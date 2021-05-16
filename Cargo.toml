@@ -2,5 +2,6 @@
 
 members = [
 	"qsspodcasts",
-	"rss_management"
+	"rss_management",
+        "fs_utils"
 ]

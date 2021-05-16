@@ -5,5 +5,5 @@ use std::fs;
 fn main() {
     println!("Hello, world!");
     let _i = Initializer::new_from_str("/tmp/blbl", "/tmp/blbl2");
-    _i.initialize();
+    _i.initialize().expect("Trololo is not working");
 }
