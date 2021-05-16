@@ -58,7 +58,7 @@ impl Initializer {
             use std::os::unix::fs::PermissionsExt;
 
             let dir_permissions = metadata(path.to_str().unwrap())?;
-            if dir_permissions.permissions().mode() < 0o700 {
+            if (dir_permissions.permissions().mode() & 0xFFF) < 0o700 {
                 error!("Bad permissions, user must have rwx rights on dir {}", path.to_str().unwrap());
                 return Err(std::io::Error::new(ErrorKind::PermissionDenied, "Bad permissions"));
 
@@ -81,7 +81,7 @@ mod tests {
 
         let file_path_str : &str = "/tmp/test_already_exists";
         let file_path : PathBuf = PathBuf::from(&file_path_str);
-        let file = fs::File::create(&file_path).unwrap();
+        let _file = fs::File::create(&file_path).unwrap();
 
         assert_eq!(Initializer::check_path_integrity(&file_path).unwrap_err().kind(), ErrorKind::AlreadyExists);
 
@@ -101,7 +101,6 @@ mod tests {
         use super::Initializer;
         use std::path::PathBuf;
         use std::io::ErrorKind;
-        use std::fs;
         use std::env;
 
         // Init
@@ -126,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    // #[ignore]
     fn test_path_integrity_permissions() -> Result<(), String> { // TODO: fix this test
         use super::Initializer;
         use std::path::PathBuf;
@@ -140,16 +139,16 @@ mod tests {
         let test_dir_path = PathBuf::from(&test_dir_path_str);
 
         fs::create_dir(&test_dir_path).expect("Initilization of test failed");
-        println!("{:#?}", &test_dir_path.metadata().unwrap().permissions());
+        // println!("Permission : {:#?}", &test_dir_path.metadata().unwrap().permissions());
         let mut permissions = fs::metadata(&test_dir_path).unwrap().permissions();
         permissions.set_mode(0o600);
 
-        assert_eq!(permissions.mode() & 0x1FF, 0o600);
+        assert_eq!(permissions.mode() & 0xFFF, 0o600);
 
         fs::set_permissions(&test_dir_path, permissions).expect("Initialization of test failed");
-        assert_eq!(test_dir_path.metadata().unwrap().permissions().mode() & 0x1FF, 0o600);
+        assert_eq!(test_dir_path.metadata().unwrap().permissions().mode() & 0xFFF, 0o600);
 
-        println!("{:#?}", &test_dir_path.metadata().unwrap().permissions());
+        // println!("{:#?}", &test_dir_path.metadata().unwrap().permissions());
 
         assert_eq!(Initializer::check_path_integrity(&test_dir_path).unwrap_err().kind(), ErrorKind::PermissionDenied);
 
