@@ -10,3 +10,4 @@ edition = "2018"
 rss = "1.9.0"
 log = "0.4.11"
 fs_utils = { "path" = "../fs_utils" }
+home = "0.5.3"

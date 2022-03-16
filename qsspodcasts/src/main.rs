@@ -1,9 +1,7 @@
-use rss_management::initializer::Initializer;
-
-use std::fs;
+use business_core::business_core::BusinessCore;
 
 fn main() {
-    println!("Hello, world!");
-    let _i = Initializer::new_from_str("/tmp/blbl", "/tmp/blbl2");
-    _i.initialize().expect("Trololo is not working");
+    let core = BusinessCore::new();
+    core.initialize();
+    println!("Is finished !");
 }

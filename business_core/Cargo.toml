@@ -1,10 +1,9 @@
 [package]
-name = "qsspodcasts"
+name = "business_core"
 version = "0.1.0"
-authors = ["Quessours"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-business_core= { "path" = "../business_core" }
+rss_management= { "path" = "../rss_management" }
