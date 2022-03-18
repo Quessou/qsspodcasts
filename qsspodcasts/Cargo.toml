@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 business_core= { "path" = "../business_core" }
+clap = { version = "3.0", features = ["derive"] }

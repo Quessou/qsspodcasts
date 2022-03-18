@@ -26,6 +26,18 @@ impl ApplicationDirInitializer {
         "downloads"
     }
 
+    pub fn default_rss_feed_list_file_path() -> PathBuf {
+        let mut p = ApplicationDirInitializer::default_app_dir_path();
+        p.push(PathBuf::from(ApplicationDirInitializer::rss_feed_list_file_name()));
+        p
+    }
+
+    fn default_download_dir_name() -> PathBuf {
+        let mut p = ApplicationDirInitializer::default_app_dir_path();
+        p.push(PathBuf::from(ApplicationDirInitializer::download_dir_name()));
+        p
+    }
+
     pub fn is_app_dir(path: PathBuf) -> bool {
         Path::new(&path).exists() && Path::new(&(path.to_str().unwrap().to_owned() + "/" + ApplicationDirInitializer::rss_feed_list_file_name())).exists() &&
         Path::new(&(path.to_str().unwrap().to_owned() + "/" + ApplicationDirInitializer::download_dir_name())).exists()
