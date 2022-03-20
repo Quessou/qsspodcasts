@@ -1,15 +1,15 @@
-use rss_management::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider};
+use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer, UrlStorer}};
 use std::path::PathBuf;
 use std::io::Error as IoError;
 pub struct BusinessCore {
-    application_dir_initializer : ApplicationDirInitializer,
-    rss_provider : RssProvider
+    _application_dir_initializer : ApplicationDirInitializer,
+    rss_provider : RssProvider<FileUrlStorer>
 }
 
 impl BusinessCore {
     pub fn new() -> BusinessCore {
-        BusinessCore{ application_dir_initializer : ApplicationDirInitializer {}, 
-        rss_provider : RssProvider::new(ApplicationDirInitializer::default_rss_feed_list_file_path().to_str()) }
+        BusinessCore{ _application_dir_initializer : ApplicationDirInitializer {},
+        rss_provider : RssProvider::new(FileUrlStorer::new(PathBuf::from(ApplicationDirInitializer::default_rss_feed_list_file_path().to_str().unwrap())) ) }
     }
 
     pub fn initialize(&self) {
