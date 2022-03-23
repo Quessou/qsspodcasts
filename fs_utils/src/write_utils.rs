@@ -1,4 +1,3 @@
-use std::fs;
 use std::fs::OpenOptions;
 use std::path;
 use std::io::{Write, Error as IoError};

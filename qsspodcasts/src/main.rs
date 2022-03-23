@@ -1,8 +1,6 @@
 use business_core::business_core::BusinessCore;
 use clap::Parser;
 
-
-
 /// Lame podcast manager
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
@@ -11,17 +9,16 @@ struct Args {
     #[clap(short, long, default_value = "")]
     add_url: String,
 }
-
-fn main() -> Result<(), ()> {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
     
     let mut core = BusinessCore::new();
     core.initialize();
 
     if args.add_url != "" {
         if let Err(_) = core.add_url(&args.add_url) {
-            return Err(());
+            println!("Error registrering the URL");
         }
         return Ok(());
     }

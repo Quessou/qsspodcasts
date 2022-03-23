@@ -1,10 +1,8 @@
 [package]
-name = "business_core"
+name = "podcast_management"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rss_management= { "path" = "../rss_management" }
-podcast_management= { "path" = "../podcast_management" }

@@ -1,4 +1,4 @@
-use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer, UrlStorer}};
+use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer}};
 use std::path::PathBuf;
 use std::io::Error as IoError;
 pub struct BusinessCore {

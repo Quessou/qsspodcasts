@@ -1,14 +1,20 @@
 use std::io;
+
+use rss::Channel;
+
 use crate::url_storer::url_storer::UrlStorer;
+use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
 
 pub struct RssProvider<T: UrlStorer> {
     rss_feeds: Vec<String>,
-    url_storer: T
+    url_storer: T,
+    feed_downloader: feed_downloader::FeedDownloader
 }
 
 impl<T: UrlStorer> RssProvider<T> {
     pub fn new(mut url_storer : T) -> RssProvider<T> {
-        RssProvider { rss_feeds: url_storer.get_urls().unwrap(), url_storer: url_storer }
+        RssProvider { rss_feeds: url_storer.get_urls().unwrap(), url_storer: url_storer, feed_downloader: FeedDownloader{} }
+
     }
 
     pub fn add_url(&mut self, url: &str) -> Result<(), io::Error> {
@@ -17,17 +23,20 @@ impl<T: UrlStorer> RssProvider<T> {
         self.url_storer.write_url(url)?;
         Ok(())
     }
+
+    pub async fn get_feed(&mut self, url: &str) -> Channel {
+        self.feed_downloader.download_feed(url).await.unwrap()
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
     use std::io;
 
     struct DummyUrlStorer;
     impl UrlStorer for DummyUrlStorer {
-        fn write_url(&mut self, url: & str) -> Result<(), io::Error> {
+        fn write_url(&mut self, _url: & str) -> Result<(), io::Error> {
             Ok(())
         }
     
@@ -41,9 +50,10 @@ mod tests {
     use super::RssProvider;
     #[test]
     fn test_add_url() -> Result<(), String> {
-        // TODO : FIXME
         let mut rss_provider = RssProvider::new(DummyUrlStorer{});
-        rss_provider.add_url("https://www.toto.com");
+        if let Err(e) = rss_provider.add_url("https://www.toto.com") {
+            return Err(e.kind().to_string());
+        }
         assert_eq!(rss_provider.rss_feeds.len(), 1);
         Ok(())
     }
