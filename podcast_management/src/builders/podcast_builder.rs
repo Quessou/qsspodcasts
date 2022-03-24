@@ -12,7 +12,7 @@ impl PodcastBuilder {
     }
 
     pub fn build(&self, channel : rss::Channel) -> Podcast {
-        let episodes = channel.items().iter().map(|i| self.episode_builder.build(i)).collect::<Vec<PodcastEpisode>>();
+        let episodes = channel.items().iter().map(|i| self.episode_builder.build(i).unwrap()).collect::<Vec<PodcastEpisode>>();
         Podcast{}
     }
 }
