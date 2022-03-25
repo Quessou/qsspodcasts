@@ -19,7 +19,7 @@ impl PodcastEpisode {
             author : author.to_string(), categories: categories.to_vec(), 
             guid : rss::Guid{permalink:guid.permalink, value:guid.value.to_string()}, 
             pub_date : pub_date.to_string(), source : 
-            rss::Source{title:Some(source.title.as_ref().unwrap().to_string()), url:source.url.to_string()}, 
+            rss::Source{title: Some(source.title.as_ref().unwrap().to_string()), url:source.url.to_string()}, 
             content: content.to_string()}
     }
 

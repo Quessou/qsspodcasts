@@ -20,14 +20,14 @@ mod test {
         category
     }
 
-    fn build_dummy_item(title: &str, link: &str, description: &str, author: &str, categories: Vec<rss::Category>, guid: rss::Guid, pub_date: &str, source: rss::Source, content: &str) -> rss::Item {
+    fn build_dummy_item(title: &str, link: &str, description: &str, author: &str, categories: Vec<rss::Category>, guid: &rss::Guid, pub_date: &str, source: rss::Source, content: &str) -> rss::Item {
         let mut item = rss::Item::default();
         item.set_title(title.to_string());
         item.set_link(link.to_string());
         item.set_description(description.to_string());
         item.set_author(author.to_string());
         item.set_categories(categories);
-        item.set_guid(guid);
+        item.set_guid(guid.clone());
         item.set_pub_date(pub_date.to_string());
         item.set_source(source);
         item.set_content(content.to_string());
@@ -45,12 +45,23 @@ mod test {
         let categories: Vec<rss::Category> = vec![build_dummy_category(category_name, category_domain)];
         let guid: rss::Guid = rss::Guid::default();
         let pub_date: &str = ""; 
-        let source: rss::Source = rss::Source::default();
+        let mut source: rss::Source = rss::Source::default();
+        source.set_title(Some("title".to_string()));
+        source.set_url("https://www.google.com");
         let content: &str = "";
-        let item = build_dummy_item(title, link, description, author, categories, guid, pub_date, source, content);
+        let item = build_dummy_item(title, link, description, author, categories, &guid, pub_date, source, content);
         let episode_builder = super::EpisodeBuilder{};
         let episode = episode_builder.build(&item).unwrap();
+
         assert_eq!(episode.title, title);
+        assert_eq!(episode.link, link);
+        assert_eq!(episode.description, description);
+        assert_eq!(episode.author, author);
+        assert_eq!(episode.categories[0].name, category_name);
+        assert_eq!(episode.categories[0].domain.as_ref().unwrap(), category_domain);
+        assert_eq!(&episode.guid, &guid);
+        assert_eq!(episode.pub_date, pub_date);
+        
         Ok(())
     } 
 }
