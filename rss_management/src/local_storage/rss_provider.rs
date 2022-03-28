@@ -25,6 +25,7 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 
     pub async fn get_feed(&mut self, url: &str) -> Channel {
+        // TODO : Remove this line
         let hu = self.feed_downloader.download_feed(url);
         self.feed_downloader.download_feed(url).await.unwrap()
     }
@@ -32,7 +33,12 @@ impl<T: UrlStorer> RssProvider<T> {
     pub async fn get_all_feeds(&mut self) -> Vec<Channel> {
         use tokio::join;
         use std::future::Future;
-        let toto :Vec<dyn Future<Output=Channel>> = self.rss_feeds.iter().map(|f| self.get_feed(f)).collect();
+        
+        let mut hu = vec![];
+        let mut rss_feeds = self.rss_feeds.clone();
+        for f in rss_feeds {
+            hu.push(self.get_feed(&f).await)
+        }
         vec![]
     }
 }
