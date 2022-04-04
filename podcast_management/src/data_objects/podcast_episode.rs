@@ -1,5 +1,6 @@
 use rss::{Category, Guid, Item, Source};
 
+#[derive(Debug)]
 pub struct PodcastEpisode {
     pub title: String, 
     pub link: String, 
@@ -19,14 +20,15 @@ impl PodcastEpisode {
             author : author.to_string(), categories: categories.to_vec(), 
             guid : rss::Guid{permalink:guid.permalink, value:guid.value.to_string()}, 
             pub_date : pub_date.to_string(), source : 
-            rss::Source{title: Some(source.title.as_ref().unwrap().to_string()), url:source.url.to_string()}, 
+            rss::Source{title: Some(source.title.as_ref().unwrap_or(&String::from("")).to_string()), url:source.url.to_string()}, 
             content: content.to_string()}
     }
 
     pub fn from_item(item: &rss::Item) -> PodcastEpisode {
         PodcastEpisode::new( item.title.as_ref().unwrap(), item.link.as_ref().unwrap(), item.description.as_ref().unwrap(),
-         item.author.as_ref().unwrap(), item.categories.as_ref(), 
-            item.guid.as_ref().unwrap(), item.pub_date.as_ref().unwrap(), item.source.as_ref().unwrap(), item.content.as_ref().unwrap())      
+         item.author.as_ref().unwrap_or(&String::from("Unknown")), item.categories.as_ref(), 
+            item.guid.as_ref().unwrap(), item.pub_date.as_ref().unwrap(), item.source.as_ref().unwrap_or(&rss::Source::default()), 
+            item.content.as_ref().unwrap_or(&String::from("")))      
     }
 }
 

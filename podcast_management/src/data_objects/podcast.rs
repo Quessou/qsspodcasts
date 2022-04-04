@@ -1,6 +1,7 @@
 use rss::Image;
 use super::podcast_episode::PodcastEpisode;
 
+#[derive(Debug)]
 pub struct Podcast {
     title: String,
     link: String,

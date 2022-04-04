@@ -21,6 +21,10 @@ impl UrlStorer for FileUrlStorer {
     }
 
     fn get_urls(&mut self) -> Result<Vec<String>, io::Error> {
-        read_utils::read_lines(&self.file_path)
+        let lines = read_utils::read_lines(&self.file_path);
+        if let Err(_) = lines {
+            return Ok(vec![]);
+        }
+        lines
     }
 }
