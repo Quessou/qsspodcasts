@@ -33,7 +33,7 @@ impl BusinessCore {
 
     pub async fn build_podcasts(&mut self) {
         let channels = self.rss_provider.get_all_feeds().await;
-        for channel in channels {
+        for channel in &channels {
             self.podcasts.push(self.podcast_builder.build(channel))
         }
         println!("{:#?}", self.podcasts);
