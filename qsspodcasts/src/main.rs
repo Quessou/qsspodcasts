@@ -15,6 +15,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     let mut core = BusinessCore::new();
     core.initialize();
+    core.build_podcasts().await;
 
     if args.add_url != "" {
         if let Err(_) = core.add_url(&args.add_url) {

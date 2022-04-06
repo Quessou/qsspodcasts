@@ -4,5 +4,6 @@ members = [
 	"qsspodcasts",
 	"rss_management",
     "fs_utils",
-	"business_core"
+	"business_core",
+	"podcast_management"
 ]

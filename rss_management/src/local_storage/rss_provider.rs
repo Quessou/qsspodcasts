@@ -1,4 +1,6 @@
+use std::future::Future;
 use std::io;
+use std::pin::Pin;
 
 use rss::Channel;
 
@@ -25,7 +27,19 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 
     pub async fn get_feed(&mut self, url: &str) -> Channel {
+        let hu = self.feed_downloader.download_feed(url);
         self.feed_downloader.download_feed(url).await.unwrap()
+    }
+
+    pub async fn get_all_feeds(&mut self) -> Vec<Channel> {
+        // Note : This is bad AF
+        let mut rss_feeds = self.rss_feeds.clone();
+        let mut feeds = vec![];
+        for f in rss_feeds {
+            feeds.push(self.get_feed(&f).await)
+        }
+
+        feeds
     }
 }
 
