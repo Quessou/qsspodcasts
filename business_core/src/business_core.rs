@@ -3,11 +3,13 @@ use std::io::Error as IoError;
 
 use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer}};
 use podcast_management::{builders::podcast_builder::PodcastBuilder, data_objects::{podcast::Podcast,podcast_episode::PodcastEpisode}};
+use podcast_download::podcast_downloader::PodcastDownloader;
 
 pub struct BusinessCore {
     _application_dir_initializer : ApplicationDirInitializer,
     rss_provider : RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
+    podcast_downloader: PodcastDownloader,
     podcasts: Vec<Podcast>
 }
 
@@ -15,7 +17,9 @@ impl BusinessCore {
     pub fn new() -> BusinessCore {
         BusinessCore{ _application_dir_initializer : ApplicationDirInitializer {},
         rss_provider : RssProvider::new(FileUrlStorer::new(PathBuf::from(ApplicationDirInitializer::default_rss_feed_list_file_path().to_str().unwrap())) ),
-        podcast_builder : PodcastBuilder::new(), podcasts: vec![] }
+        podcast_builder : PodcastBuilder::new(), 
+        podcast_downloader: PodcastDownloader::new(ApplicationDirInitializer::default_download_dir_path().to_str().unwrap()), 
+        podcasts: vec![] }
     }
 
     pub fn initialize(&self) {

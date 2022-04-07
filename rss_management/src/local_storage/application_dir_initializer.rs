@@ -32,7 +32,7 @@ impl ApplicationDirInitializer {
         p
     }
 
-    fn default_download_dir_name() -> PathBuf {
+    pub fn default_download_dir_path() -> PathBuf {
         let mut p = ApplicationDirInitializer::default_app_dir_path();
         p.push(PathBuf::from(ApplicationDirInitializer::download_dir_name()));
         p
