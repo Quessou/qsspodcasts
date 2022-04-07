@@ -13,6 +13,8 @@ impl EpisodeBuilder {
 
 #[cfg(test)]
 mod test {
+    use rss::Enclosure;
+
     fn build_dummy_category(name: &str, domain: &str) -> rss::Category {
         let mut category = rss::Category::default();
         category.set_name(name);
@@ -20,7 +22,7 @@ mod test {
         category
     }
 
-    fn build_dummy_item(title: &str, link: &str, description: &str, author: &str, categories: Vec<rss::Category>, guid: &rss::Guid, pub_date: &str, source: rss::Source, content: &str) -> rss::Item {
+    fn build_dummy_item(title: &str, link: &str, description: &str, author: &str, categories: Vec<rss::Category>, guid: &rss::Guid, pub_date: &str, source: rss::Source, content: &str, enclosure: &rss::Enclosure) -> rss::Item {
         let mut item = rss::Item::default();
         item.set_title(title.to_string());
         item.set_link(link.to_string());
@@ -31,6 +33,7 @@ mod test {
         item.set_pub_date(pub_date.to_string());
         item.set_source(source);
         item.set_content(content.to_string());
+        item.set_enclosure(enclosure.clone());
         item
     }
 
@@ -49,7 +52,8 @@ mod test {
         source.set_title(Some("title".to_string()));
         source.set_url("https://www.google.com");
         let content: &str = "";
-        let item = build_dummy_item(title, link, description, author, categories, &guid, pub_date, source, content);
+        let enclosure = rss::Enclosure::default();
+        let item = build_dummy_item(title, link, description, author, categories, &guid, pub_date, source, content, &enclosure);
         let episode_builder = super::EpisodeBuilder{};
         let episode = episode_builder.build(&item).unwrap();
 

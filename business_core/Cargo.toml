@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 rss_management= { "path" = "../rss_management" }
+podcast_download= { "path" = "../podcast_download" }
 podcast_management= { "path" = "../podcast_management" }
