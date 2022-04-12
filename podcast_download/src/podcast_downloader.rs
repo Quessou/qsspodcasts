@@ -1,5 +1,10 @@
 use std::{path::PathBuf, str::FromStr};
+
 use reqwest;
+use log::info;
+use bytes::Bytes;
+
+use fs_utils::write_utils::write_bytes_in_file;
 
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 
@@ -13,10 +18,13 @@ impl PodcastDownloader {
         PodcastDownloader { download_dir: PathBuf::from_str(download_dir).unwrap(), client: reqwest::Client::new() }
     }
 
-    pub async fn download_episode(&self, episode: PodcastEpisode) -> Result<(), reqwest::Error> {
-        let url = episode.url;
+    pub async fn download_episode(&self, episode: &PodcastEpisode) -> Result<(), reqwest::Error> {
+        let url = &episode.url;
         let request = self.client.get(url);
-        request.send().await?;
+        info!("Downloading podcast episode {episode_title}", episode_title=episode.title);
+        let result: Bytes = request.send().await?.bytes().await?;
+        write_bytes_in_file("/tmp/toto.mp3", &result);
+        info!("Download of podcast episode {episode_title} finished", episode_title=episode.title);
         Ok(())
     }
 }

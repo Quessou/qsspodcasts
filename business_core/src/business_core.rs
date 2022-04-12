@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::io::Error as IoError;
 
 use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer}};
+
 use podcast_management::{builders::podcast_builder::PodcastBuilder, data_objects::{podcast::Podcast,podcast_episode::PodcastEpisode}};
 use podcast_download::podcast_downloader::PodcastDownloader;
 
@@ -40,6 +41,14 @@ impl BusinessCore {
         for channel in &channels {
             self.podcasts.push(self.podcast_builder.build(channel))
         }
-        println!("{:#?}", self.podcasts);
+        // println!("{:#?}", self.podcasts);
+    }
+
+    pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
+        println!("Entering");
+        if let Err(e) = self.podcast_downloader.download_episode(&self.podcasts[0].episodes[0]).await {
+            return Err(());
+        }
+        Ok(())
     }
 }

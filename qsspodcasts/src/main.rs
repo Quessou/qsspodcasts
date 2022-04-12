@@ -9,6 +9,7 @@ struct Args {
     #[clap(short, long, default_value = "")]
     add_url: String,
 }
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
@@ -23,8 +24,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
-
-    // TODO : Add the processing in case of use of the "add-url" option
+    let toto = core.download_some_random_podcast();
+    let result = toto.await;
+    //if let Err(_) = {
+    //    println!("Download failed !")
+    //} else {
+    //    println!("Download successful !");
+    //}
 
     println!("Is finished !");
     Ok(())
