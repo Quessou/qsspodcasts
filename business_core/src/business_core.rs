@@ -5,13 +5,15 @@ use rss_management::{local_storage::{application_dir_initializer::ApplicationDir
 
 use podcast_management::{builders::podcast_builder::PodcastBuilder, data_objects::{podcast::Podcast,podcast_episode::PodcastEpisode}};
 use podcast_download::podcast_downloader::PodcastDownloader;
+use podcast_player::mp3_player::Mp3Player;
 
 pub struct BusinessCore {
     _application_dir_initializer : ApplicationDirInitializer,
     rss_provider : RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    podcasts: Vec<Podcast>
+    player: Mp3Player,
+    podcasts: Vec<Podcast>,
 }
 
 impl BusinessCore {
@@ -19,7 +21,8 @@ impl BusinessCore {
         BusinessCore{ _application_dir_initializer : ApplicationDirInitializer {},
         rss_provider : RssProvider::new(FileUrlStorer::new(PathBuf::from(ApplicationDirInitializer::default_rss_feed_list_file_path().to_str().unwrap())) ),
         podcast_builder : PodcastBuilder::new(), 
-        podcast_downloader: PodcastDownloader::new(ApplicationDirInitializer::default_download_dir_path().to_str().unwrap()), 
+        podcast_downloader: PodcastDownloader::new(ApplicationDirInitializer::default_download_dir_path().to_str().unwrap()),
+        player: Mp3Player{}, 
         podcasts: vec![] }
     }
 
@@ -49,6 +52,7 @@ impl BusinessCore {
         if let Err(e) = self.podcast_downloader.download_episode(&self.podcasts[0].episodes[0]).await {
             return Err(());
         }
+        self.player.play_file("/tmp/toto.mp3");
         Ok(())
     }
 }
