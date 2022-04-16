@@ -18,13 +18,15 @@ impl PodcastDownloader {
         PodcastDownloader { download_dir: PathBuf::from_str(download_dir).unwrap(), client: reqwest::Client::new() }
     }
 
-    pub async fn download_episode(&self, episode: &PodcastEpisode) -> Result<(), reqwest::Error> {
+    pub async fn download_episode(&self, episode: &PodcastEpisode) -> Result<PathBuf, reqwest::Error> {
         let url = &episode.url;
         let request = self.client.get(url);
         info!("Downloading podcast episode {episode_title}", episode_title=episode.title);
         let result: Bytes = request.send().await?.bytes().await?;
-        write_bytes_in_file("/tmp/toto.mp3", &result);
+        let mut output_path = self.download_dir.clone();
+        output_path.push(&episode.title);
+        write_bytes_in_file(&output_path.clone().into_os_string().to_str().unwrap(), &result);
         info!("Download of podcast episode {episode_title} finished", episode_title=episode.title);
-        Ok(())
+        Ok(output_path)
     }
 }

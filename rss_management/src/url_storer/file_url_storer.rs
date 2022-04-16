@@ -15,7 +15,6 @@ impl FileUrlStorer {
 
 impl UrlStorer for FileUrlStorer {
     fn write_url(&mut self, url: & str) -> Result<(), io::Error> {
-        // TODO
         write_utils::write_at_end_of_file(&self.file_path, url)?;
         Ok(())
     }

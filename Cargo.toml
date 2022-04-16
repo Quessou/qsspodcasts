@@ -6,5 +6,7 @@ members = [
     "fs_utils",
 	"business_core",
 	"podcast_management",
-	"podcast_download"
+	"podcast_download",
+	"podcast_player",
+	"path_providing"
 ]
