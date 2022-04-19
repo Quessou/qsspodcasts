@@ -50,7 +50,6 @@ impl BusinessCore {
         for channel in &channels {
             self.podcasts.push(self.podcast_builder.build(channel))
         }
-        // println!("{:#?}", self.podcasts);
     }
 
     pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
@@ -58,7 +57,9 @@ impl BusinessCore {
         if let Err(e) = self.podcast_downloader.download_episode(&self.podcasts[0].episodes[0]).await {
             return Err(());
         }
-        self.player.play_file("/tmp/toto.mp3");
+        // TODO : Replace that
+        let path = self.path_provider.compute_episode_path(&self.podcasts[0].episodes[0]).into_os_string().into_string().unwrap();
+        self.player.play_file(&path);
         Ok(())
     }
 }

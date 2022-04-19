@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 home = "0.5.3"
+podcast_management= { "path" = "../podcast_management" }

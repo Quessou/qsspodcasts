@@ -43,7 +43,6 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::io;
