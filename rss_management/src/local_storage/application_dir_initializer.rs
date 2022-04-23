@@ -15,32 +15,6 @@ pub struct ApplicationDirInitializer {
 
 impl ApplicationDirInitializer {
 
-    //pub fn default_app_dir_path() -> PathBuf {
-    //    let home_dir_path = home_dir().unwrap();
-    //    let home_dir_path : &str = home_dir_path.to_str().unwrap();
-    //    [ home_dir_path, ".qsspodcasts" ].iter().collect()
-    //}
-//
-    //fn rss_feed_list_file_name() -> &'static str {
-    //    "rss_feed_list"
-    //}
-//
-    //fn download_dir_name() -> &'static str {
-    //    "downloads"
-    //}
-//
-    //pub fn default_rss_feed_list_file_path() -> PathBuf {
-    //    let mut p = ApplicationDirInitializer::default_app_dir_path();
-    //    p.push(PathBuf::from(ApplicationDirInitializer::rss_feed_list_file_name()));
-    //    p
-    //}
-//
-    //pub fn default_download_dir_path() -> PathBuf {
-    //    let mut p = ApplicationDirInitializer::default_app_dir_path();
-    //    p.push(PathBuf::from(ApplicationDirInitializer::download_dir_name()));
-    //    p
-    //}
-
     pub fn is_app_dir_created(&self, path: PathBuf) -> bool {
         // TODO : What to do with this ?
         Path::new(&path).exists() && Path::new(&(path.to_str().unwrap().to_owned() + "/" + self.path_provider.rss_feed_list_file_name())).exists() &&
@@ -62,9 +36,9 @@ impl ApplicationDirInitializer {
         ApplicationDirInitializer::is_path_valid(&app_dir_path)?;
         fs::create_dir_all(&app_dir_path.to_path_buf())?;
 
-        let rss_feed_list_file_path: PathBuf = app_dir_path.join(self.path_provider.rss_feed_list_file_path());
+        let rss_feed_list_file_path: PathBuf = app_dir_path.join(self.path_provider.rss_feed_list_file_name());
         fs::File::create(rss_feed_list_file_path)?;
-        let download_dir_path: PathBuf = app_dir_path.join(self.path_provider.download_dir_path());
+        let download_dir_path: PathBuf = app_dir_path.join(self.path_provider.download_dir_name());
         fs::create_dir_all(download_dir_path)?;
 
         Ok(())
@@ -151,7 +125,7 @@ mod tests {
     }
 
     #[test]
-    fn test_path_integrity_permissions() -> Result<(), String> { 
+    fn test_path_integrity_permissions() -> Result<(), String> {
         use super::ApplicationDirInitializer;
         use std::path::PathBuf;
         use std::io::ErrorKind;
@@ -184,14 +158,14 @@ mod tests {
     fn test_initialize_application_dir() -> Result<(), String> {
         use super::ApplicationDirInitializer;
         use std::path::PathBuf;
-        use path_providing::default_path_provider::DefaultPathProvider;
-        
+        use path_providing::dummy_path_provider::DummyPathProvider;
+
         let dummy_app_dir = "/tmp/.qsspodcasts";
-        let app_dir_initializer = ApplicationDirInitializer{path_provider: Box::new(DefaultPathProvider{})};
+        let app_dir_initializer = ApplicationDirInitializer{path_provider: Box::new(DummyPathProvider::new(dummy_app_dir))};
         assert!(! PathBuf::from(dummy_app_dir).is_dir());
         app_dir_initializer.initialize_application_dir(&dummy_app_dir).expect("Initialization application dir failed");
         assert!(PathBuf::from(dummy_app_dir).is_dir());
-        
+
         fs::remove_dir_all(PathBuf::from(dummy_app_dir).to_path_buf()).expect("Cleanup of test failed");
 
         Ok(())
