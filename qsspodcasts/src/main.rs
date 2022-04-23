@@ -13,7 +13,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
+
     let mut core = BusinessCore::new();
     core.initialize();
     core.build_podcasts().await;
@@ -24,14 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
-    let toto = core.download_some_random_podcast();
-    let result = toto.await;
-    //if let Err(_) = {
-    //    println!("Download failed !")
-    //} else {
-    //    println!("Download successful !");
-    //}
+    core.download_some_random_podcast().await;
 
-    println!("Is finished !");
     Ok(())
 }

@@ -21,12 +21,12 @@ pub struct BusinessCore {
 impl BusinessCore {
     pub fn new() -> BusinessCore {
         let path_provider = DefaultPathProvider{};
-        BusinessCore { 
+        BusinessCore {
             rss_provider : RssProvider::new(FileUrlStorer::new(PathBuf::from(path_provider.rss_feed_list_file_path().to_str().unwrap())) ),
-            podcast_builder : PodcastBuilder::new(), 
+            podcast_builder : PodcastBuilder::new(),
             podcast_downloader: PodcastDownloader::new(path_provider.download_dir_path().to_str().unwrap()),
-            player: Mp3Player{}, 
-            podcasts: vec![], 
+            player: Mp3Player{},
+            podcasts: vec![],
             application_dir_initializer : ApplicationDirInitializer {path_provider: Box::new(path_provider.clone()) },
             path_provider: path_provider,
         }
@@ -57,7 +57,7 @@ impl BusinessCore {
         if let Err(e) = self.podcast_downloader.download_episode(&self.podcasts[0].episodes[0]).await {
             return Err(());
         }
-        // TODO : Replace that
+
         let path = self.path_provider.compute_episode_path(&self.podcasts[0].episodes[0]).into_os_string().into_string().unwrap();
         self.player.play_file(&path);
         Ok(())
