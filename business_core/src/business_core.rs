@@ -3,7 +3,7 @@ use std::io::Error as IoError;
 
 use rss_management::{local_storage::{application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider}, url_storer::file_url_storer::{FileUrlStorer}};
 
-use podcast_management::{builders::podcast_builder::PodcastBuilder, data_objects::{podcast::Podcast,podcast_episode::PodcastEpisode}};
+use podcast_management::{builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast, podcast_library::PodcastLibrary};
 use podcast_download::podcast_downloader::PodcastDownloader;
 use podcast_player::mp3_player::Mp3Player;
 use path_providing::default_path_provider::{PathProvider, DefaultPathProvider};
@@ -14,7 +14,7 @@ pub struct BusinessCore {
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
     player: Mp3Player,
-    podcasts: Vec<Podcast>,
+    podcast_library: PodcastLibrary,
     path_provider: DefaultPathProvider
 }
 
@@ -26,7 +26,7 @@ impl BusinessCore {
             podcast_builder : PodcastBuilder::new(),
             podcast_downloader: PodcastDownloader::new(path_provider.download_dir_path().to_str().unwrap()),
             player: Mp3Player{},
-            podcasts: vec![],
+            podcast_library: PodcastLibrary::new(),
             application_dir_initializer : ApplicationDirInitializer {path_provider: Box::new(path_provider.clone()) },
             path_provider: path_provider,
         }
@@ -47,18 +47,20 @@ impl BusinessCore {
 
     pub async fn build_podcasts(&mut self) {
         let channels = self.rss_provider.get_all_feeds().await;
+        let mut podcasts: Vec<Podcast> = vec![];
         for channel in &channels {
-            self.podcasts.push(self.podcast_builder.build(channel))
+            podcasts.push(self.podcast_builder.build(channel))
         }
+        self.podcast_library.push(&mut podcasts);
     }
 
     pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
         println!("Entering");
-        if let Err(e) = self.podcast_downloader.download_episode(&self.podcasts[0].episodes[0]).await {
+        if let Err(e) = self.podcast_downloader.download_episode(&self.podcast_library.podcasts[0].episodes[0]).await {
             return Err(());
         }
 
-        let path = self.path_provider.compute_episode_path(&self.podcasts[0].episodes[0]).into_os_string().into_string().unwrap();
+        let path = self.path_provider.compute_episode_path(&self.podcast_library.podcasts[0].episodes[0]).into_os_string().into_string().unwrap();
         self.player.play_file(&path);
         Ok(())
     }

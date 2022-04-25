@@ -32,7 +32,7 @@ mod tests {
         return Err(String::from("Test failed"));
     }
     let channel : Channel = channel.unwrap();
-    assert!(channel.items().len() != 0);
+    assert_eq!(channel.items().len(), 0);
     assert_eq!(channel.link(), url);
     Ok(())
     }
