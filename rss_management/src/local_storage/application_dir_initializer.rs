@@ -3,7 +3,6 @@ use std::path::PathBuf;
 use std::io::{ErrorKind};
 use log::{warn, error};
 use fs_utils::permissions::are_permissions_fulfilled;
-//use home::home_dir;
 use std::path::Path;
 
 use path_providing::path_provider::PathProvider;
