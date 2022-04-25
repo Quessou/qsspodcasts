@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 test-case = "1.1.0"
 log = "0.4.11"
+bytes = "1.1.0"

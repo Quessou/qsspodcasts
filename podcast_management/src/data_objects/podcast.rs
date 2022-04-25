@@ -9,7 +9,7 @@ pub struct Podcast {
     copyright: Option<String>,
     pub_date: Option<String>,
     image: Option<Image>,
-    episodes: Vec<PodcastEpisode>,
+    pub episodes: Vec<PodcastEpisode>,
 }
 
 impl Podcast {

@@ -43,7 +43,6 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use std::io;
@@ -66,7 +65,7 @@ mod tests {
     fn test_add_url() -> Result<(), String> {
         let mut rss_provider = RssProvider::new(DummyUrlStorer{});
         if let Err(e) = rss_provider.add_url("https://www.toto.com") {
-            return Err(e.kind().to_string());
+            return Err(e.to_string());
         }
         assert_eq!(rss_provider.rss_feeds.len(), 1);
         Ok(())

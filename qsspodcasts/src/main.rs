@@ -9,23 +9,22 @@ struct Args {
     #[clap(short, long, default_value = "")]
     add_url: String,
 }
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    
+
     let mut core = BusinessCore::new();
     core.initialize();
     core.build_podcasts().await;
 
     if args.add_url != "" {
         if let Err(_) = core.add_url(&args.add_url) {
-            println!("Error registrering the URL");
+            println!("Error registering the URL");
         }
         return Ok(());
     }
+    core.download_some_random_podcast().await;
 
-    // TODO : Add the processing in case of use of the "add-url" option
-
-    println!("Is finished !");
     Ok(())
 }
