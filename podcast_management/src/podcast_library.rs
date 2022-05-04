@@ -1,23 +1,22 @@
-use crate::data_objects::{podcast::Podcast, podcast_episode::PodcastEpisode};
+use crate::data_objects::podcast::Podcast;
 
 pub struct PodcastLibrary {
-    pub podcasts : Vec<Podcast>
+    pub podcasts: Vec<Podcast>,
 }
 
 impl PodcastLibrary {
     pub fn new() -> PodcastLibrary {
-        PodcastLibrary{ podcasts: vec![] }
+        PodcastLibrary { podcasts: vec![] }
     }
 
     pub fn clear(&mut self) {
         self.podcasts = vec![];
     }
 
-    pub fn push(&mut self, podcasts: &mut Vec<Podcast> ) {
+    pub fn push(&mut self, podcasts: &mut Vec<Podcast>) {
         self.podcasts.append(podcasts);
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -46,8 +45,5 @@ mod tests {
         library.clear();
         assert_eq!(library.podcasts.len(), 0);
         Ok(())
-
     }
-
-
 }

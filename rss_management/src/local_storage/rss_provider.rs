@@ -1,22 +1,23 @@
-use std::future::Future;
 use std::io;
-use std::pin::Pin;
 
 use rss::Channel;
 
-use crate::url_storer::url_storer::UrlStorer;
 use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
+use crate::url_storer::url_storer::UrlStorer;
 
 pub struct RssProvider<T: UrlStorer> {
     rss_feeds: Vec<String>,
     url_storer: T,
-    feed_downloader: feed_downloader::FeedDownloader
+    feed_downloader: feed_downloader::FeedDownloader,
 }
 
 impl<T: UrlStorer> RssProvider<T> {
-    pub fn new(mut url_storer : T) -> RssProvider<T> {
-        RssProvider { rss_feeds: url_storer.get_urls().unwrap(), url_storer: url_storer, feed_downloader: FeedDownloader{} }
-
+    pub fn new(mut url_storer: T) -> RssProvider<T> {
+        RssProvider {
+            rss_feeds: url_storer.get_urls().unwrap(),
+            url_storer: url_storer,
+            feed_downloader: FeedDownloader {},
+        }
     }
 
     pub fn add_url(&mut self, url: &str) -> Result<(), io::Error> {
@@ -27,13 +28,12 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 
     pub async fn get_feed(&mut self, url: &str) -> Channel {
-        let hu = self.feed_downloader.download_feed(url);
         self.feed_downloader.download_feed(url).await.unwrap()
     }
 
     pub async fn get_all_feeds(&mut self) -> Vec<Channel> {
         // Note : This is bad AF
-        let mut rss_feeds = self.rss_feeds.clone();
+        let rss_feeds = self.rss_feeds.clone();
         let mut feeds = vec![];
         for f in rss_feeds {
             feeds.push(self.get_feed(&f).await)
@@ -49,10 +49,10 @@ mod tests {
 
     struct DummyUrlStorer;
     impl UrlStorer for DummyUrlStorer {
-        fn write_url(&mut self, _url: & str) -> Result<(), io::Error> {
+        fn write_url(&mut self, _url: &str) -> Result<(), io::Error> {
             Ok(())
         }
-    
+
         fn get_urls(&mut self) -> Result<Vec<String>, io::Error> {
             Ok(Vec::new())
         }
@@ -63,7 +63,7 @@ mod tests {
     use super::RssProvider;
     #[test]
     fn test_add_url() -> Result<(), String> {
-        let mut rss_provider = RssProvider::new(DummyUrlStorer{});
+        let mut rss_provider = RssProvider::new(DummyUrlStorer {});
         if let Err(e) = rss_provider.add_url("https://www.toto.com") {
             return Err(e.to_string());
         }

@@ -1,19 +1,35 @@
-use rss::Image;
 use super::podcast_episode::PodcastEpisode;
+use rss::Image;
 
 #[derive(Debug)]
 pub struct Podcast {
-    title: String,
-    link: String,
-    description: String,
-    copyright: Option<String>,
-    pub_date: Option<String>,
-    image: Option<Image>,
+    _title: String,
+    _link: String,
+    _description: String,
+    _copyright: Option<String>,
+    _pub_date: Option<String>,
+    _image: Option<Image>,
     pub episodes: Vec<PodcastEpisode>,
 }
 
 impl Podcast {
-    pub fn new(title : &str, link : &str, description: & str, copyright: Option<String>, pub_date: Option<String>, image: Option<Image>, episodes: Vec<PodcastEpisode>) -> Podcast {
-        Podcast { title : title.to_string(), link: link.to_string(), description: description.to_string(), copyright: copyright, pub_date: pub_date, image: image, episodes : episodes }
+    pub fn new(
+        title: &str,
+        link: &str,
+        description: &str,
+        copyright: Option<String>,
+        pub_date: Option<String>,
+        image: Option<Image>,
+        episodes: Vec<PodcastEpisode>,
+    ) -> Podcast {
+        Podcast {
+            _title: title.to_string(),
+            _link: link.to_string(),
+            _description: description.to_string(),
+            _copyright: copyright,
+            _pub_date: pub_date,
+            _image: image,
+            episodes: episodes,
+        }
     }
 }

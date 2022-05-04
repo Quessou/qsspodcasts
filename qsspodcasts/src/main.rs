@@ -24,7 +24,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
-    core.download_some_random_podcast().await;
+    let play_future = core.download_some_random_podcast();
+    //let run_future = core.run();
+
+    //futures::join!(play_future, run_future);
 
     Ok(())
 }

@@ -1,7 +1,7 @@
 use std::fs;
-use std::path;
 use std::io;
 use std::io::BufRead;
+use std::path;
 
 pub fn read_lines(path: &path::Path) -> Result<Vec<String>, io::Error> {
     let file_to_read = fs::File::open(&path)?;
