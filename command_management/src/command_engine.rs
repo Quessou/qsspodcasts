@@ -30,16 +30,16 @@ impl CommandEngine {
 
     pub fn run(this: Arc<Mutex<Self>>) {
         println!("Launching thread");
-        thread::spawn(move || {
-            println!("Thread launched");
-            let mut s = String::from("");
-            while s != "exit" {
-                print!(">>> ");
-                // TODO : Use if let here
-                s = command_reader::read_command().unwrap();
-                this.lock().unwrap().handle_command(&s);
-            }
-            println!("Thread finished");
-        });
+        //thread::spawn(move || {
+        //    println!("Thread launched");
+        //    let mut s = String::from("");
+        //    while s != "exit" {
+        //        print!(">>> ");
+        //        // TODO : Use if let here
+        //        s = command_reader::read_command().unwrap();
+        //        this.lock().unwrap().handle_command(&s);
+        //    }
+        //    println!("Thread finished");
+        //});
     }
 }

@@ -1,3 +1,4 @@
+use std::io::BufReader;
 use std::io::Error as IoError;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -16,6 +17,7 @@ use podcast_management::{
     podcast_library::PodcastLibrary,
 };
 use podcast_player::mp3_player::Mp3Player;
+use tokio::io::AsyncBufReadExt;
 // use command_management::command_engine::CommandEngine;
 
 pub struct BusinessCore {
@@ -103,9 +105,20 @@ impl BusinessCore {
             .into_os_string()
             .into_string()
             .unwrap();
-        self.player.lock().unwrap().play_file(&path);
-
+        {
+            self.player.lock().unwrap().play_file(&path);
+        }
         println!("Podcast played lul");
+
+        let t_stdin = tokio::io::stdin();
+        let mut reader = tokio::io::BufReader::new(t_stdin);
+        let mut line : String = String::from("");
+        let mut size_read = reader.read_line(&mut line).await.unwrap();
+        while size_read > 1 {
+            println!("YAS {size_read}");
+            size_read = reader.read_line(&mut line).await.unwrap();
+        }
+
         Ok(())
     }
 
