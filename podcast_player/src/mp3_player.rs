@@ -16,8 +16,11 @@ impl Mp3Player {
         let file = BufReader::new(File::open(path).unwrap());
         let source = Decoder::new(file).unwrap();
         let (_stream, stream_handle) = OutputStream::try_default().unwrap();
+
         self.sink = Option::Some(Sink::try_new(&stream_handle).unwrap());
         self.sink.as_ref().unwrap().append(source);
+
+        // TODO : Replace that by something that polls for commands ?
         self.sink.as_ref().unwrap().sleep_until_end();
     }
 

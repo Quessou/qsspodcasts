@@ -1,23 +1,25 @@
 use std::{path::PathBuf, str::FromStr};
 
 use bytes::Bytes;
-use log::info;
+use log::{info, debug};
 use reqwest;
 
 use fs_utils::write_utils::write_bytes_in_file;
 
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 
+use path_providing::path_provider::PathProvider;
+
 pub struct PodcastDownloader {
-    download_dir: PathBuf,
     client: reqwest::Client,
+    path_provider: Box<dyn PathProvider>
 }
 
 impl PodcastDownloader {
-    pub fn new(download_dir: &str) -> PodcastDownloader {
+    pub fn new(path_provider: Box<dyn PathProvider>) -> PodcastDownloader {
         PodcastDownloader {
-            download_dir: PathBuf::from_str(download_dir).unwrap(),
             client: reqwest::Client::new(),
+            path_provider : path_provider,
         }
     }
 
@@ -27,6 +29,13 @@ impl PodcastDownloader {
     ) -> Result<PathBuf, std::io::Error> {
         let url = &episode.url;
         let request = self.client.get(url);
+        let output_path = self.path_provider.compute_episode_path(&episode);
+
+        if output_path.exists() {
+            debug!("Episode already downloaded, not doing anything");
+            return Ok(output_path)
+        }
+
         info!(
             "Downloading podcast episode {episode_title}",
             episode_title = episode.title
@@ -53,8 +62,7 @@ impl PodcastDownloader {
                 ))
             }
         }
-        let mut output_path = self.download_dir.clone();
-        output_path.push(&episode.title);
+
         write_bytes_in_file(
             &output_path.clone().into_os_string().to_str().unwrap(),
             &result,

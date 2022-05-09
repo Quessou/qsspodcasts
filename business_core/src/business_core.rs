@@ -47,7 +47,7 @@ impl BusinessCore {
             ))),
             podcast_builder: PodcastBuilder::new(),
             podcast_downloader: PodcastDownloader::new(
-                path_provider.download_dir_path().to_str().unwrap(),
+                Box::new(path_provider.clone())
             ),
             player: mp3_player.clone(),
             podcast_library: podcast_library.clone(),
@@ -95,6 +95,7 @@ impl BusinessCore {
         {
             return Err(());
         }
+        println!("Podcast downloaded lul");
 
         let path = self
             .path_provider
@@ -103,6 +104,8 @@ impl BusinessCore {
             .into_string()
             .unwrap();
         self.player.lock().unwrap().play_file(&path);
+
+        println!("Podcast played lul");
         Ok(())
     }
 
