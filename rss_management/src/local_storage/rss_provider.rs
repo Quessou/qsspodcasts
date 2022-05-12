@@ -3,7 +3,7 @@ use std::io;
 use rss::Channel;
 
 use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
-use crate::url_storer::url_storer::UrlStorer;
+use crate::url_storage::url_storer::UrlStorer;
 
 pub struct RssProvider<T: UrlStorer> {
     rss_feeds: Vec<String>,
@@ -15,7 +15,7 @@ impl<T: UrlStorer> RssProvider<T> {
     pub fn new(mut url_storer: T) -> RssProvider<T> {
         RssProvider {
             rss_feeds: url_storer.get_urls().unwrap(),
-            url_storer: url_storer,
+            url_storer,
             feed_downloader: FeedDownloader {},
         }
     }
@@ -58,7 +58,7 @@ mod tests {
         }
     }
 
-    use crate::url_storer::file_url_storer::UrlStorer;
+    use crate::url_storage::file_url_storer::UrlStorer;
 
     use super::RssProvider;
     #[test]

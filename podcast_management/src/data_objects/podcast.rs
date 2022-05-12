@@ -29,7 +29,7 @@ impl Podcast {
             _copyright: copyright,
             _pub_date: pub_date,
             _image: image,
-            episodes: episodes,
+            episodes,
         }
     }
 }

@@ -18,16 +18,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     core.initialize();
     core.build_podcasts().await;
 
-    if args.add_url != "" {
-        if let Err(_) = core.add_url(&args.add_url) {
+    if !args.add_url.is_empty() {
+        if core.add_url(&args.add_url).is_err() {
             println!("Error registering the URL");
         }
         return Ok(());
     }
     let play_future = core.download_some_random_podcast();
-    //let run_future = core.run();
 
-    futures::join!(play_future);
+    if futures::join!(play_future).0.is_err() {
+        println!("Not working !")
+    }
 
     Ok(())
 }

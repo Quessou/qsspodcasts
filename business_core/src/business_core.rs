@@ -1,4 +1,3 @@
-use std::io::BufReader;
 use std::io::Error as IoError;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -7,7 +6,7 @@ use rss_management::{
     local_storage::{
         application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider,
     },
-    url_storer::file_url_storer::FileUrlStorer,
+    url_storage::file_url_storer::FileUrlStorer,
 };
 
 use path_providing::default_path_provider::{DefaultPathProvider, PathProvider};
@@ -18,7 +17,6 @@ use podcast_management::{
 };
 use podcast_player::mp3_player::Mp3Player;
 use tokio::io::AsyncBufReadExt;
-// use command_management::command_engine::CommandEngine;
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
@@ -28,36 +26,25 @@ pub struct BusinessCore {
     player: Arc<Mutex<Mp3Player>>,
     podcast_library: Arc<Mutex<PodcastLibrary>>,
     path_provider: DefaultPathProvider,
-    //command_engine: Arc<Mutex<CommandEngine>>
-}
-
-fn add(i: u32, j: u32) -> u32 {
-    let toto = i + 10;
-    i + j + toto
 }
 
 impl BusinessCore {
     pub fn new() -> BusinessCore {
-        let t = add(1, 20);
         let path_provider = DefaultPathProvider {};
         let mp3_player = Arc::new(Mutex::new(Mp3Player::new()));
         let podcast_library = Arc::new(Mutex::new(PodcastLibrary::new()));
-        //  let command_engine = Arc::new(Mutex::new(CommandEngine::new(mp3_player.clone(), podcast_library.clone())));
         BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(
                 path_provider.rss_feed_list_file_path().to_str().unwrap(),
             ))),
             podcast_builder: PodcastBuilder::new(),
-            podcast_downloader: PodcastDownloader::new(
-                Box::new(path_provider.clone())
-            ),
-            player: mp3_player.clone(),
-            podcast_library: podcast_library.clone(),
+            podcast_downloader: PodcastDownloader::new(Box::new(path_provider)),
+            player: mp3_player,
+            podcast_library,
             application_dir_initializer: ApplicationDirInitializer {
-                path_provider: Box::new(path_provider.clone()),
+                path_provider: Box::new(path_provider),
             },
             path_provider,
-            //    command_engine: command_engine,
         }
     }
 
@@ -69,7 +56,7 @@ impl BusinessCore {
             .is_app_dir_created(PathBuf::from(app_dir_path))
         {
             self.application_dir_initializer
-                .initialize_application_dir(&app_dir_path)
+                .initialize_application_dir(app_dir_path)
                 .expect("Application dir initialization failed");
         }
     }
@@ -90,10 +77,11 @@ impl BusinessCore {
 
     pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
         // TODO : Remove me
-        if let Err(_) = self
+        if (self
             .podcast_downloader
             .download_episode(&self.podcast_library.lock().unwrap().podcasts[0].episodes[0])
-            .await
+            .await)
+            .is_err()
         {
             return Err(());
         }
@@ -106,13 +94,13 @@ impl BusinessCore {
             .into_string()
             .unwrap();
         {
-            self.player.lock().unwrap().play_file(&path);
+            self.player.lock().unwrap().play_file(&path).unwrap();
         }
         println!("Podcast played lul");
 
         let t_stdin = tokio::io::stdin();
         let mut reader = tokio::io::BufReader::new(t_stdin);
-        let mut line : String = String::from("");
+        let mut line: String = String::from("");
         let mut size_read = reader.read_line(&mut line).await.unwrap();
         while size_read > 1 {
             println!("YAS {size_read}");
@@ -121,8 +109,10 @@ impl BusinessCore {
 
         Ok(())
     }
+}
 
-    //pub async fn run(&mut self) {
-    //    CommandEngine::run(self.command_engine.clone());
-    //}
+impl Default for BusinessCore {
+    fn default() -> Self {
+        Self::new()
+    }
 }

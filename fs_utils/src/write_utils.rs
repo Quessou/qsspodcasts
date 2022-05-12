@@ -30,7 +30,7 @@ pub fn open_or_create_file(file_path: &str) -> Result<File, std::io::Error> {
 
 pub fn write_bytes_in_file(file_path: &str, bytes: &Bytes) -> Result<(), std::io::Error> {
     let mut file = open_or_create_file(file_path)?;
-    file.write(&bytes.to_vec())?;
+    file.write_all(bytes)?;
     file.flush()?;
     Ok(())
 }

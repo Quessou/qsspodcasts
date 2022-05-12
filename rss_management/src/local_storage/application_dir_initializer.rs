@@ -39,7 +39,7 @@ impl ApplicationDirInitializer {
         let app_dir_path = PathBuf::from(app_dir_path);
         // Create app configuration dir
         ApplicationDirInitializer::is_path_valid(&app_dir_path)?;
-        fs::create_dir_all(&app_dir_path.to_path_buf())?;
+        fs::create_dir_all(&app_dir_path)?;
 
         let rss_feed_list_file_path: PathBuf =
             app_dir_path.join(self.path_provider.rss_feed_list_file_name());
@@ -50,7 +50,7 @@ impl ApplicationDirInitializer {
         Ok(())
     }
 
-    fn is_path_valid(path: &PathBuf) -> Result<(), std::io::Error> {
+    fn is_path_valid(path: &Path) -> Result<(), std::io::Error> {
         if path.exists() && path.is_file() {
             error!(
                 "Path points to an already existing file, and not a directory : {}",
@@ -73,17 +73,15 @@ impl ApplicationDirInitializer {
             ));
         }
 
-        if path.is_dir() {
-            if !are_permissions_fulfilled(path, 0o700).unwrap() {
-                error!(
-                    "Bad permissions, user must have rwx rights on dir {}",
-                    path.to_str().unwrap()
-                );
-                return Err(std::io::Error::new(
-                    ErrorKind::PermissionDenied,
-                    "Bad permissions",
-                ));
-            }
+        if path.is_dir() && !are_permissions_fulfilled(path, 0o700).unwrap() {
+            error!(
+                "Bad permissions, user must have rwx rights on dir {}",
+                path.to_str().unwrap()
+            );
+            return Err(std::io::Error::new(
+                ErrorKind::PermissionDenied,
+                "Bad permissions",
+            ));
         }
 
         Ok(())

@@ -18,6 +18,13 @@ impl PodcastLibrary {
     }
 }
 
+impl Default for PodcastLibrary {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+
 #[cfg(test)]
 mod tests {
     use crate::builders::podcast_builder::PodcastBuilder;

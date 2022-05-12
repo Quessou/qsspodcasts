@@ -8,9 +8,7 @@ pub struct FileUrlStorer {
 
 impl FileUrlStorer {
     pub fn new(file_path: PathBuf) -> FileUrlStorer {
-        FileUrlStorer {
-            file_path: file_path,
-        }
+        FileUrlStorer { file_path }
     }
 }
 
@@ -22,7 +20,7 @@ impl UrlStorer for FileUrlStorer {
 
     fn get_urls(&mut self) -> Result<Vec<String>, io::Error> {
         let lines = read_utils::read_lines(&self.file_path);
-        if let Err(_) = lines {
+        if lines.is_err() {
             return Ok(vec![]);
         }
         lines

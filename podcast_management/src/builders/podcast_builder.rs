@@ -30,3 +30,9 @@ impl PodcastBuilder {
         )
     }
 }
+
+impl Default for PodcastBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}

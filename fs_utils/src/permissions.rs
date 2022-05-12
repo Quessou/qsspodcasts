@@ -1,6 +1,6 @@
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::Path;
 use std::result::Result;
 
 const PERMISSIONS_MASK: u32 = 0xFFF;
@@ -11,7 +11,7 @@ const PERMISSIONS_MASK: u32 = 0xFFF;
 ///
 /// * `path` - A PathBuf containing a path to the file whose permissions has to be checked
 /// * `permissions` - Permissions we need on the file
-pub fn are_permissions_fulfilled(path: &PathBuf, permissions: u32) -> Result<bool, std::io::Error> {
+pub fn are_permissions_fulfilled(path: &Path, permissions: u32) -> Result<bool, std::io::Error> {
     let tested_metadata = fs::metadata(path.to_str().unwrap())?;
     Ok((tested_metadata.permissions().mode() & PERMISSIONS_MASK) >= permissions)
 }
