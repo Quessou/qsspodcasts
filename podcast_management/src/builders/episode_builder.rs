@@ -1,15 +1,13 @@
-use rss;
 use crate::data_objects::podcast_episode::PodcastEpisode;
+use rss;
 
-pub struct EpisodeBuilder {   
-}
+pub struct EpisodeBuilder {}
 
 impl EpisodeBuilder {
-    pub fn build(&self, item: &rss::Item) -> Result<PodcastEpisode,String> {
+    pub fn build(&self, item: &rss::Item) -> Result<PodcastEpisode, String> {
         Ok(PodcastEpisode::from_item(item))
     }
 }
-
 
 #[cfg(test)]
 mod test {
@@ -22,7 +20,18 @@ mod test {
         category
     }
 
-    fn build_dummy_item(title: &str, link: &str, description: &str, author: &str, categories: Vec<rss::Category>, guid: &rss::Guid, pub_date: &str, source: rss::Source, content: &str, enclosure: &rss::Enclosure) -> rss::Item {
+    fn build_dummy_item(
+        title: &str,
+        link: &str,
+        description: &str,
+        author: &str,
+        categories: Vec<rss::Category>,
+        guid: &rss::Guid,
+        pub_date: &str,
+        source: rss::Source,
+        content: &str,
+        enclosure: &rss::Enclosure,
+    ) -> rss::Item {
         let mut item = rss::Item::default();
         item.set_title(title.to_string());
         item.set_link(link.to_string());
@@ -39,22 +48,34 @@ mod test {
 
     #[test]
     fn test_build_episode() -> Result<(), String> {
-        let title: &str = ""; 
-        let link: &str = ""; 
-        let description: &str = ""; 
-        let author: &str = ""; 
+        let title: &str = "";
+        let link: &str = "";
+        let description: &str = "";
+        let author: &str = "";
         let category_name: &str = "";
         let category_domain: &str = "";
-        let categories: Vec<rss::Category> = vec![build_dummy_category(category_name, category_domain)];
+        let categories: Vec<rss::Category> =
+            vec![build_dummy_category(category_name, category_domain)];
         let guid: rss::Guid = rss::Guid::default();
-        let pub_date: &str = ""; 
+        let pub_date: &str = "";
         let mut source: rss::Source = rss::Source::default();
         source.set_title(Some("title".to_string()));
         source.set_url("https://www.google.com");
         let content: &str = "";
         let enclosure = rss::Enclosure::default();
-        let item = build_dummy_item(title, link, description, author, categories, &guid, pub_date, source, content, &enclosure);
-        let episode_builder = super::EpisodeBuilder{};
+        let item = build_dummy_item(
+            title,
+            link,
+            description,
+            author,
+            categories,
+            &guid,
+            pub_date,
+            source,
+            content,
+            &enclosure,
+        );
+        let episode_builder = super::EpisodeBuilder {};
         let episode = episode_builder.build(&item).unwrap();
 
         assert_eq!(episode.title, title);
@@ -62,10 +83,13 @@ mod test {
         assert_eq!(episode.description, description);
         assert_eq!(episode.author, author);
         assert_eq!(episode.categories[0].name, category_name);
-        assert_eq!(episode.categories[0].domain.as_ref().unwrap(), category_domain);
+        assert_eq!(
+            episode.categories[0].domain.as_ref().unwrap(),
+            category_domain
+        );
         assert_eq!(&episode.guid, &guid);
         assert_eq!(episode.pub_date, pub_date);
-        
+
         Ok(())
-    } 
+    }
 }

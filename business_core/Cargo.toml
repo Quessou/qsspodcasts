@@ -6,8 +6,11 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rss_management= { "path" = "../rss_management" }
-podcast_download= { "path" = "../podcast_download" }
-podcast_management= { "path" = "../podcast_management" }
-podcast_player= { "path" = "../podcast_player" }
-path_providing = { "path" = "../path_providing" }
+rss_management= { path = "../rss_management" }
+podcast_download= { path = "../podcast_download" }
+podcast_management= { path = "../podcast_management" }
+podcast_player= { path = "../podcast_player" }
+path_providing = { path = "../path_providing" }
+command_management = { path = "../command_management" }
+
+tokio = { version = "1.17.0", features = ["full"] }

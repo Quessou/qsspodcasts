@@ -12,7 +12,6 @@ pub trait PathProvider {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         let mut download_dir: PathBuf = self.download_dir_path();
         download_dir.push(PathBuf::from(&episode.title));
-        let file_path = download_dir;
-        file_path
+        download_dir
     }
 }
