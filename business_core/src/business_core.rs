@@ -84,7 +84,6 @@ impl BusinessCore {
         {
             return Err(());
         }
-        println!("Podcast downloaded lul");
 
         let path = self
             .path_provider
@@ -95,16 +94,6 @@ impl BusinessCore {
         {
             self.player.lock().unwrap().play_file(&path).unwrap();
         }
-        println!("Podcast played lul");
-
-        //let t_stdin = tokio::io::stdin();
-        //let mut reader = tokio::io::BufReader::new(t_stdin);
-        //let mut line: String = String::from("");
-        //let mut size_read = reader.read_line(&mut line).await.unwrap();
-        //while size_read > 1 {
-        //    println!("YAS {size_read}");
-        //    size_read = reader.read_line(&mut line).await.unwrap();
-        //}
 
         Ok(())
     }
