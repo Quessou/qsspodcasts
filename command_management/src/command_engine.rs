@@ -21,7 +21,7 @@ impl CommandEngine {
         }
     }
 
-    pub fn handle_command(&mut self, _command: &str) {
+    pub fn handle_command(&mut self, command: &str) {
         let mut mp3_player = self.mp3_player.lock().unwrap();
         if mp3_player.is_paused() {
             mp3_player.play();
@@ -31,20 +31,18 @@ impl CommandEngine {
     }
 
     pub async fn run(&mut self) -> Result<(), ()> {
-        println!("Launching CLI");
         let mut command = match read_command().await {
             Ok(c) => c,
-            Err(e) => return Err(()),
+            Err(_) => return Err(()),
         };
         let exit_command: String = String::from("exit");
-        while command != exit_command {
+        while exit_command != command {
             self.handle_command(&command);
             command = match read_command().await {
                 Ok(c) => c,
-                Err(e) => return Err(()),
+                Err(_) => return Err(()),
             };
         }
-        println!("Ending CLI");
         Ok(())
     }
 }

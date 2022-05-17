@@ -9,8 +9,7 @@ pub async fn show_prompt() {
         .write_all(b">>> ")
         .await
         .expect("Writing prompt failed");
-    writer.flush().await;
-    //writer.wr
+    writer.flush().await.expect("Flushing failed");
 }
 
 pub async fn read_command() -> Result<String, IoError> {
@@ -23,5 +22,6 @@ pub async fn read_command() -> Result<String, IoError> {
         .read_until(b'\n', &mut s)
         .await
         .expect("Reading from stdin failed");
+    s.pop();
     Ok(std::str::from_utf8(&s).unwrap().to_string())
 }
