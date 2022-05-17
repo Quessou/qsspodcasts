@@ -24,7 +24,6 @@ impl Default for PodcastLibrary {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use crate::builders::podcast_builder::PodcastBuilder;

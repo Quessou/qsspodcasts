@@ -16,7 +16,6 @@ use podcast_management::{
     podcast_library::PodcastLibrary,
 };
 use podcast_player::mp3_player::Mp3Player;
-use tokio::io::AsyncBufReadExt;
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
