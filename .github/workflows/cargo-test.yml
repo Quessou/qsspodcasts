@@ -1,9 +1,10 @@
-name: learn-github-actions
+name: Cargo test
 on: [push]
 jobs:
-  check-bats-version:
+  cargo-test:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt install -y alsa-utils alsa-base libasound2-dev portaudio19-dev build-essential libpulse-dev
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
