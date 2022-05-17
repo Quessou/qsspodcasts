@@ -9,6 +9,11 @@ pub enum ErrorKind {
     RodioError,
 }
 
+/// Error type that wraps error that can come from the Player.
+///
+/// ### TODO
+///
+/// * Find  way to abstract the wrapping logic to reuse it somewhere else.
 #[derive(Debug)]
 pub struct PlayerError {
     source: Option<Box<dyn Error>>,
@@ -30,14 +35,6 @@ impl fmt::Display for PlayerError {
 impl Error for PlayerError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         Some(&**self.source.as_ref().unwrap())
-    }
-
-    fn description(&self) -> &str {
-        ""
-    }
-
-    fn cause(&self) -> Option<&dyn Error> {
-        None
     }
 }
 

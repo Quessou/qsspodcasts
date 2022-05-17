@@ -3,6 +3,8 @@ use std::sync::{Arc, Mutex};
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::mp3_player::Mp3Player;
 
+use crate::command_reader::read_command;
+
 pub struct CommandEngine {
     mp3_player: Arc<Mutex<Mp3Player>>,
     podcast_library: Arc<Mutex<PodcastLibrary>>,
@@ -21,21 +23,28 @@ impl CommandEngine {
 
     pub fn handle_command(&mut self, _command: &str) {
         let mut mp3_player = self.mp3_player.lock().unwrap();
-        mp3_player.pause();
+        if mp3_player.is_paused() {
+            mp3_player.play();
+        } else {
+            mp3_player.pause();
+        }
     }
 
-    //pub fn run(this: Arc<Mutex<Self>>) {
-    //    println!("Launching thread");
-    //    thread::spawn(move || {
-    //        println!("Thread launched");
-    //        let mut s = String::from("");
-    //        while s != "exit" {
-    //            print!(">>> ");
-    //            // TODO : Use if let here
-    //            s = command_reader::read_command().unwrap();
-    //            this.lock().unwrap().handle_command(&s);
-    //        }
-    //        println!("Thread finished");
-    //    });
-    //}
+    pub async fn run(&mut self) -> Result<(), ()> {
+        println!("Launching CLI");
+        let mut command = match read_command().await {
+            Ok(c) => c,
+            Err(e) => return Err(()),
+        };
+        let exit_command: String = String::from("exit");
+        while command != exit_command {
+            self.handle_command(&command);
+            command = match read_command().await {
+                Ok(c) => c,
+                Err(e) => return Err(()),
+            };
+        }
+        println!("Ending CLI");
+        Ok(())
+    }
 }

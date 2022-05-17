@@ -23,8 +23,8 @@ pub struct BusinessCore {
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    player: Arc<Mutex<Mp3Player>>,
-    podcast_library: Arc<Mutex<PodcastLibrary>>,
+    pub player: Arc<Mutex<Mp3Player>>,
+    pub podcast_library: Arc<Mutex<PodcastLibrary>>,
     path_provider: DefaultPathProvider,
 }
 
@@ -98,14 +98,14 @@ impl BusinessCore {
         }
         println!("Podcast played lul");
 
-        let t_stdin = tokio::io::stdin();
-        let mut reader = tokio::io::BufReader::new(t_stdin);
-        let mut line: String = String::from("");
-        let mut size_read = reader.read_line(&mut line).await.unwrap();
-        while size_read > 1 {
-            println!("YAS {size_read}");
-            size_read = reader.read_line(&mut line).await.unwrap();
-        }
+        //let t_stdin = tokio::io::stdin();
+        //let mut reader = tokio::io::BufReader::new(t_stdin);
+        //let mut line: String = String::from("");
+        //let mut size_read = reader.read_line(&mut line).await.unwrap();
+        //while size_read > 1 {
+        //    println!("YAS {size_read}");
+        //    size_read = reader.read_line(&mut line).await.unwrap();
+        //}
 
         Ok(())
     }

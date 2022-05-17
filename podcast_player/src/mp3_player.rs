@@ -14,7 +14,10 @@ impl Mp3Player {
     pub fn new() -> Mp3Player {
         let (stream, stream_handle) = OutputStream::try_default().unwrap();
         let sink = Sink::try_new(&stream_handle).unwrap();
-        Mp3Player { sink, _stream: stream }
+        Mp3Player {
+            sink,
+            _stream: stream,
+        }
     }
 
     /// Play the audio file whose path is given in parameter
@@ -43,6 +46,14 @@ impl Mp3Player {
 
     pub fn pause(&mut self) {
         self.sink.pause();
+    }
+
+    pub fn play(&mut self) {
+        self.sink.play();
+    }
+
+    pub fn is_paused(&self) -> bool {
+        self.sink.is_paused()
     }
 }
 
