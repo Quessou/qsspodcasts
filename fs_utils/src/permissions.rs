@@ -21,6 +21,7 @@ mod tests {
     use super::*;
     use log::warn;
     use std::fs;
+    use std::path::PathBuf;
     use test_case::test_case;
 
     struct FilePermissionsTestData {
