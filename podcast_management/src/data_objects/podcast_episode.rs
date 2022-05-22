@@ -1,6 +1,6 @@
 use rss::Guid;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PodcastEpisode {
     pub title: String,
     pub link: String,

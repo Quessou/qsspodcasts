@@ -15,8 +15,6 @@ pub async fn show_prompt() {
 pub async fn read_command() -> Result<String, IoError> {
     let mut s = vec![];
 
-    show_prompt().await;
-
     let mut reader = tokioIo::BufReader::new(tokioIo::stdin());
     reader
         .read_until(b'\n', &mut s)

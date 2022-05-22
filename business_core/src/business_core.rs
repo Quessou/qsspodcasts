@@ -2,6 +2,8 @@ use std::io::Error as IoError;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
+use log::error;
+
 use rss_management::{
     local_storage::{
         application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider,
@@ -30,7 +32,7 @@ pub struct BusinessCore {
 impl BusinessCore {
     pub fn new() -> BusinessCore {
         let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(Mutex::new(Mp3Player::new()));
+        let mp3_player = Arc::new(Mutex::new(Mp3Player::new(Box::new(path_provider))));
         let podcast_library = Arc::new(Mutex::new(PodcastLibrary::new()));
         BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(
@@ -76,23 +78,18 @@ impl BusinessCore {
 
     pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
         // TODO : Remove me
-        if (self
-            .podcast_downloader
-            .download_episode(&self.podcast_library.lock().unwrap().podcasts[0].episodes[0])
-            .await)
-            .is_err()
-        {
+        let episode = &self.podcast_library.lock().unwrap().podcasts[0].episodes[0];
+        if (self.podcast_downloader.download_episode(episode).await).is_err() {
             return Err(());
         }
 
-        let path = self
-            .path_provider
-            .compute_episode_path(&self.podcast_library.lock().unwrap().podcasts[0].episodes[0])
-            .into_os_string()
-            .into_string()
-            .unwrap();
-        {
-            self.player.lock().unwrap().play_file(&path).unwrap();
+        if self.player.lock().unwrap().select_episode(episode).is_err() {
+            error!("Selecting of episode failed");
+            return Err(());
+        }
+        if self.player.lock().unwrap().play_selected_episode().is_err() {
+            error!("Playing of episode failed");
+            return Err(());
         }
 
         Ok(())
