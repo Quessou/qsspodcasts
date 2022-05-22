@@ -29,6 +29,7 @@ impl Mp3Player {
         }
     }
 
+    /// TODO: FIXME : https://rust-lang.github.io/rust-clippy/master/index.html#result_unit_err
     pub fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
         if !self.path_provider.compute_episode_path(episode).exists() {
             warn!("Cannot select an episode which has not been downloaded first");
@@ -41,7 +42,7 @@ impl Mp3Player {
     pub fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
         let path = self
             .path_provider
-            .compute_episode_path(&self.selected_episode.as_ref().unwrap())
+            .compute_episode_path(self.selected_episode.as_ref().unwrap())
             .into_os_string()
             .into_string()
             .unwrap();

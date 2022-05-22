@@ -30,6 +30,7 @@ impl CommandEngine {
         }
     }
 
+    /// TODO: FIXME : https://rust-lang.github.io/rust-clippy/master/index.html#result_unit_err
     pub fn handle_command(&mut self, command: &str) -> Result<(), ()> {
         let command = match self.command_parser.parse_command(command) {
             Ok(c) => c,
@@ -55,7 +56,7 @@ impl CommandEngine {
                 Ok(c) => c,
                 Err(_) => return Err(()),
             };
-            self.handle_command(&command);
+            self.handle_command(&command).expect("Command failed");
         }
         Ok(())
     }

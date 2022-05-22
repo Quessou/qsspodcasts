@@ -19,12 +19,13 @@ impl CommandParser {
     /// Parses command and returns a Result with a nested command object in it if parsing succeded
     ///
     /// # TODO
-    /// Create an error type for parsing
+    /// * Create an error type for parsing
+    /// * Add management of parameters
     pub fn parse_command(&self, command: &str) -> Result<Command, ()> {
-        let mut command_components = command.split(" ");
+        let mut command_components = command.split(' ');
         let verb: String = command_components.next().unwrap().to_string();
         let parameters: Vec<String> = command_components.map(|s| s.to_string()).collect();
-        if parameters.len() > 0 {
+        if !parameters.is_empty() {
             println!("There are parameters to parse !")
         }
         let command = match self.factory_hashmap.get(&verb) {
