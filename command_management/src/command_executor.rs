@@ -5,7 +5,7 @@ pub use podcast_player::mp3_player::Mp3Player;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-type CommandExecutionFn = fn(&CommandExecutor, Command) -> Result<(), ()>;
+type CommandExecutionFn = fn(&CommandExecutor, Command) -> Result<String, ()>;
 
 pub struct CommandExecutor {
     podcast_library: Arc<Mutex<PodcastLibrary>>,
@@ -30,26 +30,32 @@ impl CommandExecutor {
         }
     }
 
-    fn handle_play(&self, _: Command) -> Result<(), ()> {
-        self.mp3_player.lock().unwrap().play();
-        Ok(())
+    fn handle_play(&self, _: Command) -> Result<String, ()> {
+        let mut mp3_player = self.mp3_player.lock().unwrap();
+        if mp3_player.is_paused() {
+            mp3_player.play();
+        }
+        Ok("Player launched".to_string())
     }
 
-    fn handle_pause(&self, _: Command) -> Result<(), ()> {
-        self.mp3_player.lock().unwrap().pause();
-        Ok(())
+    fn handle_pause(&self, _: Command) -> Result<String, ()> {
+        let mut mp3_player = self.mp3_player.lock().unwrap();
+        if !mp3_player.is_paused() {
+            mp3_player.pause();
+        }
+        Ok("Player paused".to_string())
     }
 
     /// Executes command
     ///
     /// # TODO :
     /// * Add error type for command execution
-    pub fn execute_command(&mut self, command: Command) -> Result<(), ()> {
+    pub fn execute_command(&mut self, command: Command) -> Result<String, ()> {
         let handler = self.command_callbacks.get(&command);
-        match handler {
+        let return_message: String = match handler {
             Some(f) => f(self, command).unwrap(),
             None => return Err(()),
         };
-        Ok(())
+        Ok(return_message)
     }
 }

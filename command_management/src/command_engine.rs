@@ -35,7 +35,8 @@ impl CommandEngine {
             Ok(c) => c,
             Err(_) => return Err(()),
         };
-        self.command_executor.execute_command(command).unwrap();
+        let message = self.command_executor.execute_command(command).unwrap();
+        println!("{}", message);
         Ok(())
     }
 
