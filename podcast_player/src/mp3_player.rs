@@ -98,4 +98,5 @@ impl Mp3Player {
     }
 }
 
+// NOTE : Is this really the only solution ?
 unsafe impl Send for Mp3Player {}
