@@ -1,6 +1,7 @@
 pub mod command_engine;
 mod command_executor;
+pub mod command_frontend;
 mod command_parser;
-pub mod command_reader;
+mod command_read_utils;
 mod commands;
 mod prompt;

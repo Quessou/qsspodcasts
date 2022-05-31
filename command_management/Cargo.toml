@@ -7,5 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.17.0", features = ["full"] }
+# async-trait = "0.1.53"
 podcast_management = {path = "../podcast_management"}
 podcast_player = {path = "../podcast_player"}
+abstract_frontend = { path = "../abstract_frontend" }

@@ -4,13 +4,13 @@ use tokio::io as tokioIo;
 
 use tokio::io::{AsyncWriteExt, BufWriter, Stdout};
 
-pub struct PromptWriter {
+pub struct PromptWriter<PG: PromptGenerator> {
     stdout_writer: BufWriter<Stdout>,
-    prompt_generator: Box<dyn PromptGenerator>,
+    prompt_generator: Box<PG>,
 }
 
-impl PromptWriter {
-    pub fn new(prompt_generator: Box<dyn PromptGenerator>) -> PromptWriter {
+impl<PG: PromptGenerator> PromptWriter<PG> {
+    pub fn new(prompt_generator: Box<PG>) -> PromptWriter<PG> {
         PromptWriter {
             stdout_writer: tokioIo::BufWriter::new(tokioIo::stdout()),
             prompt_generator,
@@ -27,8 +27,8 @@ impl PromptWriter {
     }
 }
 
-impl Default for PromptWriter {
-    fn default() -> PromptWriter {
+impl Default for PromptWriter<MinimalisticPromptGenerator> {
+    fn default() -> PromptWriter<MinimalisticPromptGenerator> {
         PromptWriter::new(Box::new(MinimalisticPromptGenerator::default()))
     }
 }

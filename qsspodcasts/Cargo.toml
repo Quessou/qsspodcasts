@@ -8,7 +8,9 @@ edition = "2018"
 
 [dependencies]
 futures = "0.3.21"
-business_core = { path = "../business_core" }
-command_management = { path = "../command_management" }
+frontend = { path = "../frontend" }
 clap = { version = "3.0", features = ["derive"] }
 tokio = { version = "1.17.0", features = ["full"] }
+abstract_frontend = { path = "../abstract_frontend" }
+business_core = { path = "../business_core" }
+command_management = { path = "../command_management" }
