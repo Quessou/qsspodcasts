@@ -57,14 +57,15 @@ impl QssPodcastFrontend for CommandFrontend {
                 Err(e) => return Err(()),
             };
 
-            if let Err(_) = self
+            match self
                 .command_engine
                 .lock()
                 .await
                 .handle_command(&command)
                 .await
             {
-                continue;
+                Err(_) => continue,
+                Ok(s) => println!("{}", s),
             }
         }
         Ok(())

@@ -25,7 +25,7 @@ impl CommandEngine {
         }
     }
 
-    pub async fn handle_command(&mut self, command: &str) -> Result<(), CommandError> {
+    pub async fn handle_command(&mut self, command: &str) -> Result<String, CommandError> {
         let command = match self.command_parser.lock().await.parse_command(command) {
             Ok(c) => c,
             Err(e) => {
@@ -39,7 +39,6 @@ impl CommandEngine {
             .execute_command(command)
             .await
             .unwrap();
-        println!("{}", message);
-        Ok(())
+        Ok(message)
     }
 }

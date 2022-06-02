@@ -9,3 +9,6 @@ edition = "2021"
 tui = { version = "0.15", features = ["crossterm"], default-features = false }
 crossterm = "0.19"
 tokio = { version = "1.17.0", features = ["full"] }
+command_management = { path = "../command_management" }
+podcast_player = { path = "../podcast_player" }
+podcast_management = { path = "../podcast_management" }
