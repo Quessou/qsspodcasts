@@ -1,5 +1,5 @@
 use std::io::stdout;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::{error::Error, time::Duration};
 
 use crossterm::event::KeyEvent;
@@ -10,24 +10,15 @@ use crossterm::{
 };
 use podcast_management::podcast_library::PodcastLibrary;
 use tokio::sync::Mutex as TokioMutex;
-use tui::{
-    backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
-    style::{Color, Style},
-    widgets::{self, Block, Borders, Paragraph},
-    Frame, Terminal,
-};
+use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
 use podcast_player::mp3_player::Mp3Player;
 
+use crate::screen_action::ScreenAction;
+use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
-
-enum ScreenAction {
-    TypingCommand,
-    ScrollingOutput,
-    ScrollingLogs,
-}
+use crate::ui_drawers::ui_drawer::UiDrawer;
 
 /// TODO : Find a better name
 enum ActionPostEvent {
@@ -35,43 +26,23 @@ enum ActionPostEvent {
     Quit,
 }
 
-/// TODO : Find a better way to store these data ?
-/// Page system for logs & outputs ?
-/// Screen height ?
-struct ScreenContext {
-    pub command: String,
-    pub last_command_output: String,
-    pub logs: String,
-    pub current_action: ScreenAction,
-    pub ui_refresh_tickrate: Duration,
-}
-
-impl Default for ScreenContext {
-    fn default() -> Self {
-        ScreenContext {
-            command: String::from(""),
-            last_command_output: String::from(""),
-            logs: String::from(""),
-            current_action: ScreenAction::TypingCommand,
-            ui_refresh_tickrate: Duration::from_millis(200),
-        }
-    }
-}
-
-pub struct Frontend {
+pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_engine: Arc<TokioMutex<CommandEngine>>,
     context: ScreenContext,
+    ui_drawer: Box<D>,
 }
 
-impl Frontend {
+impl<D: UiDrawer> Frontend<D> {
     pub fn new(
         mp3_player: Arc<TokioMutex<Mp3Player>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    ) -> Frontend {
+        ui_drawer: Box<D>,
+    ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
-        TerminalFrontendLogger::default()
+        let context = ScreenContext::default();
+        TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
         Frontend {
@@ -80,7 +51,8 @@ impl Frontend {
                 mp3_player,
                 podcast_library,
             ))),
-            context: ScreenContext::default(),
+            context: context,
+            ui_drawer,
         }
     }
 
@@ -116,6 +88,11 @@ impl Frontend {
                     self.context.command.pop();
                 }
                 KeyCode::Tab => (), // TODO : Handle auto-completion
+                KeyCode::Delete => self.context.current_action = ScreenAction::ScrollingLogs,
+                _ => (),
+            },
+            ScreenAction::ScrollingLogs => match key_event.code {
+                KeyCode::Delete => self.context.current_action = ScreenAction::TypingCommand,
                 _ => (),
             },
             _ => (),
@@ -135,7 +112,7 @@ impl Frontend {
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
         loop {
             self.terminal
-                .draw(|f| Frontend::draw_ui(f, &self.context))?;
+                .draw(|f| self.ui_drawer.draw_ui(f, &self.context))?;
 
             if crossterm::event::poll(self.context.ui_refresh_tickrate)? {
                 if let ActionPostEvent::Quit = self.handle_event().await.unwrap() {
@@ -146,29 +123,5 @@ impl Frontend {
         disable_raw_mode()?;
         execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
         Ok(())
-    }
-
-    fn draw_ui<B: Backend>(f: &mut Frame<B>, context: &ScreenContext) {
-        let size = f.size();
-
-        // Defining screen layout
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .margin(2)
-            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
-            .split(f.size());
-
-        let input = Paragraph::new(context.command.as_ref())
-            .style(match context.current_action {
-                ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
-                _ => Style::default(),
-            })
-            .block(Block::default().borders(Borders::ALL).title("Command"));
-        f.render_widget(input, chunks[0]);
-
-        let output = Paragraph::new(context.last_command_output.as_ref())
-            .style(Style::default())
-            .block(Block::default().borders(Borders::ALL).title("Output"));
-        f.render_widget(output, chunks[1]);
     }
 }

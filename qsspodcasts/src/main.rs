@@ -24,7 +24,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     core.initialize();
     core.build_podcasts().await;
 
-    let mut frontend = Frontend::new(core.player.clone(), core.podcast_library.clone());
+    let mut frontend = Frontend::new(
+        core.player.clone(),
+        core.podcast_library.clone(),
+        Box::new(frontend::ui_drawers::minimalistic_ui_drawer::MinimalisticUiDrawer::new()),
+    );
 
     if !args.add_url.is_empty() {
         if core.add_url(&args.add_url).is_err() {

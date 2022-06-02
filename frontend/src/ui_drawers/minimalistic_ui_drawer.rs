@@ -1,0 +1,79 @@
+use tui::backend::Backend;
+use tui::layout::Corner;
+use tui::text::{Span, Spans};
+use tui::widgets::ListItem;
+use tui::Frame;
+use tui::{
+    layout::{Constraint, Direction, Layout},
+    style::{Color, Style},
+    widgets::{self, Block, Borders, List, Paragraph},
+};
+
+use log::logger;
+
+use crate::screen_action::ScreenAction;
+use crate::screen_context::ScreenContext;
+
+use super::ui_drawer;
+
+pub struct MinimalisticUiDrawer {}
+
+impl MinimalisticUiDrawer {
+    pub fn new() -> MinimalisticUiDrawer {
+        MinimalisticUiDrawer {}
+    }
+
+    fn draw_log_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+        let size = f.size();
+        let chunk = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints([Constraint::Min(1)].as_ref())
+            .split(size)[0];
+
+        let logs = context.logs.lock().unwrap();
+        let logs_list: Vec<ListItem> = logs
+            .iter()
+            .rev()
+            .map(|s| ListItem::new(Spans::from(vec![Span::raw(s)])))
+            .collect();
+
+        let log_output = List::new(logs_list)
+            .block(Block::default().borders(Borders::ALL).title("Log output"))
+            .start_corner(Corner::BottomLeft);
+        f.render_widget(log_output, chunk);
+    }
+
+    fn draw_main_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+        let size = f.size();
+
+        // Defining screen layout
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(2)
+            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
+            .split(size);
+
+        let input = Paragraph::new(context.command.as_ref())
+            .style(match context.current_action {
+                ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
+                _ => Style::default(),
+            })
+            .block(Block::default().borders(Borders::ALL).title("Command"));
+        f.render_widget(input, chunks[0]);
+
+        let output = Paragraph::new(context.last_command_output.as_ref())
+            .style(Style::default())
+            .block(Block::default().borders(Borders::ALL).title("Output"));
+        f.render_widget(output, chunks[1]);
+    }
+}
+
+impl ui_drawer::UiDrawer for MinimalisticUiDrawer {
+    fn draw_ui<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+        match context.current_action {
+            ScreenAction::ScrollingLogs => self.draw_log_screen(f, context),
+            _ => self.draw_main_screen(f, context),
+        }
+    }
+}

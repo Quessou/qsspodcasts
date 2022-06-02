@@ -1,17 +1,15 @@
 use log::{self, Log, Metadata, Record, SetLoggerError};
 
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 pub struct TerminalFrontendLogger {
-    pub log: Mutex<Vec<String>>,
+    pub log_buffer: Arc<Mutex<Vec<String>>>,
 }
 
 impl TerminalFrontendLogger {
     #[must_use = "You must call init() to begin logging"]
-    pub fn new() -> TerminalFrontendLogger {
-        TerminalFrontendLogger {
-            log: Mutex::new(vec![]),
-        }
+    pub fn new(log_buffer: Arc<Mutex<Vec<String>>>) -> TerminalFrontendLogger {
+        TerminalFrontendLogger { log_buffer }
     }
 
     pub fn init(mut self) -> Result<(), SetLoggerError> {
@@ -21,20 +19,16 @@ impl TerminalFrontendLogger {
     }
 }
 
-impl Default for TerminalFrontendLogger {
-    fn default() -> TerminalFrontendLogger {
-        TerminalFrontendLogger::new()
-    }
-}
-
 impl Log for TerminalFrontendLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         true
     }
 
     fn log(&self, record: &Record) {
-        // TODO : Take care of internal mutability here
-        self.log.lock().unwrap().push(String::from("Blbl"));
+        self.log_buffer
+            .lock()
+            .unwrap()
+            .push(format!("{}", record.args()));
     }
 
     fn flush(&self) {}
