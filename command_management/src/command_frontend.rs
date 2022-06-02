@@ -7,6 +7,7 @@ use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::mp3_player::Mp3Player;
 
 use crate::command_engine::CommandEngine;
+use crate::command_error::CommandError;
 use crate::command_read_utils::read_command;
 use crate::prompt::{
     minimalistic_prompt_generator::MinimalisticPromptGenerator, prompt_writer::PromptWriter,
@@ -36,11 +37,11 @@ impl CommandFrontend {
         }
     }
 
-    pub async fn wait_for_command(&mut self) -> Result<String, ()> {
+    pub async fn wait_for_command(&mut self) -> Result<String, CommandError> {
         self.prompt_writer.lock().await.write_prompt().await;
         match read_command().await {
             Ok(c) => Ok(c),
-            Err(_) => Err(()),
+            Err(io_error) => Err(CommandError::from(io_error)),
         }
     }
 }
@@ -49,17 +50,22 @@ impl CommandFrontend {
 impl QssPodcastFrontend for CommandFrontend {
     async fn run(&mut self) -> Result<(), ()> {
         let mut command = String::from("");
-        while EXIT_COMMAND != command {
+        while EXIT_COMMAND != command.to_lowercase() {
+            // TODO : replace by if let
             command = match self.wait_for_command().await {
                 Ok(c) => c,
-                Err(_) => return Err(()),
+                Err(e) => return Err(()),
             };
-            self.command_engine
+
+            if let Err(_) = self
+                .command_engine
                 .lock()
                 .await
                 .handle_command(&command)
                 .await
-                .expect("Command failed");
+            {
+                continue;
+            }
         }
         Ok(())
     }

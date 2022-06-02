@@ -1,20 +1,20 @@
 use std::fs::File;
 use std::io::BufReader;
-use std::process::Output;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use log::{error, info, warn};
 
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 
-use crate::player_error::PlayerError;
+use crate::player_error::{ErrorKind as PlayerErrorKind, PlayerError};
 
 use path_providing::path_provider::PathProvider;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 
 pub struct Mp3Player {
     sink: Arc<Mutex<Sink>>,
-    _stream: Arc<Mutex<OutputStream>>,
+    _stream: OutputStream,
     selected_episode: Option<PodcastEpisode>,
     path_provider: Arc<Mutex<Box<dyn PathProvider>>>,
 }
@@ -26,7 +26,7 @@ impl Mp3Player {
         let sink = Sink::try_new(&stream_handle).unwrap();
         Mp3Player {
             sink: Arc::new(Mutex::new(sink)),
-            _stream: Arc::new(Mutex::new(stream)),
+            _stream: stream,
             selected_episode: None,
             path_provider: Arc::new(Mutex::new(path_provider)),
         }
@@ -49,14 +49,19 @@ impl Mp3Player {
     }
 
     pub fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
-        let path = "toto";
-        self.path_provider
+        let path = self
+            .path_provider
             .lock()
             .unwrap()
             .compute_episode_path(self.selected_episode.as_ref().unwrap())
             .into_os_string()
             .into_string()
             .unwrap();
+
+        if !Path::new(&path).exists() {
+            error!("Could not find file {path}, playing failed");
+            return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
+        }
 
         return self.play_file(&path);
     }
@@ -81,16 +86,19 @@ impl Mp3Player {
             Err(e) => return Err(PlayerError::from(e)),
         };
         self.sink.lock().unwrap().append(source);
+        info!("File {path} started");
 
         Ok(())
     }
 
     pub fn pause(&mut self) {
         self.sink.lock().unwrap().pause();
+        info!("Player paused");
     }
 
     pub fn play(&mut self) {
         self.sink.lock().unwrap().play();
+        info!("Player started");
     }
 
     pub fn is_paused(&self) -> bool {

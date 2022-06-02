@@ -1,9 +1,9 @@
+use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
+
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::mp3_player::Mp3Player;
 
-use std::collections::HashMap;
-use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
@@ -23,7 +23,7 @@ impl CommandExecutor {
         }
     }
 
-    async fn handle_play(&self, _: Command) -> Result<String, ()> {
+    async fn handle_play(&self, _: Command) -> Result<String, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
@@ -32,7 +32,7 @@ impl CommandExecutor {
         Ok("Player launched".to_string())
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<String, ()> {
+    async fn handle_pause(&self, _: Command) -> Result<String, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if !mp3_player.is_paused() {
             mp3_player.pause();
@@ -41,14 +41,19 @@ impl CommandExecutor {
     }
 
     /// Executes command
-    ///
-    /// # TODO :
-    /// * Add error type for command execution
-    pub async fn execute_command(&mut self, command: Command) -> Result<String, ()> {
+    pub async fn execute_command(&mut self, command: Command) -> Result<String, CommandError> {
         let return_message: String = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
-            _ => return Err(()),
+            Command::Exit => return Ok(String::from("Exiting")),
+            _ => {
+                return Err(CommandError::new(
+                    None,
+                    CommandErrorKind::UnhandledCommand,
+                    None,
+                    Some(format!("Command {:#?} unhandled by executor", command)),
+                ))
+            }
         };
         Ok(return_message)
     }

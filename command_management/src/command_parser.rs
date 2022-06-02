@@ -1,3 +1,6 @@
+use log::{error, info};
+
+use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use std::collections::HashMap;
 use std::vec::Vec;
@@ -21,16 +24,31 @@ impl CommandParser {
     /// # TODO
     /// * Create an error type for parsing
     /// * Add management of parameters
-    pub fn parse_command(&self, command: &str) -> Result<Command, ()> {
+    pub fn parse_command(&self, command: &str) -> Result<Command, CommandError> {
         let mut command_components = command.split(' ');
         let verb: String = command_components.next().unwrap().to_string();
         let parameters: Vec<String> = command_components.map(|s| s.to_string()).collect();
+
         if !parameters.is_empty() {
-            println!("There are parameters to parse !")
+            // TODO
+            info!("There are parameters to parse !")
         }
-        let command = match self.factory_hashmap.get(&verb) {
-            Some(factory) => factory(),
-            None => return Err(()),
+
+        let command = match self.factory_hashmap.get(&verb.to_lowercase()) {
+            Some(factory) => match factory(parameters) {
+                Ok(c) => c,
+                Err(e) => return Err(e),
+            },
+            None => {
+                let error_message = format!("Unknown verb {verb}");
+                error!("{error_message}");
+                return Err(CommandError::new(
+                    None,
+                    CommandErrorKind::UnknownVerb,
+                    Some(command.to_string()),
+                    Some(error_message),
+                ));
+            }
         };
         Ok(command)
     }

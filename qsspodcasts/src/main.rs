@@ -1,8 +1,9 @@
 use abstract_frontend::qss_podcast_frontend::QssPodcastFrontend;
 use business_core::business_core::BusinessCore;
 use clap::Parser;
-use command_management::{command_engine::CommandEngine, command_frontend::CommandFrontend};
+use command_management::command_frontend::CommandFrontend;
 use frontend::terminal_frontend::Frontend;
+use simple_logger::SimpleLogger;
 
 /// Lame podcast manager
 #[derive(Parser, Debug)]
@@ -15,6 +16,8 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    SimpleLogger::new().init().unwrap();
+
     let args = Args::parse();
 
     let mut core = BusinessCore::new();

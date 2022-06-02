@@ -2,4 +2,5 @@
 pub enum Command {
     Play,
     Pause,
+    Exit,
 }

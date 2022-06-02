@@ -1,9 +1,11 @@
+use log::error;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::mp3_player::Mp3Player;
 
+use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 
@@ -23,12 +25,15 @@ impl CommandEngine {
         }
     }
 
-    /// TODO: FIXME : https://rust-lang.github.io/rust-clippy/master/index.html#result_unit_err
-    pub async fn handle_command(&mut self, command: &str) -> Result<(), ()> {
+    pub async fn handle_command(&mut self, command: &str) -> Result<(), CommandError> {
         let command = match self.command_parser.lock().await.parse_command(command) {
             Ok(c) => c,
-            Err(_) => return Err(()),
+            Err(e) => {
+                error!("Command parsing failed");
+                return Err(e);
+            }
         };
+
         let message = self
             .command_executor
             .execute_command(command)
