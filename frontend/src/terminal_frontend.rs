@@ -1,6 +1,6 @@
-use std::error::Error;
 use std::io::stdout;
 use std::sync::Arc;
+use std::{error::Error, time::Duration};
 
 use crossterm::{
     event::{self, Event, KeyCode},
@@ -20,6 +20,8 @@ use tui::{
 use command_management::command_engine::CommandEngine;
 use podcast_player::mp3_player::Mp3Player;
 
+use crate::terminal_frontend_logger::TerminalFrontendLogger;
+
 enum ScreenAction {
     TypingCommand,
     ScrollingOutput,
@@ -34,6 +36,7 @@ struct ScreenContext {
     pub last_command_output: String,
     pub logs: String,
     pub current_action: ScreenAction,
+    pub toto: u32,
 }
 
 impl Default for ScreenContext {
@@ -43,6 +46,7 @@ impl Default for ScreenContext {
             last_command_output: String::from(""),
             logs: String::from(""),
             current_action: ScreenAction::TypingCommand,
+            toto: 0,
         }
     }
 }
@@ -59,6 +63,9 @@ impl Frontend {
     ) -> Frontend {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
+        TerminalFrontendLogger::default()
+            .init()
+            .expect("Logger initialization failed");
         Frontend {
             terminal,
             command_engine: Arc::new(TokioMutex::new(CommandEngine::new(
@@ -73,40 +80,43 @@ impl Frontend {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
         loop {
-            self.terminal.draw(|f| Frontend::draw_ui(f, &ctxt))?;
-            if let Event::Key(key) = event::read()? {
-                match ctxt.current_action {
-                    ScreenAction::TypingCommand => match key.code {
-                        KeyCode::Enter => {
-                            if ctxt.command.len() == 0 {
-                                continue;
-                            }
-                            if ctxt.command.to_lowercase() == "exit" {
-                                break;
-                            }
-                            let command = ctxt.command;
-                            ctxt.command = String::from("");
+            self.terminal.draw(|f| Frontend::draw_ui(f, &mut ctxt))?;
 
-                            match self
-                                .command_engine
-                                .lock()
-                                .await
-                                .handle_command(&command)
-                                .await
-                            {
-                                Err(_) => continue,
-                                Ok(s) => ctxt.last_command_output = s,
+            if crossterm::event::poll(Duration::from_millis(200))? {
+                if let Event::Key(key) = event::read()? {
+                    match ctxt.current_action {
+                        ScreenAction::TypingCommand => match key.code {
+                            KeyCode::Enter => {
+                                if ctxt.command.len() == 0 {
+                                    continue;
+                                }
+                                if ctxt.command.to_lowercase() == "exit" {
+                                    break;
+                                }
+                                let command = ctxt.command;
+                                ctxt.command = String::from("");
+
+                                match self
+                                    .command_engine
+                                    .lock()
+                                    .await
+                                    .handle_command(&command)
+                                    .await
+                                {
+                                    Err(_) => continue,
+                                    Ok(s) => ctxt.last_command_output = s,
+                                }
                             }
-                        }
-                        KeyCode::Char(c) => ctxt.command.push(c),
-                        KeyCode::Backspace => {
-                            ctxt.command.pop();
-                            ()
-                        }
-                        KeyCode::Tab => (), // TODO : Handle auto-completion
+                            KeyCode::Char(c) => ctxt.command.push(c),
+                            KeyCode::Backspace => {
+                                ctxt.command.pop();
+                                ()
+                            }
+                            KeyCode::Tab => (), // TODO : Handle auto-completion
+                            _ => (),
+                        },
                         _ => (),
-                    },
-                    _ => (),
+                    }
                 }
             }
         }
@@ -115,7 +125,7 @@ impl Frontend {
         Ok(())
     }
 
-    fn draw_ui<B: Backend>(f: &mut Frame<B>, context: &ScreenContext) {
+    fn draw_ui<B: Backend>(f: &mut Frame<B>, context: &mut ScreenContext) {
         let size = f.size();
 
         // Defining screen layout
@@ -135,7 +145,7 @@ impl Frontend {
 
         let output = Paragraph::new(context.last_command_output.as_ref())
             .style(Style::default())
-            .block(Block::default().borders(Borders::ALL).title("Command"));
+            .block(Block::default().borders(Borders::ALL).title("Output"));
         f.render_widget(output, chunks[1]);
     }
 }

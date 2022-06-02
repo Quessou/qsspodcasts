@@ -27,7 +27,6 @@ impl CommandExecutor {
         let mut mp3_player = self.mp3_player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
-            println!("toto");
         }
         Ok("Player launched".to_string())
     }
