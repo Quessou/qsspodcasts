@@ -2,6 +2,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
+use crossterm::event::KeyEvent;
 use crossterm::{
     event::{self, Event, KeyCode},
     execute,
@@ -28,6 +29,12 @@ enum ScreenAction {
     ScrollingLogs,
 }
 
+/// TODO : Find a better name
+enum ActionPostEvent {
+    DoNothing,
+    Quit,
+}
+
 /// TODO : Find a better way to store these data ?
 /// Page system for logs & outputs ?
 /// Screen height ?
@@ -36,7 +43,7 @@ struct ScreenContext {
     pub last_command_output: String,
     pub logs: String,
     pub current_action: ScreenAction,
-    pub toto: u32,
+    pub ui_refresh_tickrate: Duration,
 }
 
 impl Default for ScreenContext {
@@ -46,7 +53,7 @@ impl Default for ScreenContext {
             last_command_output: String::from(""),
             logs: String::from(""),
             current_action: ScreenAction::TypingCommand,
-            toto: 0,
+            ui_refresh_tickrate: Duration::from_millis(200),
         }
     }
 }
@@ -54,6 +61,7 @@ impl Default for ScreenContext {
 pub struct Frontend {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_engine: Arc<TokioMutex<CommandEngine>>,
+    context: ScreenContext,
 }
 
 impl Frontend {
@@ -72,51 +80,66 @@ impl Frontend {
                 mp3_player,
                 podcast_library,
             ))),
+            context: ScreenContext::default(),
         }
     }
 
+    async fn handle_key_event(
+        &mut self,
+        key_event: KeyEvent,
+    ) -> Result<ActionPostEvent, Box<dyn Error>> {
+        match self.context.current_action {
+            ScreenAction::TypingCommand => match key_event.code {
+                KeyCode::Enter => {
+                    if self.context.command.len() == 0 {
+                        return Ok(ActionPostEvent::DoNothing);
+                    }
+                    if self.context.command.to_lowercase() == "exit" {
+                        return Ok(ActionPostEvent::Quit);
+                    }
+                    let command = self.context.command.clone();
+                    self.context.command = String::from("");
+
+                    match self
+                        .command_engine
+                        .lock()
+                        .await
+                        .handle_command(&command)
+                        .await
+                    {
+                        Err(_) => return Ok(ActionPostEvent::DoNothing),
+                        Ok(s) => self.context.last_command_output = s,
+                    }
+                }
+                KeyCode::Char(c) => self.context.command.push(c),
+                KeyCode::Backspace => {
+                    self.context.command.pop();
+                }
+                KeyCode::Tab => (), // TODO : Handle auto-completion
+                _ => (),
+            },
+            _ => (),
+        }
+        Ok(ActionPostEvent::DoNothing)
+    }
+
+    async fn handle_event(&mut self) -> Result<ActionPostEvent, Box<dyn Error>> {
+        if let Event::Key(key) = event::read()? {
+            return self.handle_key_event(key).await;
+        }
+        Ok(ActionPostEvent::DoNothing)
+    }
+
     pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
-        let mut ctxt = ScreenContext::default();
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
         loop {
-            self.terminal.draw(|f| Frontend::draw_ui(f, &mut ctxt))?;
+            self.terminal
+                .draw(|f| Frontend::draw_ui(f, &self.context))?;
 
-            if crossterm::event::poll(Duration::from_millis(200))? {
-                if let Event::Key(key) = event::read()? {
-                    match ctxt.current_action {
-                        ScreenAction::TypingCommand => match key.code {
-                            KeyCode::Enter => {
-                                if ctxt.command.len() == 0 {
-                                    continue;
-                                }
-                                if ctxt.command.to_lowercase() == "exit" {
-                                    break;
-                                }
-                                let command = ctxt.command;
-                                ctxt.command = String::from("");
-
-                                match self
-                                    .command_engine
-                                    .lock()
-                                    .await
-                                    .handle_command(&command)
-                                    .await
-                                {
-                                    Err(_) => continue,
-                                    Ok(s) => ctxt.last_command_output = s,
-                                }
-                            }
-                            KeyCode::Char(c) => ctxt.command.push(c),
-                            KeyCode::Backspace => {
-                                ctxt.command.pop();
-                                ()
-                            }
-                            KeyCode::Tab => (), // TODO : Handle auto-completion
-                            _ => (),
-                        },
-                        _ => (),
-                    }
+            if crossterm::event::poll(self.context.ui_refresh_tickrate)? {
+                if let ActionPostEvent::Quit = self.handle_event().await.unwrap() {
+                    break;
                 }
             }
         }
@@ -125,7 +148,7 @@ impl Frontend {
         Ok(())
     }
 
-    fn draw_ui<B: Backend>(f: &mut Frame<B>, context: &mut ScreenContext) {
+    fn draw_ui<B: Backend>(f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
 
         // Defining screen layout
