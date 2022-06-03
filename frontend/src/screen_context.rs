@@ -21,7 +21,7 @@ impl Default for ScreenContext {
             last_command_output: String::from(""),
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,
-            ui_refresh_tickrate: Duration::from_millis(200),
+            ui_refresh_tickrate: Duration::from_millis(20),
         }
     }
 }

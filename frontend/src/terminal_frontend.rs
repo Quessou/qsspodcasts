@@ -1,15 +1,18 @@
 use std::io::stdout;
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc::channel, Arc};
+use std::thread;
 use std::{error::Error, time::Duration};
 
+use crossterm::event::Event::Key;
 use crossterm::event::KeyEvent;
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event as CrosstermEvent, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use podcast_management::podcast_library::PodcastLibrary;
 use tokio::sync::Mutex as TokioMutex;
+use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
@@ -97,12 +100,16 @@ impl<D: UiDrawer> Frontend<D> {
             },
             _ => (),
         }
+
         Ok(ActionPostEvent::DoNothing)
     }
 
-    async fn handle_event(&mut self) -> Result<ActionPostEvent, Box<dyn Error>> {
-        if let Event::Key(key) = event::read()? {
-            return self.handle_key_event(key).await;
+    async fn handle_event(
+        &mut self,
+        event: CrosstermEvent,
+    ) -> Result<ActionPostEvent, Box<dyn Error>> {
+        if let CrosstermEvent::Key(key_event) = event {
+            return self.handle_key_event(key_event).await;
         }
         Ok(ActionPostEvent::DoNothing)
     }
@@ -110,14 +117,33 @@ impl<D: UiDrawer> Frontend<D> {
     pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
+
+        let (tx, rx) = channel();
+        thread::spawn(move || {
+            let input_polling_rate = Duration::from_millis(50);
+            log::error!("Launching input polling thread");
+            loop {
+                if crossterm::event::poll(input_polling_rate).unwrap() {
+                    let event = Some(event::read().unwrap());
+                    if let Err(e) = tx.send(event) {
+                        log::error!("Send error while sending event {e}");
+                    }
+                } else {
+                    log::trace!("Send empty event");
+                    tx.send(None).unwrap();
+                }
+            }
+        });
+
         loop {
             self.terminal
                 .draw(|f| self.ui_drawer.draw_ui(f, &self.context))?;
-
-            if crossterm::event::poll(self.context.ui_refresh_tickrate)? {
-                if let ActionPostEvent::Quit = self.handle_event().await.unwrap() {
+            if let Some(event) = rx.recv().unwrap() {
+                if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
                     break;
                 }
+            } else {
+                tokio_sleep(self.context.ui_refresh_tickrate).await;
             }
         }
         disable_raw_mode()?;
