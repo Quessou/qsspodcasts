@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::rodio_mp3_player::RodioMp3Player;
 
 use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;
@@ -16,7 +16,7 @@ pub struct CommandEngine {
 
 impl CommandEngine {
     pub fn new(
-        mp3_player: Arc<TokioMutex<Mp3Player>>,
+        mp3_player: Arc<TokioMutex<RodioMp3Player>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     ) -> CommandEngine {
         CommandEngine {

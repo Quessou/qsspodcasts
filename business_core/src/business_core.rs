@@ -19,14 +19,14 @@ use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::rodio_mp3_player::RodioMp3Player;
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    pub player: Arc<TokioMutex<Mp3Player>>,
+    pub player: Arc<TokioMutex<RodioMp3Player>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: DefaultPathProvider,
 }
@@ -34,7 +34,9 @@ pub struct BusinessCore {
 impl BusinessCore {
     pub fn new() -> BusinessCore {
         let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(TokioMutex::new(Mp3Player::new(Box::new(path_provider))));
+        let mp3_player = Arc::new(TokioMutex::new(RodioMp3Player::new(Box::new(
+            path_provider,
+        ))));
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(

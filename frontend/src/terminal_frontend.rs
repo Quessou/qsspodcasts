@@ -16,7 +16,7 @@ use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::rodio_mp3_player::RodioMp3Player;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -38,7 +38,7 @@ pub struct Frontend<D: UiDrawer> {
 
 impl<D: UiDrawer> Frontend<D> {
     pub fn new(
-        mp3_player: Arc<TokioMutex<Mp3Player>>,
+        mp3_player: Arc<TokioMutex<RodioMp3Player>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {

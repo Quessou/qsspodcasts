@@ -4,7 +4,7 @@ use tokio::sync::Mutex as TokioMutex;
 
 use abstract_frontend::QssPodcastFrontend;
 use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::rodio_mp3_player::RodioMp3Player;
 
 use crate::command_engine::CommandEngine;
 use crate::command_error::CommandError;
@@ -23,7 +23,7 @@ pub struct CommandFrontend {
 
 impl CommandFrontend {
     pub fn new(
-        mp3_player: Arc<TokioMutex<Mp3Player>>,
+        mp3_player: Arc<TokioMutex<RodioMp3Player>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     ) -> CommandFrontend {
         CommandFrontend {
