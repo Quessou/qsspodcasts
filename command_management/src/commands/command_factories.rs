@@ -6,15 +6,15 @@ use std::collections::HashMap;
 
 pub type FactoryFn = fn(Vec<String>) -> Result<Command, CommandError>;
 
-pub fn build_play_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+pub fn build_play_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
     Ok(Command::Play)
 }
 
-pub fn build_pause_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+pub fn build_pause_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
     Ok(Command::Pause)
 }
 
-pub fn build_exit_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+pub fn build_exit_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
     Ok(Command::Exit)
 }
 

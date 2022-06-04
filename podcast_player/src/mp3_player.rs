@@ -18,14 +18,14 @@ pub trait Mp3Player {
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
 
-    fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
+    fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
         if !self
             .get_path_provider()
             .compute_episode_path(episode)
             .exists()
         {
             warn!("Cannot select an episode which has not been downloaded first");
-            return Err(());
+            return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
         self.set_selected_episode(Some(episode.clone()));
         Ok(())
@@ -44,6 +44,6 @@ pub trait Mp3Player {
             return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
 
-        return self.play_file(&path);
+        self.play_file(&path)
     }
 }

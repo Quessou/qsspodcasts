@@ -3,7 +3,6 @@ use std::sync::{mpsc::channel, Arc};
 use std::thread;
 use std::{error::Error, time::Duration};
 
-use crossterm::event::Event::Key;
 use crossterm::event::KeyEvent;
 use crossterm::{
     event::{self, Event as CrosstermEvent, KeyCode},
@@ -16,7 +15,7 @@ use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
-use podcast_player::rodio_mp3_player::RodioMp3Player;
+use podcast_player::mp3_player::Mp3Player;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -38,7 +37,7 @@ pub struct Frontend<D: UiDrawer> {
 
 impl<D: UiDrawer> Frontend<D> {
     pub fn new(
-        mp3_player: Arc<TokioMutex<RodioMp3Player>>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
@@ -54,7 +53,7 @@ impl<D: UiDrawer> Frontend<D> {
                 mp3_player,
                 podcast_library,
             ))),
-            context: context,
+            context,
             ui_drawer,
         }
     }
@@ -66,7 +65,7 @@ impl<D: UiDrawer> Frontend<D> {
         match self.context.current_action {
             ScreenAction::TypingCommand => match key_event.code {
                 KeyCode::Enter => {
-                    if self.context.command.len() == 0 {
+                    if self.context.command.is_empty() {
                         return Ok(ActionPostEvent::DoNothing);
                     }
                     if self.context.command.to_lowercase() == "exit" {
@@ -94,10 +93,11 @@ impl<D: UiDrawer> Frontend<D> {
                 KeyCode::Delete => self.context.current_action = ScreenAction::ScrollingLogs,
                 _ => (),
             },
-            ScreenAction::ScrollingLogs => match key_event.code {
-                KeyCode::Delete => self.context.current_action = ScreenAction::TypingCommand,
-                _ => (),
-            },
+            ScreenAction::ScrollingLogs => {
+                if key_event.code == KeyCode::Delete {
+                    self.context.current_action = ScreenAction::TypingCommand
+                }
+            }
             _ => (),
         }
 

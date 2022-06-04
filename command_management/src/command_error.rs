@@ -19,8 +19,8 @@ pub enum ErrorKind {
 pub struct CommandError {
     source: Option<Box<dyn Error>>,
     kind: ErrorKind,
-    command: Option<String>,
-    message: Option<String>,
+    _command: Option<String>,
+    _message: Option<String>,
 }
 
 impl CommandError {
@@ -33,8 +33,8 @@ impl CommandError {
         CommandError {
             source,
             kind,
-            command,
-            message,
+            _command: command,
+            _message: message,
         }
     }
 
@@ -61,8 +61,8 @@ impl From<std::io::Error> for CommandError {
         CommandError {
             source: Some(Box::new(error)),
             kind: ErrorKind::IoError,
-            command: None,
-            message: Some(String::from("Error while trying to read the command")),
+            _command: None,
+            _message: Some(String::from("Error while trying to read the command")),
         }
     }
 }

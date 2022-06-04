@@ -54,7 +54,7 @@ impl QssPodcastFrontend for CommandFrontend {
             // TODO : replace by if let
             command = match self.wait_for_command().await {
                 Ok(c) => c,
-                Err(e) => return Err(()),
+                Err(_) => return Err(()),
             };
 
             match self

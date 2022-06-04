@@ -6,10 +6,8 @@ use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{self, Block, Borders, List, Paragraph},
+    widgets::{Block, Borders, List, Paragraph},
 };
-
-use log::logger;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -75,5 +73,10 @@ impl ui_drawer::UiDrawer for MinimalisticUiDrawer {
             ScreenAction::ScrollingLogs => self.draw_log_screen(f, context),
             _ => self.draw_main_screen(f, context),
         }
+    }
+}
+impl Default for MinimalisticUiDrawer {
+    fn default() -> Self {
+        Self::new()
     }
 }

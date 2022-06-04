@@ -12,7 +12,7 @@ impl TerminalFrontendLogger {
         TerminalFrontendLogger { log_buffer }
     }
 
-    pub fn init(mut self) -> Result<(), SetLoggerError> {
+    pub fn init(self) -> Result<(), SetLoggerError> {
         log::set_max_level(log::LevelFilter::Trace);
         log::set_boxed_logger(Box::new(self))?;
         Ok(())
@@ -20,7 +20,7 @@ impl TerminalFrontendLogger {
 }
 
 impl Log for TerminalFrontendLogger {
-    fn enabled(&self, metadata: &Metadata) -> bool {
+    fn enabled(&self, _metadata: &Metadata) -> bool {
         true
     }
 

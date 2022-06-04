@@ -2,22 +2,20 @@ use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
-pub use podcast_player::{mp3_player::Mp3Player, rodio_mp3_player::RodioMp3Player};
+pub use podcast_player::mp3_player::Mp3Player;
 
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::Mutex as TokioMutex;
-use tokio::time::sleep as tokio_sleep;
 
 pub struct CommandExecutor {
     podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    mp3_player: Arc<TokioMutex<RodioMp3Player>>,
+    mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
 }
 
 impl CommandExecutor {
     pub fn new(
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-        mp3_player: Arc<TokioMutex<RodioMp3Player>>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     ) -> CommandExecutor {
         CommandExecutor {
             podcast_library,
