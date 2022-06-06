@@ -37,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .0
         .is_err()
     {
-        println!("Not working !")
+        println!("Not working !");
     }
 
     Ok(())

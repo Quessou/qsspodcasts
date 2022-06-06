@@ -19,7 +19,10 @@ use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::{mp3_player::Mp3Player, rodio_mp3_player::RodioMp3Player};
+use podcast_player::players::{
+    gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player,
+    rodio_mp3_player::RodioMp3Player,
+};
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
@@ -34,7 +37,7 @@ pub struct BusinessCore {
 impl BusinessCore {
     pub fn new() -> BusinessCore {
         let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(TokioMutex::new(RodioMp3Player::new(Box::new(
+        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
             path_provider,
         ))));
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));

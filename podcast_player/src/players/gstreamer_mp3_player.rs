@@ -1,0 +1,66 @@
+use std::sync::{Arc, Mutex, MutexGuard};
+
+use gstreamer_player::{self, Player as GStreamerInnerPlayer};
+use log::error;
+
+use path_providing::path_provider::PathProvider;
+use path_providing::path_provider::PodcastEpisode;
+
+use crate::player_error::PlayerError;
+
+use super::mp3_player::Mp3Player;
+
+pub struct GStreamerMp3Player {
+    selected_episode: Option<PodcastEpisode>,
+    path_provider: Arc<Mutex<Box<dyn PathProvider>>>,
+    is_paused: bool,
+    player: GStreamerInnerPlayer, // TODO : Add stuff
+}
+
+impl GStreamerMp3Player {
+    pub fn new(path_provider: Box<dyn PathProvider>) -> GStreamerMp3Player {
+        GStreamerMp3Player {
+            selected_episode: None,
+            path_provider: Arc::new(Mutex::new(path_provider)),
+            is_paused: true,
+            player: GStreamerInnerPlayer::new(
+                None,
+                Some(gstreamer_player::PlayerGMainContextSignalDispatcher::new(None).as_ref()),
+            ),
+        }
+    }
+}
+
+impl Mp3Player for GStreamerMp3Player {
+    fn get_path_provider(&self) -> MutexGuard<Box<dyn PathProvider>> {
+        self.path_provider.lock().unwrap()
+    }
+    fn get_selected_episode(&self) -> &Option<PodcastEpisode> {
+        &self.selected_episode
+    }
+    fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
+        self.selected_episode = episode;
+    }
+
+    fn is_paused(&self) -> bool {
+        self.is_paused
+    }
+
+    fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
+        self.player.set_uri(Some(&format!("file://{}", path)));
+        self.play();
+        Ok(())
+    }
+
+    fn pause(&mut self) {
+        self.player.pause();
+        self.is_paused = true;
+    }
+
+    fn play(&mut self) {
+        self.player.play();
+        self.is_paused = false;
+    }
+}
+
+unsafe impl Send for GStreamerMp3Player {}

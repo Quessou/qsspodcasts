@@ -15,7 +15,7 @@ use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::players::mp3_player::Mp3Player;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;

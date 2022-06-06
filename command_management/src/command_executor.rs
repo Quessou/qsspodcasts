@@ -2,7 +2,7 @@ use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
-pub use podcast_player::mp3_player::Mp3Player;
+pub use podcast_player::players::mp3_player::Mp3Player;
 
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;

@@ -4,10 +4,10 @@ use std::sync::{Arc, Mutex, MutexGuard};
 
 use log::info;
 
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink, Source};
 
-use crate::mp3_player::Mp3Player;
 use crate::player_error::PlayerError;
+use crate::players::mp3_player::Mp3Player;
 
 use path_providing::path_provider::PathProvider;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
@@ -78,7 +78,9 @@ impl Mp3Player for RodioMp3Player {
             Ok(s) => s,
             Err(e) => return Err(PlayerError::from(e)),
         };
+
         self.sink.lock().unwrap().append(source);
+
         info!("File {path} started");
 
         Ok(())

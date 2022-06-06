@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::players::mp3_player::Mp3Player;
 
 use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;

@@ -4,7 +4,7 @@ use tokio::sync::Mutex as TokioMutex;
 
 use abstract_frontend::QssPodcastFrontend;
 use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::rodio_mp3_player::RodioMp3Player;
+use podcast_player::players::rodio_mp3_player::RodioMp3Player;
 
 use crate::command_engine::CommandEngine;
 use crate::command_error::CommandError;

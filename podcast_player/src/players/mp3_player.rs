@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::MutexGuard;
+use std::time::Duration;
 
 use path_providing::default_path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
@@ -17,6 +18,8 @@ pub trait Mp3Player {
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
+
+    //fn get_selected_episode_duration(&self) -> Duration;
 
     fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
         if !self
