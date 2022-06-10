@@ -19,10 +19,7 @@ use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::players::{
-    gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player,
-    rodio_mp3_player::RodioMp3Player,
-};
+use podcast_player::players::{gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player};
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,

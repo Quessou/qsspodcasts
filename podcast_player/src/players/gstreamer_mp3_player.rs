@@ -1,11 +1,14 @@
 use std::sync::{Arc, Mutex, MutexGuard};
+use std::time::Duration;
 
+use gstreamer::ClockTime;
 use gstreamer_player::{self, Player as GStreamerInnerPlayer};
 use log::error;
 
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
+use crate::duration_wrapper::DurationWrapper;
 use crate::player_error::PlayerError;
 
 use super::mp3_player::Mp3Player;
@@ -49,6 +52,7 @@ impl Mp3Player for GStreamerMp3Player {
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
         self.player.set_uri(Some(&format!("file://{}", path)));
         self.play();
+        let toto = self.get_selected_episode_duration();
         Ok(())
     }
 
@@ -60,6 +64,28 @@ impl Mp3Player for GStreamerMp3Player {
     fn play(&mut self) {
         self.player.play();
         self.is_paused = false;
+    }
+
+    fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
+        if self.get_selected_episode().is_none() {
+            return None;
+        }
+
+        let duration = self.player.duration().unwrap_or(ClockTime::default());
+
+        let duration = Duration::new(duration.seconds(), 0);
+        Some(DurationWrapper::new(duration))
+    }
+
+    fn get_selected_episode_progression(&self) -> Option<DurationWrapper> {
+        if self.get_selected_episode().is_none() {
+            return None;
+        }
+
+        let progression = self.player.position().unwrap_or(ClockTime::default());
+
+        let progression = Duration::new(progression.seconds(), 0);
+        Some(DurationWrapper::new(progression))
     }
 }
 

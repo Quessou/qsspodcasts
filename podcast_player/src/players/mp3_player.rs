@@ -7,7 +7,10 @@ use path_providing::path_provider::PodcastEpisode;
 
 use log::{error, warn};
 
-use crate::player_error::{ErrorKind as PlayerErrorKind, PlayerError};
+use crate::{
+    duration_wrapper::DurationWrapper,
+    player_error::{ErrorKind as PlayerErrorKind, PlayerError},
+};
 
 pub trait Mp3Player {
     fn get_path_provider(&self) -> MutexGuard<Box<dyn PathProvider>>;
@@ -19,7 +22,27 @@ pub trait Mp3Player {
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
 
-    //fn get_selected_episode_duration(&self) -> Duration;
+    fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
+    fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
+    fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
+        let episode_duration: Duration = match self.get_selected_episode_duration() {
+            Some(d) => d.into(),
+            None => return None,
+        };
+        let episode_duration = episode_duration.as_secs();
+
+        let episode_progression: Duration = self
+            .get_selected_episode_progression()
+            .unwrap_or(DurationWrapper::default())
+            .into();
+        let episode_progression = episode_progression.as_secs();
+
+        Some(
+            (episode_progression * 100 / episode_duration)
+                .try_into()
+                .unwrap(),
+        )
+    }
 
     fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
         if !self

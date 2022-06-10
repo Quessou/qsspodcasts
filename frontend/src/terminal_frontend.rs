@@ -9,13 +9,15 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use log::info;
 use podcast_management::podcast_library::PodcastLibrary;
+use podcast_player::duration_wrapper::DurationWrapper;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
-use podcast_player::players::mp3_player::Mp3Player;
+use podcast_player::{mp3_player_exposer::Mp3PlayerExposer, players::mp3_player::Mp3Player};
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -33,6 +35,7 @@ pub struct Frontend<D: UiDrawer> {
     command_engine: Arc<TokioMutex<CommandEngine>>,
     context: ScreenContext,
     ui_drawer: Box<D>,
+    mp3_player_exposer: Mp3PlayerExposer,
 }
 
 impl<D: UiDrawer> Frontend<D> {
@@ -50,11 +53,12 @@ impl<D: UiDrawer> Frontend<D> {
         Frontend {
             terminal,
             command_engine: Arc::new(TokioMutex::new(CommandEngine::new(
-                mp3_player,
+                mp3_player.clone(),
                 podcast_library,
             ))),
             context,
             ui_drawer,
+            mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
         }
     }
 
@@ -144,6 +148,26 @@ impl<D: UiDrawer> Frontend<D> {
                 }
             } else {
                 tokio_sleep(self.context.ui_refresh_tickrate).await;
+
+                let episode_progression = match self
+                    .mp3_player_exposer
+                    .get_selected_episode_progression()
+                    .await
+                {
+                    Some(d) => d.as_string(),
+                    None => DurationWrapper::default().as_string(),
+                };
+
+                let episode_duration = match self
+                    .mp3_player_exposer
+                    .get_selected_episode_duration()
+                    .await
+                {
+                    Some(d) => d.as_string(),
+                    None => DurationWrapper::default().as_string(),
+                };
+
+                info!("{episode_progression}/{episode_duration}");
             }
         }
         disable_raw_mode()?;
