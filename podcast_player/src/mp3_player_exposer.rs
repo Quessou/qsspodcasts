@@ -36,4 +36,8 @@ impl Mp3PlayerExposer {
             .await
             .get_selected_episode_progression_percentage()
     }
+
+    pub async fn is_paused(&self) -> bool {
+        self.mp3_player.lock().await.is_paused()
+    }
 }

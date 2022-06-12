@@ -52,7 +52,6 @@ impl Mp3Player for GStreamerMp3Player {
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
         self.player.set_uri(Some(&format!("file://{}", path)));
         self.play();
-        let toto = self.get_selected_episode_duration();
         Ok(())
     }
 

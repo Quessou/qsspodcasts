@@ -12,6 +12,7 @@ use crossterm::{
 use log::info;
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::duration_wrapper::DurationWrapper;
+use podcast_player::player_status::PlayerStatus;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::sleep as tokio_sleep;
 use tui::{backend::CrosstermBackend, Terminal};
@@ -118,6 +119,35 @@ impl<D: UiDrawer> Frontend<D> {
         Ok(ActionPostEvent::DoNothing)
     }
 
+    /// Updates the screen context according to the entire system state (Mp3Player, and so on...)
+    async fn update_screen_context(&mut self) {
+        // Updating player_status
+        let player_exposer = &self.mp3_player_exposer;
+        let episode_progression = player_exposer.get_selected_episode_progression().await;
+        let episode_duration = player_exposer.get_selected_episode_duration().await;
+        let progression_percentage = player_exposer
+            .get_selected_episode_progression_percentage()
+            .await;
+
+        let player_status = match player_exposer.is_paused().await {
+            true => match player_exposer.get_selected_episode_progression().await {
+                None => PlayerStatus::Stopped,
+                Some(_) => PlayerStatus::Paused(
+                    episode_progression.unwrap().to_string(),
+                    episode_duration.unwrap().to_string(),
+                    progression_percentage.unwrap(),
+                ),
+            },
+            false => PlayerStatus::Playing(
+                episode_progression.unwrap().to_string(),
+                episode_duration.unwrap().to_string(),
+                progression_percentage.unwrap(),
+            ),
+        };
+
+        self.context.player_status = player_status;
+    }
+
     pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
@@ -133,7 +163,6 @@ impl<D: UiDrawer> Frontend<D> {
                         log::error!("Send error while sending event {e}");
                     }
                 } else {
-                    log::trace!("Send empty event");
                     tx.send(None).unwrap();
                 }
             }
@@ -148,26 +177,7 @@ impl<D: UiDrawer> Frontend<D> {
                 }
             } else {
                 tokio_sleep(self.context.ui_refresh_tickrate).await;
-
-                let episode_progression = match self
-                    .mp3_player_exposer
-                    .get_selected_episode_progression()
-                    .await
-                {
-                    Some(d) => d.as_string(),
-                    None => DurationWrapper::default().as_string(),
-                };
-
-                let episode_duration = match self
-                    .mp3_player_exposer
-                    .get_selected_episode_duration()
-                    .await
-                {
-                    Some(d) => d.as_string(),
-                    None => DurationWrapper::default().as_string(),
-                };
-
-                info!("{episode_progression}/{episode_duration}");
+                self.update_screen_context().await;
             }
         }
         disable_raw_mode()?;

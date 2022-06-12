@@ -1,3 +1,4 @@
+use podcast_player::player_status::PlayerStatus;
 use tui::backend::Backend;
 use tui::layout::Corner;
 use tui::text::{Span, Spans};
@@ -6,7 +7,7 @@ use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, List, Paragraph},
+    widgets::{Block, Borders, Gauge, List, Paragraph},
 };
 
 use crate::screen_action::ScreenAction;
@@ -49,7 +50,14 @@ impl MinimalisticUiDrawer {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
-            .constraints([Constraint::Length(3), Constraint::Min(1)].as_ref())
+            .constraints(
+                [
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(1),
+                ]
+                .as_ref(),
+            )
             .split(size);
 
         let input = Paragraph::new(context.command.as_ref())
@@ -60,10 +68,24 @@ impl MinimalisticUiDrawer {
             .block(Block::default().borders(Borders::ALL).title("Command"));
         f.render_widget(input, chunks[0]);
 
+        let status = &context.player_status;
+        let empty_string = String::from(""); // Isn't there something better to do here ?
+        let (progress, duration, percentage) = match status {
+            PlayerStatus::Playing(prog, dur, perc) => (prog, dur, *perc),
+            PlayerStatus::Paused(prog, dur, perc) => (prog, dur, *perc),
+            PlayerStatus::Stopped => (&empty_string, &empty_string, 0),
+        };
+
+        let podcast_progress = Gauge::default()
+            .block(Block::default().title("").borders(Borders::ALL))
+            .gauge_style(Style::default().fg(Color::LightYellow))
+            .percent(percentage.into());
+        f.render_widget(podcast_progress, chunks[1]);
+
         let output = Paragraph::new(context.last_command_output.as_ref())
             .style(Style::default())
             .block(Block::default().borders(Borders::ALL).title("Output"));
-        f.render_widget(output, chunks[1]);
+        f.render_widget(output, chunks[2]);
     }
 }
 

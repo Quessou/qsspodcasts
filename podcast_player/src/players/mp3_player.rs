@@ -31,6 +31,10 @@ pub trait Mp3Player {
         };
         let episode_duration = episode_duration.as_secs();
 
+        if episode_duration == 0 {
+            return Some(0);
+        }
+
         let episode_progression: Duration = self
             .get_selected_episode_progression()
             .unwrap_or(DurationWrapper::default())
