@@ -79,7 +79,8 @@ impl MinimalisticUiDrawer {
         let podcast_progress = Gauge::default()
             .block(Block::default().title("").borders(Borders::ALL))
             .gauge_style(Style::default().fg(Color::LightYellow))
-            .percent(percentage.into());
+            .label(format!("{progress}/{duration}"));
+        //.percent(percentage.into());
         f.render_widget(podcast_progress, chunks[1]);
 
         let output = Paragraph::new(context.last_command_output.as_ref())
