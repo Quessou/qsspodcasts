@@ -1,6 +1,8 @@
 use std::io::Error as IoError;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+
+use tokio::sync::Mutex as TokioMutex;
 
 use log::error;
 
@@ -17,23 +19,25 @@ use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::mp3_player::Mp3Player;
+use podcast_player::players::{gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player};
 
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    pub player: Arc<Mutex<Mp3Player>>,
-    pub podcast_library: Arc<Mutex<PodcastLibrary>>,
+    pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: DefaultPathProvider,
 }
 
 impl BusinessCore {
     pub fn new() -> BusinessCore {
         let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(Mutex::new(Mp3Player::new(Box::new(path_provider))));
-        let podcast_library = Arc::new(Mutex::new(PodcastLibrary::new()));
+        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
+            path_provider,
+        ))));
+        let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(
                 path_provider.rss_feed_list_file_path().to_str().unwrap(),
@@ -73,21 +77,21 @@ impl BusinessCore {
         for channel in &channels {
             podcasts.push(self.podcast_builder.build(channel))
         }
-        self.podcast_library.lock().unwrap().push(&mut podcasts);
+        self.podcast_library.lock().await.push(&mut podcasts);
     }
 
     pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
         // TODO : Remove me
-        let episode = &self.podcast_library.lock().unwrap().podcasts[0].episodes[0];
+        let episode = &self.podcast_library.lock().await.podcasts[0].episodes[0];
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
             return Err(());
         }
 
-        if self.player.lock().unwrap().select_episode(episode).is_err() {
+        if self.player.lock().await.select_episode(episode).is_err() {
             error!("Selecting of episode failed");
             return Err(());
         }
-        if self.player.lock().unwrap().play_selected_episode().is_err() {
+        if self.player.lock().await.play_selected_episode().is_err() {
             error!("Playing of episode failed");
             return Err(());
         }

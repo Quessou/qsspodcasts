@@ -1,6 +1,6 @@
 use business_core::business_core::BusinessCore;
 use clap::Parser;
-use command_management::command_engine::CommandEngine;
+use frontend::terminal_frontend::Frontend;
 
 /// Lame podcast manager
 #[derive(Parser, Debug)]
@@ -19,7 +19,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     core.initialize();
     core.build_podcasts().await;
 
-    let mut command_engine = CommandEngine::new(core.player.clone(), core.podcast_library.clone());
+    let mut frontend = Frontend::new(
+        core.player.clone(),
+        core.podcast_library.clone(),
+        Box::new(frontend::ui_drawers::minimalistic_ui_drawer::MinimalisticUiDrawer::new()),
+    );
 
     if !args.add_url.is_empty() {
         if core.add_url(&args.add_url).is_err() {
@@ -28,12 +32,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     let play_future = core.download_some_random_podcast();
-    let command_engine_future = command_engine.run();
-    if futures::join!(play_future, command_engine_future)
+    let command_frontend_future = frontend.run();
+    if futures::join!(play_future, command_frontend_future)
         .0
         .is_err()
     {
-        println!("Not working !")
+        println!("Not working !");
     }
 
     Ok(())

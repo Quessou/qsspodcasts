@@ -2,4 +2,14 @@
 pub enum Command {
     Play,
     Pause,
+    Exit,
+    Help,
+    ListPodcasts,
+    ListEpisodes,
+    Search,
+    See,
+    VolumeUp,
+    VolumeDown,
+    AddRss,
+    DeleteRss,
 }

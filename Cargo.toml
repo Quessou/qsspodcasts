@@ -8,5 +8,7 @@ members = [
 	"podcast_management",
 	"podcast_download",
 	"podcast_player",
-	"path_providing"
+	"path_providing",
+	"frontend",
+	"abstract_frontend"
 ]

@@ -24,11 +24,14 @@ impl PlayerError {
     pub fn kind(&self) -> ErrorKind {
         self.kind
     }
+    pub fn new(source: Option<Box<dyn Error>>, kind: ErrorKind) -> PlayerError {
+        PlayerError { source, kind }
+    }
 }
 
 impl fmt::Display for PlayerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Error in the MP3 Player")
+        write!(f, "Error in the MP3 Player of kind {:#?}", self.kind)
     }
 }
 

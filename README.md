@@ -4,3 +4,5 @@ Lame podcast player in Rust
 # Development dependencies (*on ubuntu 20.04 at least*)
 * libasound2-dev
 * libssl-dev
+* libgstreamer1.0-dev
+* libgstreamer-plugins-bad1.0-dev
