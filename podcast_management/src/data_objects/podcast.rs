@@ -3,7 +3,7 @@ use rss::Image;
 
 use crate::style::{
     color::Color,
-    stylized::{Style, Stylized},
+    stylized::{Style, Stylized, StylizedContent},
 };
 
 #[derive(Debug)]
@@ -37,10 +37,22 @@ impl Podcast {
             episodes,
         }
     }
+
+    pub fn shallow_copy(&self) -> Podcast {
+        Podcast::new(
+            &self.title,
+            &self.link,
+            &self.description,
+            self.copyright.clone(),
+            self.pub_date.clone(),
+            self.image.clone(),
+            vec![],
+        )
+    }
 }
 
 impl Stylized for Podcast {
-    fn to_stylized(&self) -> Vec<(&str, Option<Vec<crate::style::stylized::Style>>)> {
+    fn to_stylized(&self) -> StylizedContent {
         // TODO : See if there isn't a more fancy way of designing that code (call to "map" ?)
         return vec![
             (

@@ -4,6 +4,7 @@ use crate::output::command_output::CommandOutput;
 use crate::output::command_output_factory::build_from_string;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
+use podcast_management::{data_objects::podcast::Podcast, style::stylized::Stylized};
 pub use podcast_player::players::mp3_player::Mp3Player;
 
 use std::sync::Arc;
@@ -43,6 +44,18 @@ impl CommandExecutor {
         Ok(return_message)
     }
 
+    async fn handle_list_podcasts(&self, _: Command) -> Result<CommandOutput, CommandError> {
+        let mut podcast_library = self.podcast_library.lock().await;
+        let podcasts = &podcast_library.podcasts;
+
+        let podcasts = podcasts
+            .iter()
+            .map(|p| Box::new(p.shallow_copy()) as Box<dyn Stylized>)
+            .collect();
+
+        let output = CommandOutput::new(podcasts);
+        Ok(output)
+    }
     /// Executes command
     pub async fn execute_command(
         &mut self,
@@ -52,6 +65,7 @@ impl CommandExecutor {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
             Command::Exit => build_from_string("Exiting"),
+            Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

@@ -1,5 +1,7 @@
 use super::color::Color;
 
+pub type StylizedContent<'a> = Vec<(&'a str, Option<Vec<Style>>)>;
+
 #[derive(PartialEq, Debug)]
 pub enum Style {
     Bold,
@@ -10,11 +12,11 @@ pub enum Style {
 }
 
 pub trait Stylized {
-    fn to_stylized(&self) -> Vec<(&str, Option<Vec<Style>>)>;
+    fn to_stylized(&self) -> StylizedContent;
 }
 
 impl Stylized for String {
-    fn to_stylized(&self) -> Vec<(&str, Option<Vec<Style>>)> {
+    fn to_stylized(&self) -> StylizedContent {
         vec![(&self, None)]
     }
 }

@@ -1,4 +1,4 @@
-pub use podcast_management::style::stylized::{Style, Stylized};
+pub use podcast_management::style::stylized::{Style, Stylized, StylizedContent};
 
 pub struct CommandOutput {
     pub output: Vec<Box<dyn Stylized>>,
@@ -11,7 +11,7 @@ impl CommandOutput {
 }
 
 impl Stylized for CommandOutput {
-    fn to_stylized(&self) -> Vec<(&str, Option<Vec<Style>>)> {
+    fn to_stylized(&self) -> StylizedContent {
         self.output
             .iter()
             .map(|s| s.to_stylized())
