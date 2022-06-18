@@ -10,6 +10,9 @@ use tui::{
     widgets::{Block, Borders, Gauge, List, Paragraph},
 };
 
+use command_management::output::command_output::CommandOutput;
+use podcast_management::style::stylized::Stylized;
+
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
@@ -65,7 +68,11 @@ impl MinimalisticUiDrawer {
                 ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
             })
-            .block(Block::default().borders(Borders::ALL).title("Command"));
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(vec![Span::from("Command")]),
+            );
         f.render_widget(input, chunks[0]);
 
         let status = &context.player_status;
@@ -83,7 +90,8 @@ impl MinimalisticUiDrawer {
             .percent(percentage.into());
         f.render_widget(podcast_progress, chunks[1]);
 
-        let output = Paragraph::new(context.last_command_output.as_ref())
+        // TODO : Rework that
+        let output = Paragraph::new(context.last_command_output.to_stylized()[0].0)
             .style(Style::default())
             .block(Block::default().borders(Borders::ALL).title("Output"));
         f.render_widget(output, chunks[2]);

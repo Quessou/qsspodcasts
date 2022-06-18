@@ -5,4 +5,5 @@ mod command_parser;
 mod command_read_utils;
 mod commands;
 mod mocks;
+pub mod output;
 mod prompt;

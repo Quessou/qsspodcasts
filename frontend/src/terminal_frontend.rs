@@ -10,6 +10,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::info;
+
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;

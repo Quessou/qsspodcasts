@@ -1,5 +1,7 @@
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
+use crate::output::command_output::CommandOutput;
+use crate::output::command_output_factory::build_from_string;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -23,28 +25,33 @@ impl CommandExecutor {
         }
     }
 
-    async fn handle_play(&self, _: Command) -> Result<String, CommandError> {
+    async fn handle_play(&self, _: Command) -> Result<CommandOutput, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
         }
-        Ok("Player launched".to_string())
+        let return_message = build_from_string("Player launched");
+        Ok(return_message)
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<String, CommandError> {
+    async fn handle_pause(&self, _: Command) -> Result<CommandOutput, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if !mp3_player.is_paused() {
             mp3_player.pause();
         }
-        Ok("Player paused".to_string())
+        let return_message = build_from_string("Player paused");
+        Ok(return_message)
     }
 
     /// Executes command
-    pub async fn execute_command(&mut self, command: Command) -> Result<String, CommandError> {
-        let return_message: String = match command {
+    pub async fn execute_command(
+        &mut self,
+        command: Command,
+    ) -> Result<CommandOutput, CommandError> {
+        let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
-            Command::Exit => return Ok(String::from("Exiting")),
+            Command::Exit => build_from_string("Exiting"),
             _ => {
                 return Err(CommandError::new(
                     None,
@@ -54,7 +61,8 @@ impl CommandExecutor {
                 ))
             }
         };
-        Ok(return_message)
+
+        Ok(command_output)
     }
 }
 

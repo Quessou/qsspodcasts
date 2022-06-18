@@ -8,6 +8,7 @@ use podcast_player::players::mp3_player::Mp3Player;
 use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
+use crate::output::command_output::CommandOutput;
 
 pub struct CommandEngine {
     command_parser: Arc<TokioMutex<CommandParser>>,
@@ -25,7 +26,7 @@ impl CommandEngine {
         }
     }
 
-    pub async fn handle_command(&mut self, command: &str) -> Result<String, CommandError> {
+    pub async fn handle_command(&mut self, command: &str) -> Result<CommandOutput, CommandError> {
         let command = match self.command_parser.lock().await.parse_command(command) {
             Ok(c) => c,
             Err(e) => {
