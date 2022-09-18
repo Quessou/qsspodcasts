@@ -90,7 +90,8 @@ impl MinimalisticUiDrawer {
             .percent(percentage.into());
         f.render_widget(podcast_progress, chunks[1]);
 
-        // TODO : Rework that
+        let displayed_output = context.last_command_output.to_stylized();
+
         let output = Paragraph::new(context.last_command_output.to_stylized()[0].0)
             .style(Style::default())
             .block(Block::default().borders(Borders::ALL).title("Output"));
