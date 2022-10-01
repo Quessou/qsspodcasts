@@ -56,9 +56,10 @@ impl CommandParser {
 
 #[cfg(test)]
 mod tests {
-    /// TODO : Remember the way to mutualize tests
-    use super::CommandParser;
+
+    use super::*;
     use crate::commands::command_enum::Command;
+
     #[test]
     fn test_play() -> Result<(), String> {
         let command_parser = CommandParser::new();
@@ -72,6 +73,14 @@ mod tests {
         let command_parser = CommandParser::new();
         let command = command_parser.parse_command("pause");
         assert_eq!(command.unwrap(), Command::Pause);
+        Ok(())
+    }
+
+    #[test]
+    fn test_invalid_verb() -> Result<(), String> {
+        let command_parser = CommandParser::new();
+        let error = command_parser.parse_command("toto").err().unwrap();
+        assert_eq!(error.kind(), CommandErrorKind::UnknownVerb);
         Ok(())
     }
 }

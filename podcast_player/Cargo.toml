@@ -14,3 +14,7 @@ gstreamer-player = "0.18"
 log = "0.4.11"
 podcast_management = { path = "../podcast_management" }
 path_providing = { path = "../path_providing" }
+
+
+#[dev-dependencies]
+mockall = "0.11.2"

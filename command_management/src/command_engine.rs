@@ -42,3 +42,59 @@ impl CommandEngine {
         Ok(message)
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use tokio_test;
+    macro_rules! aw {
+        ($e:expr) => {
+            tokio_test::block_on($e)
+        };
+    }
+
+    use super::*;
+    use crate::mocks::mp3_player::MockMp3Player;
+    use test_case::test_case;
+
+    fn instanciate_engine(
+        player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        library: Arc<TokioMutex<PodcastLibrary>>,
+    ) -> CommandEngine {
+        CommandEngine::new(player, library)
+    }
+
+    #[test]
+    fn test_engine_instanciation() -> Result<(), String> {
+        let player = MockMp3Player::new();
+        let library = PodcastLibrary::new();
+        let engine = instanciate_engine(
+            Arc::new(TokioMutex::new(player)),
+            Arc::new(TokioMutex::new(library)),
+        );
+        Ok(())
+    }
+
+    #[test_case(true, 1 => Ok(()))]
+    #[test_case(false, 0 => Ok(()))]
+    fn test_play_command(is_paused: bool, expected_play_calls: usize) -> Result<(), String> {
+        let mut player = MockMp3Player::new();
+
+        player.expect_is_paused().times(1).return_const(is_paused);
+        player
+            .expect_play()
+            .times(expected_play_calls)
+            .return_const(());
+
+        let library = PodcastLibrary::new();
+        let mut engine = instanciate_engine(
+            Arc::new(TokioMutex::new(player)),
+            Arc::new(TokioMutex::new(library)),
+        );
+
+        match aw!(engine.handle_command("play")) {
+            Ok(_) => return Ok(()),
+            Err(_) => return Err(String::from("Something went wrong")),
+        };
+    }
+}

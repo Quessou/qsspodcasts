@@ -4,4 +4,5 @@ mod command_executor;
 mod command_parser;
 mod command_read_utils;
 mod commands;
+mod mocks;
 mod prompt;

@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
@@ -35,8 +36,11 @@ impl GStreamerMp3Player {
 }
 
 impl Mp3Player for GStreamerMp3Player {
-    fn get_path_provider(&self) -> MutexGuard<Box<dyn PathProvider>> {
-        self.path_provider.lock().unwrap()
+    fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
+        self.path_provider
+            .lock()
+            .unwrap()
+            .compute_episode_path(episode)
     }
     fn get_selected_episode(&self) -> &Option<PodcastEpisode> {
         &self.selected_episode
