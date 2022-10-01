@@ -1,8 +1,6 @@
-use std::path::Path;
-use std::sync::MutexGuard;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use path_providing::default_path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
 use log::{error, warn};
@@ -11,9 +9,8 @@ use crate::{
     duration_wrapper::DurationWrapper,
     player_error::{ErrorKind as PlayerErrorKind, PlayerError},
 };
-
 pub trait Mp3Player {
-    fn get_path_provider(&self) -> MutexGuard<Box<dyn PathProvider>>;
+    fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
     fn get_selected_episode(&self) -> &Option<PodcastEpisode>;
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
     fn pause(&mut self);
@@ -49,11 +46,7 @@ pub trait Mp3Player {
     }
 
     fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
-        if !self
-            .get_path_provider()
-            .compute_episode_path(episode)
-            .exists()
-        {
+        if !self.compute_episode_path(episode).exists() {
             warn!("Cannot select an episode which has not been downloaded first");
             return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
@@ -63,7 +56,6 @@ pub trait Mp3Player {
 
     fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
         let path = self
-            .get_path_provider()
             .compute_episode_path(self.get_selected_episode().as_ref().unwrap())
             .into_os_string()
             .into_string()

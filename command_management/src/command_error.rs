@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::fmt;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
     IoError,
     UnknownVerb,

@@ -15,5 +15,3 @@ pub trait PathProvider {
         download_dir
     }
 }
-
-//unsafe impl Send for dyn PathProvider + 'static {}
