@@ -1,8 +1,9 @@
+use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 use tui::backend::Backend;
 use tui::layout::Corner;
 use tui::text::{Span, Spans};
-use tui::widgets::ListItem;
+use tui::widgets::{ListItem, Wrap};
 use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
@@ -10,8 +11,7 @@ use tui::{
     widgets::{Block, Borders, Gauge, List, Paragraph},
 };
 
-use command_management::output::command_output::CommandOutput;
-use podcast_management::style::stylized::Stylized;
+use crate::style::stylized::Stylized;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -63,6 +63,8 @@ impl MinimalisticUiDrawer {
             )
             .split(size);
 
+        let output_pane_width = usize::from(chunks[2].width);
+
         let input = Paragraph::new(context.command.as_ref())
             .style(match context.current_action {
                 ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
@@ -90,11 +92,23 @@ impl MinimalisticUiDrawer {
             .percent(percentage.into());
         f.render_widget(podcast_progress, chunks[1]);
 
-        let displayed_output = context.last_command_output.to_stylized();
+        let dummy = String::from("");
+        let displayed_output = match &context.last_command_output {
+            OutputType::RawString(s) => s.to_stylized(),
+            OutputType::Podcasts(podcasts) => {
+                let mut output = vec![];
+                for p in podcasts {
+                    output.extend(p.to_stylized());
+                }
+                output
+            }
+            _ => dummy.to_stylized(),
+        };
 
-        let output = Paragraph::new(context.last_command_output.to_stylized()[0].0)
+        let output = Paragraph::new(displayed_output)
             .style(Style::default())
-            .block(Block::default().borders(Borders::ALL).title("Output"));
+            .block(Block::default().borders(Borders::ALL).title("Output"))
+            .wrap(Wrap { trim: true });
         f.render_widget(output, chunks[2]);
     }
 }

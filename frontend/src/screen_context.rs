@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use command_management::output::command_output::CommandOutput;
+use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
 use crate::screen_action::ScreenAction;
@@ -13,7 +13,7 @@ use crate::screen_action::ScreenAction;
 pub struct ScreenContext {
     pub command: String,
     // TODO : Replace by Option<CommandOutput>
-    pub last_command_output: CommandOutput,
+    pub last_command_output: OutputType,
     pub logs: Arc<Mutex<Vec<String>>>,
     pub current_action: ScreenAction,
     pub ui_refresh_tickrate: Duration,
@@ -24,7 +24,7 @@ impl Default for ScreenContext {
     fn default() -> Self {
         ScreenContext {
             command: String::from(""),
-            last_command_output: CommandOutput::new(vec![Box::new(String::from(""))]),
+            last_command_output: OutputType::RawString(String::from("")),
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,
             ui_refresh_tickrate: Duration::from_millis(20),

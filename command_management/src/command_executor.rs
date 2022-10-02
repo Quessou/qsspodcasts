@@ -1,10 +1,8 @@
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
-use crate::output::command_output::CommandOutput;
-use crate::output::command_output_factory::build_from_string;
+use crate::output::output_type::OutputType;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
-use podcast_management::{data_objects::podcast::Podcast, style::stylized::Stylized};
 pub use podcast_player::players::mp3_player::Mp3Player;
 
 use std::sync::Arc;
@@ -26,45 +24,38 @@ impl CommandExecutor {
         }
     }
 
-    async fn handle_play(&self, _: Command) -> Result<CommandOutput, CommandError> {
+    async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
         }
-        let return_message = build_from_string("Player launched");
-        Ok(return_message)
+        let return_message = String::from("Player launched");
+        Ok(OutputType::RawString(return_message))
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<CommandOutput, CommandError> {
+    async fn handle_pause(&self, _: Command) -> Result<OutputType, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if !mp3_player.is_paused() {
             mp3_player.pause();
         }
-        let return_message = build_from_string("Player paused");
-        Ok(return_message)
+        let return_message = String::from("Player paused");
+        Ok(OutputType::RawString(return_message))
     }
 
-    async fn handle_list_podcasts(&self, _: Command) -> Result<CommandOutput, CommandError> {
+    async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
         let mut podcast_library = self.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
-        let podcasts = podcasts
-            .iter()
-            .map(|p| Box::new(p.shallow_copy()) as Box<dyn Stylized>)
-            .collect();
+        let podcasts = podcasts.iter().map(|p| p.shallow_copy()).collect();
 
-        let output = CommandOutput::new(podcasts);
-        Ok(output)
+        Ok(OutputType::Podcasts(podcasts))
     }
     /// Executes command
-    pub async fn execute_command(
-        &mut self,
-        command: Command,
-    ) -> Result<CommandOutput, CommandError> {
+    pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
-            Command::Exit => build_from_string("Exiting"),
+            Command::Exit => OutputType::RawString(String::from("Exiting")),
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             _ => {
                 return Err(CommandError::new(

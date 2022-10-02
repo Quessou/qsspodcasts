@@ -1,16 +1,16 @@
 use super::podcast_episode::PodcastEpisode;
 use rss::Image;
 
-use crate::style::{
-    color::Color,
-    stylized::{Style, Stylized, StylizedContent},
-};
+//use crate::style::{
+//    color::Color,
+//    stylized::{Style, Stylized, StylizedContent},
+//};
 
 #[derive(Debug)]
 pub struct Podcast {
-    title: String,
-    link: String,
-    description: String,
+    pub title: String,
+    pub link: String,
+    pub description: String,
     copyright: Option<String>,
     pub_date: Option<String>,
     image: Option<Image>,
@@ -51,23 +51,24 @@ impl Podcast {
     }
 }
 
-impl Stylized for Podcast {
-    fn to_stylized(&self) -> StylizedContent {
-        // TODO : See if there isn't a more fancy way of designing that code (call to "map" ?)
-        return vec![
-            (
-                &self.title,
-                Some(vec![
-                    Style::Bold,
-                    Style::Underlined,
-                    Style::Color(Color::Red),
-                ]),
-            ),
-            ("\n", None),
-            (
-                &self.description,
-                Some(vec![Style::Italic, Style::Color(Color::Blue)]),
-            ),
-        ];
-    }
-}
+//impl Stylized for Podcast {
+//    fn to_stylized(&self) -> StylizedContent {
+//        // TODO : See if there isn't a more fancy way of designing that code (call to "map" ?)
+//        return vec![
+//            (
+//                &self.title,
+//                Some(vec![
+//                    Style::Bold,
+//                    Style::Underlined,
+//                    Style::Color(Color::Red),
+//                ]),
+//            ),
+//            ("\n", None),
+//            (
+//                &self.description,
+//                Some(vec![Style::Italic, Style::Color(Color::Blue)]),
+//            ),
+//        ];
+//    }
+//}
+//
