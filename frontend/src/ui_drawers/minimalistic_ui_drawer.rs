@@ -11,14 +11,14 @@ use tui::{
     widgets::{Block, Borders, Gauge, List, Paragraph},
 };
 
-use crate::style::stylized::Stylized;
+use crate::style::stylized::VecSpans;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
 use super::ui_drawer;
 
-use super::output_size_management::output_filter;
+use super::output_management::output_filter;
 
 pub struct MinimalisticUiDrawer {}
 
@@ -26,31 +26,6 @@ impl MinimalisticUiDrawer {
     pub fn new() -> MinimalisticUiDrawer {
         MinimalisticUiDrawer {}
     }
-
-    //    fn filter_displayed_output(
-    //        complete_output: Vec<Spans>,
-    //        output_pane_width: usize,
-    //        output_pane_height: usize,
-    //    ) -> Vec<Spans> {
-    //        if complete_output.len() == 0 {
-    //            return vec![];
-    //        }
-    //
-    //        let mut used_lines: usize = 0;
-    //        let mut displayed_output = vec![];
-    //        let mut i: usize = 0;
-    //        while used_lines <= output_pane_height && i < displayed_output.len() {
-    //            used_lines +=
-    //                output_size_computationer::get_spans_height(&complete_output[i], output_pane_width);
-    //            displayed_output.push(complete_output[i].clone());
-    //            i += 1;
-    //        }
-    //        if used_lines > output_pane_height {
-    //            displayed_output.pop();
-    //        }
-    //
-    //        displayed_output
-    //    }
 
     fn draw_log_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
@@ -121,22 +96,10 @@ impl MinimalisticUiDrawer {
         f.render_widget(podcast_progress, chunks[1]);
 
         let dummy = String::from("");
-        let complete_output = match &context.last_command_output {
-            OutputType::RawString(s) => s.to_stylized(),
-            OutputType::Podcasts(podcasts) => {
-                let mut output = vec![];
-                for p in podcasts {
-                    output.extend(p.to_stylized());
-                }
-                output
-            }
-            _ => dummy.to_stylized(),
-        };
-
-        // TODO : Compute output to display here
+        //let complete_output: VecSpans = context.last_command_output.clone().into();
 
         let displayed_output = output_filter::filter_displayed_output(
-            complete_output,
+            &context.last_command_output.0,
             output_pane_width,
             output_pane_height,
         );

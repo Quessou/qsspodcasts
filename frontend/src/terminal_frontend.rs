@@ -32,20 +32,20 @@ enum ActionPostEvent {
     Quit,
 }
 
-pub struct Frontend<D: UiDrawer> {
+pub struct Frontend<'a, D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_engine: Arc<TokioMutex<CommandEngine>>,
-    context: ScreenContext,
+    context: ScreenContext<'a>,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
 }
 
-impl<D: UiDrawer> Frontend<D> {
+impl<D: UiDrawer> Frontend<'_, D> {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
-    ) -> Frontend<D> {
+    ) -> Frontend<'static, D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();
@@ -88,7 +88,13 @@ impl<D: UiDrawer> Frontend<D> {
                         .await
                     {
                         Err(_) => return Ok(ActionPostEvent::DoNothing),
-                        Ok(s) => self.context.last_command_output = s,
+                        Ok(s) => {
+                            self.context.last_command_output = s.into();
+                            self.context.output_index = Some(0);
+                            //let spans =
+                            //if output_overflow()
+                            // TODO : Transition to ScrollingLogs state if output is bigger than the pane
+                        }
                     }
                 }
                 KeyCode::Char(c) => self.context.command.push(c),
@@ -156,7 +162,7 @@ impl<D: UiDrawer> Frontend<D> {
         let (tx, rx) = channel();
         thread::spawn(move || {
             let input_polling_rate = Duration::from_millis(50);
-            log::error!("Launching input polling thread");
+            log::info!("Launching input polling thread");
             loop {
                 if crossterm::event::poll(input_polling_rate).unwrap() {
                     let event = Some(event::read().unwrap());

@@ -1,11 +1,11 @@
 use super::output_size_computationer;
 use tui::text::Spans;
 
-pub fn filter_displayed_output(
-    complete_output: Vec<Spans>,
+pub fn filter_displayed_output<'a>(
+    complete_output: &'a Vec<Spans<'a>>,
     output_pane_width: usize,
     output_pane_height: usize,
-) -> Vec<Spans> {
+) -> Vec<Spans<'a>> {
     if complete_output.len() == 0 {
         return vec![];
     }
@@ -37,7 +37,7 @@ mod tests {
     #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 3 => 1; "spans with line breaks that does not fit in the output")]
     #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 4 => 2; "spans with line breaks that does fit in the output")]
     fn test_output_filter(spans: Vec<Spans>, output_width: usize, output_height: usize) -> usize {
-        let displayed_output = filter_displayed_output(spans, output_width, output_height);
+        let displayed_output = filter_displayed_output(&spans, output_width, output_height);
         displayed_output.len()
     }
 }

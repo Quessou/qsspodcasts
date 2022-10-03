@@ -6,7 +6,7 @@ use rss::Image;
 //    stylized::{Style, Stylized, StylizedContent},
 //};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Podcast {
     pub title: String,
     pub link: String,
