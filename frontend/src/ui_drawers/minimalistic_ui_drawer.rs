@@ -18,12 +18,39 @@ use crate::screen_context::ScreenContext;
 
 use super::ui_drawer;
 
+use super::output_size_management::output_filter;
+
 pub struct MinimalisticUiDrawer {}
 
 impl MinimalisticUiDrawer {
     pub fn new() -> MinimalisticUiDrawer {
         MinimalisticUiDrawer {}
     }
+
+    //    fn filter_displayed_output(
+    //        complete_output: Vec<Spans>,
+    //        output_pane_width: usize,
+    //        output_pane_height: usize,
+    //    ) -> Vec<Spans> {
+    //        if complete_output.len() == 0 {
+    //            return vec![];
+    //        }
+    //
+    //        let mut used_lines: usize = 0;
+    //        let mut displayed_output = vec![];
+    //        let mut i: usize = 0;
+    //        while used_lines <= output_pane_height && i < displayed_output.len() {
+    //            used_lines +=
+    //                output_size_computationer::get_spans_height(&complete_output[i], output_pane_width);
+    //            displayed_output.push(complete_output[i].clone());
+    //            i += 1;
+    //        }
+    //        if used_lines > output_pane_height {
+    //            displayed_output.pop();
+    //        }
+    //
+    //        displayed_output
+    //    }
 
     fn draw_log_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
@@ -63,7 +90,8 @@ impl MinimalisticUiDrawer {
             )
             .split(size);
 
-        let output_pane_width = usize::from(chunks[2].width);
+        let output_pane_width = usize::from(chunks[2].width) - 2;
+        let output_pane_height = usize::from(chunks[2].height) - 2;
 
         let input = Paragraph::new(context.command.as_ref())
             .style(match context.current_action {
@@ -93,7 +121,7 @@ impl MinimalisticUiDrawer {
         f.render_widget(podcast_progress, chunks[1]);
 
         let dummy = String::from("");
-        let displayed_output = match &context.last_command_output {
+        let complete_output = match &context.last_command_output {
             OutputType::RawString(s) => s.to_stylized(),
             OutputType::Podcasts(podcasts) => {
                 let mut output = vec![];
@@ -104,6 +132,14 @@ impl MinimalisticUiDrawer {
             }
             _ => dummy.to_stylized(),
         };
+
+        // TODO : Compute output to display here
+
+        let displayed_output = output_filter::filter_displayed_output(
+            complete_output,
+            output_pane_width,
+            output_pane_height,
+        );
 
         let output = Paragraph::new(displayed_output)
             .style(Style::default())

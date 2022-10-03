@@ -14,6 +14,7 @@ pub struct ScreenContext {
     pub command: String,
     // TODO : Replace by Option<CommandOutput>
     pub last_command_output: OutputType,
+    pub output_index: Option<usize>,
     pub logs: Arc<Mutex<Vec<String>>>,
     pub current_action: ScreenAction,
     pub ui_refresh_tickrate: Duration,
@@ -25,6 +26,7 @@ impl Default for ScreenContext {
         ScreenContext {
             command: String::from(""),
             last_command_output: OutputType::RawString(String::from("")),
+            output_index: None,
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,
             ui_refresh_tickrate: Duration::from_millis(20),
