@@ -89,15 +89,22 @@ impl<D: UiDrawer> Frontend<'_, D> {
                     {
                         Err(_) => return Ok(ActionPostEvent::DoNothing),
                         Ok(s) => {
-                            self.context.last_command_output = s.into();
+                            self.context.last_command_output = s.clone();
+                            self.context.last_formatted_command_output = s.into();
                             self.context.output_index = Some(0);
-                            //let spans =
+
                             //if output_overflow()
-                            // TODO : Transition to ScrollingLogs state if output is bigger than the pane
+                            // TODO : Transition to ScrollingLogs state if output is bigger than the pane (really ?)
                         }
                     }
                 }
-                KeyCode::Char(c) => self.context.command.push(c),
+                KeyCode::Char(c) => {
+                    if c == '²' {
+                        self.context.current_action = ScreenAction::ScrollingOutput;
+                    } else {
+                        self.context.command.push(c)
+                    }
+                }
                 KeyCode::Backspace => {
                     self.context.command.pop();
                 }
@@ -110,6 +117,15 @@ impl<D: UiDrawer> Frontend<'_, D> {
                     self.context.current_action = ScreenAction::TypingCommand
                 }
             }
+            ScreenAction::ScrollingOutput => match key_event.code {
+                KeyCode::Char(c) => {
+                    if c == '²' {
+                        self.context.current_action = ScreenAction::TypingCommand;
+                    }
+                }
+                _ => (),
+            },
+
             _ => (),
         }
 

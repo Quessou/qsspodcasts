@@ -13,7 +13,8 @@ use crate::style::stylized::VecSpans;
 /// How to prevent this struct from becoming a god class ?
 pub struct ScreenContext<'a> {
     pub command: String,
-    pub last_command_output: VecSpans<'a>, //OutputType,
+    pub last_command_output: OutputType,
+    pub last_formatted_command_output: VecSpans<'a>,
     pub output_index: Option<usize>,
     pub logs: Arc<Mutex<Vec<String>>>,
     pub current_action: ScreenAction,
@@ -25,7 +26,8 @@ impl Default for ScreenContext<'_> {
     fn default() -> Self {
         ScreenContext {
             command: String::from(""),
-            last_command_output: OutputType::RawString(String::from("")).into(),
+            last_command_output: OutputType::RawString(String::from("")),
+            last_formatted_command_output: OutputType::RawString(String::from("")).into(),
             output_index: None,
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,

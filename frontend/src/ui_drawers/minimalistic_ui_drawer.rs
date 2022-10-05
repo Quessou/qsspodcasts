@@ -96,16 +96,18 @@ impl MinimalisticUiDrawer {
         f.render_widget(podcast_progress, chunks[1]);
 
         let dummy = String::from("");
-        //let complete_output: VecSpans = context.last_command_output.clone().into();
 
         let displayed_output = output_filter::filter_displayed_output(
-            &context.last_command_output.0,
+            &context.last_formatted_command_output.0,
             output_pane_width,
             output_pane_height,
         );
 
         let output = Paragraph::new(displayed_output)
-            .style(Style::default())
+            .style(match context.current_action {
+                ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
+                _ => Style::default(),
+            })
             .block(Block::default().borders(Borders::ALL).title("Output"))
             .wrap(Wrap { trim: true });
         f.render_widget(output, chunks[2]);
