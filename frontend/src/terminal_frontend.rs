@@ -3,6 +3,8 @@ use std::sync::{mpsc::channel, Arc};
 use std::thread;
 use std::{error::Error, time::Duration};
 
+use std::cmp;
+
 use crossterm::event::KeyEvent;
 use crossterm::{
     event::{self, Event as CrosstermEvent, KeyCode},
@@ -121,6 +123,17 @@ impl<D: UiDrawer> Frontend<'_, D> {
                 KeyCode::Char(c) => {
                     if c == '²' {
                         self.context.current_action = ScreenAction::TypingCommand;
+                    }
+                }
+                KeyCode::Down => {
+                    self.context.output_index = Some(std::cmp::min(
+                        self.context.output_index.unwrap() + 1,
+                        self.context.last_formatted_command_output.0.len() - 1,
+                    ))
+                }
+                KeyCode::Up => {
+                    if self.context.output_index.unwrap_or(0) != 0 {
+                        self.context.output_index = Some(self.context.output_index.unwrap() - 1)
                     }
                 }
                 _ => (),

@@ -5,6 +5,7 @@ pub fn filter_displayed_output<'a>(
     complete_output: &'a Vec<Spans<'a>>,
     output_pane_width: usize,
     output_pane_height: usize,
+    index: usize,
 ) -> Vec<Spans<'a>> {
     if complete_output.len() == 0 {
         return vec![];
@@ -33,11 +34,16 @@ mod tests {
 
     use super::*;
 
-    #[test_case(vec![Spans::from("t")], 1, 1 => 1; "Small unique span")]
-    #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 3 => 1; "spans with line breaks that does not fit in the output")]
-    #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 4 => 2; "spans with line breaks that does fit in the output")]
-    fn test_output_filter(spans: Vec<Spans>, output_width: usize, output_height: usize) -> usize {
-        let displayed_output = filter_displayed_output(&spans, output_width, output_height);
+    #[test_case(vec![Spans::from("t")], 1, 1, 0 => 1; "Small unique span")]
+    #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 3, 0 => 1; "spans with line breaks that does not fit in the output")]
+    #[test_case(vec![Spans::from("tt"), Spans::from("tt")], 1, 4, 0 => 2; "spans with line breaks that does fit in the output")]
+    fn test_output_filter(
+        spans: Vec<Spans>,
+        output_width: usize,
+        output_height: usize,
+        index: usize,
+    ) -> usize {
+        let displayed_output = filter_displayed_output(&spans, output_width, output_height, index);
         displayed_output.len()
     }
 }

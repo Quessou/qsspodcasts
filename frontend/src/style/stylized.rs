@@ -1,6 +1,9 @@
+use command_management::output::output_type::OutputType;
 use podcast_management::data_objects::podcast::Podcast;
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
+
+// TODO : Remove this file
 
 // TODO : Move this
 pub struct VecSpans<'a>(pub Vec<Spans<'a>>);
@@ -28,18 +31,30 @@ impl From<&Vec<Podcast>> for VecSpans<'_> {
             ]);
         }
         VecSpans(spans)
-        //VecSpans(vec![
-        //    Spans::from(Span::styled::<&str>(
-        //        p.title.as_ref(),
-        //        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        //    )),
-        //    Spans::from(Span::styled::<&str>(
-        //        p.description.as_ref(),
-        //        Style::default().add_modifier(Modifier::ITALIC),
-        //    )),
-        //])
     }
 }
+
+impl From<OutputType> for VecSpans<'_> {
+    fn from(output_type: OutputType) -> Self {
+        let dummy = String::from("");
+        let complete_output: VecSpans = match &output_type {
+            OutputType::RawString(s) => s.as_str().into(),
+            OutputType::Podcasts(podcasts) => podcasts.into(),
+            _ => dummy.as_str().into(),
+        };
+        complete_output
+    }
+}
+
+//impl From<OutputType> for VecSpans<'_> {
+//    fn from(output: OutputType) -> Self {
+//        match output {
+//            OutputType::RawString(s) => s.into(),
+//            OutputType::Podcasts(p) => p.into(),
+//            _ => VecSpans(vec![]), // TODO : Implement this for PodcastEpisodes
+//        }
+//    }
+//}
 
 //pub trait Stylized {
 //    fn to_stylized(self) -> StylizedContent;

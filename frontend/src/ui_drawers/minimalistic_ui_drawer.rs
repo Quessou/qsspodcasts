@@ -11,14 +11,13 @@ use tui::{
     widgets::{Block, Borders, Gauge, List, Paragraph},
 };
 
-use crate::style::stylized::VecSpans;
+use super::output_management::output_predicates::spans_output_overflow;
+use super::output_management::vec_spans::VecSpans;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
 use super::ui_drawer;
-
-use super::output_management::output_filter;
 
 pub struct MinimalisticUiDrawer {}
 
@@ -95,13 +94,18 @@ impl MinimalisticUiDrawer {
             .percent(percentage.into());
         f.render_widget(podcast_progress, chunks[1]);
 
-        let dummy = String::from("");
-
-        let displayed_output = output_filter::filter_displayed_output(
+        let display_starting_index: usize = if !spans_output_overflow(
             &context.last_formatted_command_output.0,
             output_pane_width,
             output_pane_height,
-        );
+        ) {
+            0
+        } else {
+            context.output_index.unwrap_or(0)
+        };
+
+        let displayed_output =
+            context.last_formatted_command_output.0[display_starting_index..].to_vec();
 
         let output = Paragraph::new(displayed_output)
             .style(match context.current_action {

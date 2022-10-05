@@ -4,8 +4,8 @@ use std::time::Duration;
 use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
+use super::ui_drawers::output_management::vec_spans::VecSpans;
 use crate::screen_action::ScreenAction;
-use crate::style::stylized::VecSpans;
 
 /// TODO : Find a better way to store these data ?
 /// Page system for logs & outputs ?
