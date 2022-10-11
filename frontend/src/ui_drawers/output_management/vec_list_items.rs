@@ -49,7 +49,7 @@ impl ListItemFactory {
         ListItemFactory { available_width }
     }
 
-    pub fn build_from_podcast(&self, podcast: Podcast) -> ListItem {
+    pub fn build_from_podcast(&self, podcast: &Podcast) -> ListItem {
         let vec_spans = iter::once(Spans::from(Span::styled::<String>(
             podcast.title.clone(),
             Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),

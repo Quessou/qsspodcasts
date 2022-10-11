@@ -110,7 +110,13 @@ impl MinimalisticUiDrawer {
         let empty_string: String = "".to_string();
         assert!(context.last_command_output == OutputType::RawString(empty_string));
 
-        Paragraph::new(vec![])
+        let content = if let OutputType::RawString(ref s) = &context.last_command_output {
+            s.clone()
+        } else {
+            String::default()
+        };
+
+        Paragraph::new(content)
             .style(match context.current_action {
                 ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
@@ -120,16 +126,13 @@ impl MinimalisticUiDrawer {
     }
 
     fn build_output_field_list(context: &ScreenContext, available_width: usize) -> List {
-        //let list_item_factory = ListItemFactory::new(available_width);
+        let list_item_factory = ListItemFactory::new(available_width);
 
         let last_command_output = match context.last_command_output {
             OutputType::Episodes(ref episodes) => unimplemented!(),
             OutputType::Podcasts(ref podcasts) => podcasts
                 .iter()
-                .map(move |p| {
-                    let l = build_list_item_from_podcast(p, available_width);
-                    return l;
-                })
+                .map(move |p| build_list_item_from_podcast(p, available_width))
                 .collect::<Vec<ListItem>>(),
             _ => unimplemented!(),
         };
