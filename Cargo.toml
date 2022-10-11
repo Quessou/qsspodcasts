@@ -10,5 +10,7 @@ members = [
 	"podcast_player",
 	"path_providing",
 	"frontend",
-	"abstract_frontend"
+	"abstract_frontend",
+	"str_to_lines",
+	"tui_rs_spans_to_lines"
 ]

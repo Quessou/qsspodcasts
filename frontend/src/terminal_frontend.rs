@@ -1,10 +1,14 @@
+use std::cell::RefCell;
 use std::io::stdout;
+use std::process::Output;
 use std::sync::{mpsc::channel, Arc};
 use std::thread;
 use std::{error::Error, time::Duration};
 
 use std::cmp;
 
+use command_management::output;
+use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
     event::{self, Event as CrosstermEvent, KeyCode},
@@ -28,26 +32,28 @@ use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
 
+use tui::widgets::ListState;
+
 /// TODO : Find a better name
 enum ActionPostEvent {
     DoNothing,
     Quit,
 }
 
-pub struct Frontend<'a, D: UiDrawer> {
+pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_engine: Arc<TokioMutex<CommandEngine>>,
-    context: ScreenContext<'a>,
+    context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
 }
 
-impl<D: UiDrawer> Frontend<'_, D> {
+impl<D: UiDrawer> Frontend<D> {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
-    ) -> Frontend<'static, D> {
+    ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();
@@ -91,18 +97,23 @@ impl<D: UiDrawer> Frontend<'_, D> {
                     {
                         Err(_) => return Ok(ActionPostEvent::DoNothing),
                         Ok(s) => {
+                            // TODO
                             self.context.last_command_output = s.clone();
-                            self.context.last_formatted_command_output = s.into();
-                            self.context.output_index = Some(0);
-
-                            //if output_overflow()
-                            // TODO : Transition to ScrollingLogs state if output is bigger than the pane (really ?)
+                            if let OutputType::RawString(_) = s {
+                                self.context.list_output_state = None;
+                            } else {
+                                self.context.list_output_state =
+                                    Some(RefCell::new(ListState::default()));
+                            }
                         }
                     }
                 }
                 KeyCode::Char(c) => {
                     if c == '²' {
-                        self.context.current_action = ScreenAction::ScrollingOutput;
+                        if self.context.last_command_output != OutputType::RawString("".to_string())
+                        {
+                            self.context.current_action = ScreenAction::ScrollingOutput;
+                        }
                     } else {
                         self.context.command.push(c)
                     }
@@ -126,14 +137,41 @@ impl<D: UiDrawer> Frontend<'_, D> {
                     }
                 }
                 KeyCode::Down => {
-                    self.context.output_index = Some(std::cmp::min(
-                        self.context.output_index.unwrap() + 1,
-                        self.context.last_formatted_command_output.0.len() - 1,
-                    ))
+                    if let Some(ref state) = self.context.list_output_state {
+                        let output_length = match self.context.last_command_output {
+                            OutputType::Episodes(ref v) => v.len(),
+                            OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::RawString(_) => 0,
+                        };
+
+                        let mut state = state.borrow_mut();
+                        let selected_index = match state.selected() {
+                            Some(i) => (i + 1) % output_length,
+                            None => 0,
+                        };
+                        state.select(Some(selected_index));
+                    }
                 }
                 KeyCode::Up => {
-                    if self.context.output_index.unwrap_or(0) != 0 {
-                        self.context.output_index = Some(self.context.output_index.unwrap() - 1)
+                    if let Some(ref state) = self.context.list_output_state {
+                        let output_length = match self.context.last_command_output {
+                            OutputType::Episodes(ref v) => v.len(),
+                            OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::RawString(_) => 0,
+                        };
+
+                        let mut state = state.borrow_mut();
+                        let selected_index = match state.selected() {
+                            Some(i) => {
+                                if i == 0 {
+                                    output_length - 1
+                                } else {
+                                    i - 1
+                                }
+                            }
+                            None => 0,
+                        };
+                        state.select(Some(selected_index));
                     }
                 }
                 _ => (),
