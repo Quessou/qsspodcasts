@@ -17,7 +17,8 @@ use tui::{
 
 use super::output_management::output_predicates::spans_output_overflow;
 use super::output_management::vec_list_items::{
-    build_list_item_from_podcast, ListItemFactory, VecListItems,
+    build_list_item_from_podcast,
+    ListItemFactory, //VecListItems,
 };
 use super::output_management::vec_spans::VecSpans;
 
@@ -152,6 +153,7 @@ impl MinimalisticUiDrawer {
 
     fn draw_main_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
+        let minimal_width: u16 = 15;
 
         // Defining screen layout
         let chunks = MinimalisticUiDrawer::build_screen_layout(context, &size);
@@ -160,7 +162,10 @@ impl MinimalisticUiDrawer {
         f.render_widget(input, chunks[0]);
 
         let podcast_progress = MinimalisticUiDrawer::build_podcast_progress_bar(context);
-        f.render_widget(podcast_progress, chunks[1]);
+
+        if chunks[1].width > minimal_width {
+            f.render_widget(podcast_progress, chunks[1]);
+        }
 
         let output_layout = MinimalisticUiDrawer::build_output_layout(context, &chunks[2]);
 
