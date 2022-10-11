@@ -1,14 +1,19 @@
 use super::podcast_episode::PodcastEpisode;
 use rss::Image;
 
-#[derive(Debug)]
+//use crate::style::{
+//    color::Color,
+//    stylized::{Style, Stylized, StylizedContent},
+//};
+
+#[derive(Debug, Clone)]
 pub struct Podcast {
-    _title: String,
-    _link: String,
-    _description: String,
-    _copyright: Option<String>,
-    _pub_date: Option<String>,
-    _image: Option<Image>,
+    pub title: String,
+    pub link: String,
+    pub description: String,
+    copyright: Option<String>,
+    pub_date: Option<String>,
+    image: Option<Image>,
     pub episodes: Vec<PodcastEpisode>,
 }
 
@@ -23,13 +28,25 @@ impl Podcast {
         episodes: Vec<PodcastEpisode>,
     ) -> Podcast {
         Podcast {
-            _title: title.to_string(),
-            _link: link.to_string(),
-            _description: description.to_string(),
-            _copyright: copyright,
-            _pub_date: pub_date,
-            _image: image,
+            title: title.to_string(),
+            link: link.to_string(),
+            description: description.to_string(),
+            copyright,
+            pub_date,
+            image,
             episodes,
         }
+    }
+
+    pub fn shallow_copy(&self) -> Podcast {
+        Podcast::new(
+            &self.title,
+            &self.link,
+            &self.description,
+            self.copyright.clone(),
+            self.pub_date.clone(),
+            self.image.clone(),
+            vec![],
+        )
     }
 }

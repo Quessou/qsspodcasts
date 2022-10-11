@@ -1,5 +1,5 @@
 [package]
-name = "frontend"
+name = "tui_rs_spans_to_lines"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,12 +8,6 @@ edition = "2021"
 [dependencies]
 tui = { version = "0.15", features = ["crossterm"], default-features = false }
 crossterm = "0.19"
-tokio = { version = "1.17.0", features = ["full"] }
-command_management = { path = "../command_management" }
-podcast_player = { path = "../podcast_player" }
-podcast_management = { path = "../podcast_management" }
-log = "0.4.17"
-simple_logger = "2.1.0"
 str_to_lines = { path = "../str_to_lines" }
 
 [dev-dependencies]

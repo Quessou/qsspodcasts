@@ -1,8 +1,14 @@
+use std::cell::RefCell;
 use std::io::stdout;
+use std::process::Output;
 use std::sync::{mpsc::channel, Arc};
 use std::thread;
 use std::{error::Error, time::Duration};
 
+use std::cmp;
+
+use command_management::output;
+use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
     event::{self, Event as CrosstermEvent, KeyCode},
@@ -10,6 +16,7 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use log::info;
+
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
@@ -24,6 +31,8 @@ use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
+
+use tui::widgets::ListState;
 
 /// TODO : Find a better name
 enum ActionPostEvent {
@@ -87,10 +96,28 @@ impl<D: UiDrawer> Frontend<D> {
                         .await
                     {
                         Err(_) => return Ok(ActionPostEvent::DoNothing),
-                        Ok(s) => self.context.last_command_output = s,
+                        Ok(s) => {
+                            // TODO
+                            self.context.last_command_output = s.clone();
+                            if let OutputType::RawString(_) = s {
+                                self.context.list_output_state = None;
+                            } else {
+                                self.context.list_output_state =
+                                    Some(RefCell::new(ListState::default()));
+                            }
+                        }
                     }
                 }
-                KeyCode::Char(c) => self.context.command.push(c),
+                KeyCode::Char(c) => {
+                    if c == '²' {
+                        if self.context.last_command_output != OutputType::RawString("".to_string())
+                        {
+                            self.context.current_action = ScreenAction::ScrollingOutput;
+                        }
+                    } else {
+                        self.context.command.push(c)
+                    }
+                }
                 KeyCode::Backspace => {
                     self.context.command.pop();
                 }
@@ -103,6 +130,53 @@ impl<D: UiDrawer> Frontend<D> {
                     self.context.current_action = ScreenAction::TypingCommand
                 }
             }
+            ScreenAction::ScrollingOutput => match key_event.code {
+                KeyCode::Char(c) => {
+                    if c == '²' {
+                        self.context.current_action = ScreenAction::TypingCommand;
+                    }
+                }
+                KeyCode::Down => {
+                    if let Some(ref state) = self.context.list_output_state {
+                        let output_length = match self.context.last_command_output {
+                            OutputType::Episodes(ref v) => v.len(),
+                            OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::RawString(_) => 0,
+                        };
+
+                        let mut state = state.borrow_mut();
+                        let selected_index = match state.selected() {
+                            Some(i) => (i + 1) % output_length,
+                            None => 0,
+                        };
+                        state.select(Some(selected_index));
+                    }
+                }
+                KeyCode::Up => {
+                    if let Some(ref state) = self.context.list_output_state {
+                        let output_length = match self.context.last_command_output {
+                            OutputType::Episodes(ref v) => v.len(),
+                            OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::RawString(_) => 0,
+                        };
+
+                        let mut state = state.borrow_mut();
+                        let selected_index = match state.selected() {
+                            Some(i) => {
+                                if i == 0 {
+                                    output_length - 1
+                                } else {
+                                    i - 1
+                                }
+                            }
+                            None => 0,
+                        };
+                        state.select(Some(selected_index));
+                    }
+                }
+                _ => (),
+            },
+
             _ => (),
         }
 
@@ -155,7 +229,7 @@ impl<D: UiDrawer> Frontend<D> {
         let (tx, rx) = channel();
         thread::spawn(move || {
             let input_polling_rate = Duration::from_millis(50);
-            log::error!("Launching input polling thread");
+            log::info!("Launching input polling thread");
             loop {
                 if crossterm::event::poll(input_polling_rate).unwrap() {
                     let event = Some(event::read().unwrap());

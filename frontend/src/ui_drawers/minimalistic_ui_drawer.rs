@@ -1,17 +1,29 @@
+use std::default;
+
+use command_management::output::output_type::OutputType;
+use log::error;
+use podcast_management::data_objects::podcast::Podcast;
 use podcast_player::player_status::PlayerStatus;
 use tui::backend::Backend;
-use tui::layout::Corner;
+use tui::layout::{Corner, Rect};
+use tui::style::Modifier;
 use tui::text::{Span, Spans};
-use tui::widgets::ListItem;
 use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, Gauge, List, Paragraph},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Widget, Wrap},
 };
+
+use super::output_management::output_predicates::spans_output_overflow;
+use super::output_management::vec_list_items::{
+    build_list_item_from_podcast, ListItemFactory, VecListItems,
+};
+use super::output_management::vec_spans::VecSpans;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
+use crate::ui_drawers::output_management::output_filter::filter_displayed_output;
 
 use super::ui_drawer;
 
@@ -43,11 +55,8 @@ impl MinimalisticUiDrawer {
         f.render_widget(log_output, chunk);
     }
 
-    fn draw_main_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
-        let size = f.size();
-
-        // Defining screen layout
-        let chunks = Layout::default()
+    fn build_screen_layout(_context: &ScreenContext, size: &Rect) -> Vec<Rect> {
+        Layout::default()
             .direction(Direction::Vertical)
             .margin(2)
             .constraints(
@@ -58,16 +67,23 @@ impl MinimalisticUiDrawer {
                 ]
                 .as_ref(),
             )
-            .split(size);
+            .split(*size)
+    }
 
-        let input = Paragraph::new(context.command.as_ref())
+    fn build_input_field(context: &ScreenContext) -> Paragraph {
+        Paragraph::new(context.command.as_ref())
             .style(match context.current_action {
                 ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
             })
-            .block(Block::default().borders(Borders::ALL).title("Command"));
-        f.render_widget(input, chunks[0]);
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(vec![Span::from("Command")]),
+            )
+    }
 
+    fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
         let empty_string = String::from(""); // Isn't there something better to do here ?
         let (progress, duration, percentage) = match status {
@@ -76,17 +92,114 @@ impl MinimalisticUiDrawer {
             PlayerStatus::Stopped => (&empty_string, &empty_string, 0),
         };
 
-        let podcast_progress = Gauge::default()
+        Gauge::default()
             .block(Block::default().title("").borders(Borders::ALL))
             .gauge_style(Style::default().fg(Color::LightYellow))
             .label(format!("{progress}/{duration}"))
-            .percent(percentage.into());
+            .percent(percentage.into())
+    }
+
+    fn build_output_layout(_context: &ScreenContext, size: &Rect) -> Vec<Rect> {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(1), Constraint::Max(1)].as_ref())
+            .split(*size)
+    }
+
+    fn build_output_field_paragraph(context: &ScreenContext) -> Paragraph {
+        let empty_string: String = "".to_string();
+        assert!(context.last_command_output == OutputType::RawString(empty_string));
+
+        let content = if let OutputType::RawString(ref s) = &context.last_command_output {
+            s.clone()
+        } else {
+            String::default()
+        };
+
+        Paragraph::new(content)
+            .style(match context.current_action {
+                ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
+                _ => Style::default(),
+            })
+            .block(Block::default().borders(Borders::ALL).title("Output"))
+            .wrap(Wrap { trim: true })
+    }
+
+    fn build_output_field_list(context: &ScreenContext, available_width: usize) -> List {
+        let list_item_factory = ListItemFactory::new(available_width);
+
+        let last_command_output = match context.last_command_output {
+            OutputType::Episodes(ref episodes) => unimplemented!(),
+            OutputType::Podcasts(ref podcasts) => podcasts
+                .iter()
+                .map(move |p| build_list_item_from_podcast(p, available_width))
+                .collect::<Vec<ListItem>>(),
+            _ => unimplemented!(),
+        };
+
+        List::new(last_command_output)
+            .style(match context.current_action {
+                ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
+                _ => Style::default(),
+            })
+            .block(Block::default().borders(Borders::ALL).title("Output"))
+            .highlight_style(
+                Style::default()
+                    .bg(Color::LightMagenta)
+                    .add_modifier(Modifier::ITALIC),
+            )
+    }
+
+    fn draw_main_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+        let size = f.size();
+
+        // Defining screen layout
+        let chunks = MinimalisticUiDrawer::build_screen_layout(context, &size);
+
+        let input = MinimalisticUiDrawer::build_input_field(context);
+        f.render_widget(input, chunks[0]);
+
+        let podcast_progress = MinimalisticUiDrawer::build_podcast_progress_bar(context);
         f.render_widget(podcast_progress, chunks[1]);
 
-        let output = Paragraph::new(context.last_command_output.as_ref())
-            .style(Style::default())
-            .block(Block::default().borders(Borders::ALL).title("Output"));
-        f.render_widget(output, chunks[2]);
+        let output_layout = MinimalisticUiDrawer::build_output_layout(context, &chunks[2]);
+
+        if context.last_command_output == OutputType::RawString("".to_string()) {
+            let output_paragraph = MinimalisticUiDrawer::build_output_field_paragraph(context);
+            f.render_widget(output_paragraph, output_layout[0]);
+        } else {
+            let available_width: usize = output_layout[0].width.into();
+            let output_list =
+                MinimalisticUiDrawer::build_output_field_list(context, available_width);
+            f.render_stateful_widget(
+                output_list,
+                output_layout[0],
+                &mut context
+                    .list_output_state
+                    .as_ref()
+                    .unwrap()
+                    .try_borrow_mut()
+                    .unwrap(),
+            )
+        }
+
+        //if false {
+        //    let progress_bar_height = chunks[2].height - 2;
+        //    let mut progress_bar_string = String::from("");
+        //    let progress_ratio = display_starting_index * usize::from(progress_bar_height)
+        //        / context.last_formatted_command_output.0.len();
+        //    progress_bar_string = "\n".repeat(progress_ratio);
+        //    let content_ratio = displayed_output_length * usize::from(progress_bar_height)
+        //        / context.last_formatted_command_output.0.len();
+        //    progress_bar_string += &String::from("#".repeat(content_ratio));
+        //    error!("{}", progress_bar_string);
+        //
+        //    let output_progress_bar = Paragraph::new(progress_bar_string)
+        //        .style(Style::default().bg(Color::Gray).fg(Color::Black))
+        //        .block(Block::default().borders(Borders::TOP | Borders::BOTTOM))
+        //        .wrap(Wrap { trim: true });
+        //    f.render_widget(output_progress_bar, output_layout[1]);
+        //}
     }
 }
 

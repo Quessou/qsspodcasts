@@ -1,5 +1,6 @@
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
+use crate::output::output_type::OutputType;
 
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -23,28 +24,39 @@ impl CommandExecutor {
         }
     }
 
-    async fn handle_play(&self, _: Command) -> Result<String, CommandError> {
+    async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
         }
-        Ok("Player launched".to_string())
+        let return_message = String::from("Player launched");
+        Ok(OutputType::RawString(return_message))
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<String, CommandError> {
+    async fn handle_pause(&self, _: Command) -> Result<OutputType, CommandError> {
         let mut mp3_player = self.mp3_player.lock().await;
         if !mp3_player.is_paused() {
             mp3_player.pause();
         }
-        Ok("Player paused".to_string())
+        let return_message = String::from("Player paused");
+        Ok(OutputType::RawString(return_message))
     }
 
+    async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
+        let mut podcast_library = self.podcast_library.lock().await;
+        let podcasts = &podcast_library.podcasts;
+
+        let podcasts = podcasts.iter().map(|p| p.shallow_copy()).collect();
+
+        Ok(OutputType::Podcasts(podcasts))
+    }
     /// Executes command
-    pub async fn execute_command(&mut self, command: Command) -> Result<String, CommandError> {
-        let return_message: String = match command {
+    pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
+        let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
-            Command::Exit => return Ok(String::from("Exiting")),
+            Command::Exit => OutputType::RawString(String::from("Exiting")),
+            Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             _ => {
                 return Err(CommandError::new(
                     None,
@@ -54,7 +66,8 @@ impl CommandExecutor {
                 ))
             }
         };
-        Ok(return_message)
+
+        Ok(command_output)
     }
 }
 
