@@ -199,14 +199,14 @@ impl<D: UiDrawer> Frontend<D> {
             true => match player_exposer.get_selected_episode_progression().await {
                 None => PlayerStatus::Stopped,
                 Some(_) => PlayerStatus::Paused(
-                    episode_progression.unwrap().to_string(),
-                    episode_duration.unwrap().to_string(),
+                    episode_progression.unwrap(),
+                    episode_duration.unwrap(),
                     progression_percentage.unwrap(),
                 ),
             },
             false => PlayerStatus::Playing(
-                episode_progression.unwrap().to_string(),
-                episode_duration.unwrap().to_string(),
+                episode_progression.unwrap(),
+                episode_duration.unwrap(),
                 progression_percentage.unwrap(),
             ),
         };

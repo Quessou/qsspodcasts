@@ -101,7 +101,7 @@ mod tests {
     #[test]
     pub fn test_executor_instanciation() -> Result<(), String> {
         let mp3_player = instanciate_mock_mp3_player();
-        let executor = instanciate_executor(mp3_player);
+        let _executor = instanciate_executor(mp3_player);
         Ok(())
     }
 

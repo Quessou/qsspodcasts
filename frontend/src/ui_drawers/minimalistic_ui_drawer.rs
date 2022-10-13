@@ -1,4 +1,5 @@
 use command_management::output::output_type::OutputType;
+use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
@@ -75,11 +76,12 @@ impl MinimalisticUiDrawer {
 
     fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
-        let empty_string = String::from(""); // Isn't there something better to do here ?
+
+        let default_duration = DurationWrapper::default();
         let (progress, duration, percentage) = match status {
             PlayerStatus::Playing(prog, dur, perc) => (prog, dur, *perc),
             PlayerStatus::Paused(prog, dur, perc) => (prog, dur, *perc),
-            PlayerStatus::Stopped => (&empty_string, &empty_string, 0),
+            PlayerStatus::Stopped => (&default_duration, &default_duration, 0),
         };
 
         Gauge::default()
