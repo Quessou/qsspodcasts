@@ -1,10 +1,8 @@
+use super::hashable::Hashable;
 use super::podcast_episode::PodcastEpisode;
+use hex;
 use rss::Image;
-
-//use crate::style::{
-//    color::Color,
-//    stylized::{Style, Stylized, StylizedContent},
-//};
+use sha1::{Digest, Sha1};
 
 #[derive(Debug, Clone)]
 pub struct Podcast {
@@ -48,5 +46,39 @@ impl Podcast {
             self.image.clone(),
             vec![],
         )
+    }
+}
+
+impl Hashable for Podcast {
+    fn hash(&self) -> String {
+        let mut hasher = Sha1::new();
+        hasher.update(self.title.as_bytes());
+        hasher.update(self.description.as_bytes());
+        let d: [u8; 3] = TryFrom::try_from(&hasher.finalize()[17..]).unwrap();
+        let hash: String = hex::encode(d);
+        hash
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn get_dummy_podcast(title: &str, link: &str, description: &str) -> Podcast {
+        Podcast::new(title, link, description, None, None, None, vec![])
+    }
+
+    #[test]
+    fn test_hash_equals() {
+        let p1 = get_dummy_podcast("title", "https://www.google.com", "description");
+        let p2 = p1.clone();
+        assert_eq!(p1.hash(), p2.hash())
+    }
+
+    #[test]
+    fn test_hash_not_equals() {
+        let p1 = get_dummy_podcast("title", "https://www.google.com", "description");
+        let p2 = get_dummy_podcast("title2", "https://www.google.com", "description");
+        assert_ne!(p1.hash(), p2.hash())
     }
 }

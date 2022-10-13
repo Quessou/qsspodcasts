@@ -1,4 +1,8 @@
 use rss::Guid;
+use sha1::Digest;
+use sha1::Sha1;
+
+use super::hashable::Hashable;
 
 #[derive(Debug, Clone)]
 pub struct PodcastEpisode {
@@ -88,5 +92,16 @@ impl Default for PodcastEpisode {
             "",
             &None,
         )
+    }
+}
+
+impl Hashable for PodcastEpisode {
+    fn hash(&self) -> String {
+        let mut hasher = Sha1::new();
+        hasher.update(self.title.as_bytes());
+        hasher.update(self.description.as_bytes());
+        let d: [u8; 3] = TryFrom::try_from(&hasher.finalize()[17..]).unwrap();
+        let hash: String = hex::encode(d);
+        hash
     }
 }
