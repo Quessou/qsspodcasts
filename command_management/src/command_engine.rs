@@ -69,7 +69,7 @@ mod tests {
     fn test_engine_instanciation() -> Result<(), String> {
         let player = MockMp3Player::new();
         let library = PodcastLibrary::new();
-        let engine = instanciate_engine(
+        let _engine = instanciate_engine(
             Arc::new(TokioMutex::new(player)),
             Arc::new(TokioMutex::new(library)),
         );

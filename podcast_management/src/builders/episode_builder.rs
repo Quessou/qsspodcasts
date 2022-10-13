@@ -11,7 +11,6 @@ impl EpisodeBuilder {
 
 #[cfg(test)]
 mod test {
-    use rss::Enclosure;
 
     fn build_dummy_category(name: &str, domain: &str) -> rss::Category {
         let mut category = rss::Category::default();

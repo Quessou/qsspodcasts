@@ -1,10 +1,8 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use gstreamer::ClockTime;
 use gstreamer_player::{self, Player as GStreamerInnerPlayer};
-use log::error;
 
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
@@ -74,7 +72,7 @@ impl Mp3Player for GStreamerMp3Player {
             return None;
         }
 
-        let duration = self.player.duration().unwrap_or(ClockTime::default());
+        let duration = self.player.duration().unwrap_or_default();
 
         let duration = Duration::new(duration.seconds(), 0);
         Some(DurationWrapper::new(duration))
@@ -85,7 +83,7 @@ impl Mp3Player for GStreamerMp3Player {
             return None;
         }
 
-        let progression = self.player.position().unwrap_or(ClockTime::default());
+        let progression = self.player.position().unwrap_or_default();
 
         let progression = Duration::new(progression.seconds(), 0);
         Some(DurationWrapper::new(progression))

@@ -1,13 +1,9 @@
 use std::cell::RefCell;
 use std::io::stdout;
-use std::process::Output;
 use std::sync::{mpsc::channel, Arc};
 use std::thread;
 use std::{error::Error, time::Duration};
 
-use std::cmp;
-
-use command_management::output;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
@@ -15,10 +11,8 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use log::info;
 
 use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::sleep as tokio_sleep;
@@ -176,8 +170,6 @@ impl<D: UiDrawer> Frontend<D> {
                 }
                 _ => (),
             },
-
-            _ => (),
         }
 
         Ok(ActionPostEvent::DoNothing)
@@ -207,14 +199,14 @@ impl<D: UiDrawer> Frontend<D> {
             true => match player_exposer.get_selected_episode_progression().await {
                 None => PlayerStatus::Stopped,
                 Some(_) => PlayerStatus::Paused(
-                    episode_progression.unwrap().to_string(),
-                    episode_duration.unwrap().to_string(),
+                    episode_progression.unwrap(),
+                    episode_duration.unwrap(),
                     progression_percentage.unwrap(),
                 ),
             },
             false => PlayerStatus::Playing(
-                episode_progression.unwrap().to_string(),
-                episode_duration.unwrap().to_string(),
+                episode_progression.unwrap(),
+                episode_duration.unwrap(),
                 progression_percentage.unwrap(),
             ),
         };

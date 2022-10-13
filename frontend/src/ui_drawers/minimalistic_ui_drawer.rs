@@ -1,8 +1,5 @@
-use std::default;
-
 use command_management::output::output_type::OutputType;
-use log::error;
-use podcast_management::data_objects::podcast::Podcast;
+use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
@@ -12,20 +9,13 @@ use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Widget, Wrap},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
 };
-
-use super::output_management::output_predicates::spans_output_overflow;
-use super::output_management::vec_list_items::{
-    build_list_item_from_podcast,
-    ListItemFactory, //VecListItems,
-};
-use super::output_management::vec_spans::VecSpans;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
-use crate::ui_drawers::output_management::output_filter::filter_displayed_output;
 
+use super::output_management::vec_list_items::build_list_item_from_podcast;
 use super::ui_drawer;
 
 pub struct MinimalisticUiDrawer {}
@@ -86,11 +76,12 @@ impl MinimalisticUiDrawer {
 
     fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
-        let empty_string = String::from(""); // Isn't there something better to do here ?
+
+        let default_duration = DurationWrapper::default();
         let (progress, duration, percentage) = match status {
             PlayerStatus::Playing(prog, dur, perc) => (prog, dur, *perc),
             PlayerStatus::Paused(prog, dur, perc) => (prog, dur, *perc),
-            PlayerStatus::Stopped => (&empty_string, &empty_string, 0),
+            PlayerStatus::Stopped => (&default_duration, &default_duration, 0),
         };
 
         Gauge::default()
@@ -127,10 +118,8 @@ impl MinimalisticUiDrawer {
     }
 
     fn build_output_field_list(context: &ScreenContext, available_width: usize) -> List {
-        let list_item_factory = ListItemFactory::new(available_width);
-
         let last_command_output = match context.last_command_output {
-            OutputType::Episodes(ref episodes) => unimplemented!(),
+            OutputType::Episodes(ref _episodes) => unimplemented!(),
             OutputType::Podcasts(ref podcasts) => podcasts
                 .iter()
                 .map(move |p| build_list_item_from_podcast(p, available_width))
