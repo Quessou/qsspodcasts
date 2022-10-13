@@ -10,35 +10,35 @@ use str_to_lines::str_linesplit::str_to_lines;
 #[derive(PartialEq, Debug)]
 pub struct VecListItems<'a>(pub Vec<ListItem<'a>>);
 
-impl From<&Vec<Podcast>> for VecListItems<'_> {
-    fn from(podcasts: &Vec<Podcast>) -> Self {
-        let mut items = vec![];
-        for podcast in podcasts.iter() {
-            items.push(ListItem::new(vec![
-                Spans::from(Span::styled::<String>(
-                    podcast.title.clone(),
-                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-                )),
-                Spans::from(Span::styled::<String>(
-                    podcast.description.clone(),
-                    Style::default().add_modifier(Modifier::ITALIC),
-                )),
-            ]));
-        }
-        VecListItems(items)
-    }
-}
-
-impl From<&OutputType> for VecListItems<'_> {
-    fn from(output: &OutputType) -> Self {
-        match output {
-            OutputType::RawString(_) => VecListItems(vec![]),
-            OutputType::Podcasts(p) => p.into(),
-            _ => VecListItems(vec![]), // TODO : Implement this for PodcastEpisodes
-        }
-    }
-}
-
+//impl From<&Vec<Podcast>> for VecListItems<'_> {
+//    fn from(podcasts: &Vec<Podcast>) -> Self {
+//        let mut items = vec![];
+//        for podcast in podcasts.iter() {
+//            items.push(ListItem::new(vec![
+//                Spans::from(Span::styled::<String>(
+//                    podcast.title.clone(),
+//                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+//                )),
+//                Spans::from(Span::styled::<String>(
+//                    podcast.description.clone(),
+//                    Style::default().add_modifier(Modifier::ITALIC),
+//                )),
+//            ]));
+//        }
+//        VecListItems(items)
+//    }
+//}
+//
+//impl From<&OutputType> for VecListItems<'_> {
+//    fn from(output: &OutputType) -> Self {
+//        match output {
+//            OutputType::RawString(_) => VecListItems(vec![]),
+//            OutputType::Podcasts(p) => p.into(),
+//            _ => VecListItems(vec![]), // TODO : Implement this for PodcastEpisodes
+//        }
+//    }
+//}
+//
 #[derive(Clone)]
 pub struct ListItemFactory {
     available_width: usize,
