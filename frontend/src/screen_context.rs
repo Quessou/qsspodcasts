@@ -1,4 +1,3 @@
-use std::cell::Cell;
 use std::cell::RefCell;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -6,7 +5,6 @@ use std::time::Duration;
 use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
-use super::ui_drawers::output_management::vec_spans::VecSpans;
 use crate::screen_action::ScreenAction;
 
 use tui::widgets::ListState;
@@ -33,7 +31,6 @@ impl Default for ScreenContext {
             command: String::from(""),
             last_command_output: OutputType::RawString(String::from("")),
             list_output_state: None,
-            //last_formatted_command_output: OutputType::RawString(String::from("")).into(),
             output_index: None,
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,

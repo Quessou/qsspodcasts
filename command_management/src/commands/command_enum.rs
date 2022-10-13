@@ -1,3 +1,4 @@
+#[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Command {
     Play,

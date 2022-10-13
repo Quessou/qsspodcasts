@@ -1,10 +1,9 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use gstreamer::ClockTime;
 use gstreamer_player::{self, Player as GStreamerInnerPlayer};
-use log::error;
 
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;

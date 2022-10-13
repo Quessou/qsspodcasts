@@ -1,37 +1,3 @@
-//pub fn str_to_lines(input: &str, line_width: usize) -> Vec<String> {
-//    vec![]
-//}
-
-//pub fn str_to_lines(input: &str, line_width: usize) -> Vec<String> {
-//    let mut lines: Vec<String> = input
-//        .trim_start()
-//        .split("\n")
-//        .map(String::from)
-//        .collect::<_>();
-//    lines = lines.iter().map(|s| String::from(s.trim_start())).collect();
-//    let mut i: usize = 0;
-//    while i < lines.len() {
-//        let mut l = &lines[i];
-//        while l.len() > line_width {
-//            let last_space_index = l[..line_width + 1].rfind(" ");
-//            let mut last_space_index: usize = 0;
-//
-//            if last_space_index == None {
-//                break;
-//            }
-//
-//            let first_line: String = String::from(&l[0..last_space_index.unwrap()]);
-//            let second_line: String = String::from(&l[last_space_index.unwrap() + 1..]);
-//            lines[i] = first_line;
-//            lines.insert(i + 1, second_line);
-//            l = &lines[i];
-//        }
-//        i += 1;
-//    }
-//
-//    lines
-//}
-
 fn get_line_width(line: &Vec<&str>) -> usize {
     if line.len() == 0 {
         return 0;

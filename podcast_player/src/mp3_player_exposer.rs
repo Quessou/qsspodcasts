@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::duration_wrapper::DurationWrapper;
-use crate::players::mp3_player::{self, Mp3Player};
+use crate::players::mp3_player::Mp3Player;
 
 /// Class that wraps an object implementing the Mp3Player trait and exposes only methods that allow
 /// to retrieve data that are displayable on a user interface

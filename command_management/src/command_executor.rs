@@ -43,7 +43,7 @@ impl CommandExecutor {
     }
 
     async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut podcast_library = self.podcast_library.lock().await;
+        let podcast_library = self.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let podcasts = podcasts.iter().map(|p| p.shallow_copy()).collect();
