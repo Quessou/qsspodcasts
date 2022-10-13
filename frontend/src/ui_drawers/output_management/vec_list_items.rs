@@ -1,5 +1,6 @@
 // TODO : Rename me
 
+use podcast_management::data_objects::hashable::Hashable;
 use podcast_management::data_objects::podcast::Podcast;
 use tui::style::{Color, Modifier, Style};
 use tui::text::{Span, Spans};
@@ -16,6 +17,18 @@ pub fn build_list_item_from_podcast(podcast: &Podcast, available_width: usize) -
         podcast.title.clone(),
         Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
     )));
+
+    let hash_display = iter::once(Spans::from(vec![
+        Span::from("["),
+        Span::styled(
+            podcast.hash(),
+            Style::default()
+                .add_modifier(Modifier::BOLD)
+                .fg(Color::LightGreen),
+        ),
+        Span::from("]"),
+    ]));
+    let vec_spans = vec_spans.chain(hash_display);
 
     let description_style = Style::default().add_modifier(Modifier::ITALIC);
 
