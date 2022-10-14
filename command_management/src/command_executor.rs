@@ -2,6 +2,7 @@ use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
 
+use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
 
@@ -50,13 +51,25 @@ impl CommandExecutor {
 
         Ok(OutputType::Podcasts(podcasts))
     }
-    /// Executes command
+
+    async fn handle_list_episodes(&self, _: Command) -> Result<OutputType, CommandError> {
+        let podcast_library = self.podcast_library.lock().await;
+        let podcasts = &podcast_library.podcasts;
+
+        let mut episodes: Vec<PodcastEpisode> =
+            podcasts.iter().flat_map(|p| p.episodes.clone()).collect();
+        episodes.sort_by(|p1, p2| p1.pub_date.cmp(&p2.pub_date).reverse());
+
+        Ok(OutputType::Episodes(episodes))
+    }
+
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
             Command::Exit => OutputType::RawString(String::from("Exiting")),
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
+            Command::ListEpisodes => self.handle_list_episodes(command).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

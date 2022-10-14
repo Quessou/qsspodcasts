@@ -1,3 +1,5 @@
+use chrono::DateTime;
+use chrono::FixedOffset;
 use rss::Guid;
 use sha1::Digest;
 use sha1::Sha1;
@@ -12,7 +14,7 @@ pub struct PodcastEpisode {
     pub author: String,
     pub categories: Vec<rss::Category>,
     pub guid: rss::Guid,
-    pub pub_date: String,
+    pub pub_date: DateTime<FixedOffset>,
     pub source: rss::Source,
     pub content: String,
     pub url: String,
@@ -43,7 +45,7 @@ impl PodcastEpisode {
                 permalink: guid.permalink,
                 value: guid.value.to_string(),
             },
-            pub_date: pub_date.to_string(),
+            pub_date: DateTime::parse_from_rfc2822(pub_date).unwrap(),
             source: rss::Source {
                 title: Some(
                     source

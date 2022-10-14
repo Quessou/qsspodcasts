@@ -31,12 +31,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         return Ok(());
     }
-    let play_future = core.download_some_random_podcast();
+    //let play_future = core.download_some_random_podcast();
     let command_frontend_future = frontend.run();
-    if futures::join!(play_future, command_frontend_future)
-        .0
-        .is_err()
-    {
+    if futures::join!(command_frontend_future).0.is_err() {
         println!("Not working !");
     }
 
