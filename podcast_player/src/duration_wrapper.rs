@@ -12,6 +12,17 @@ impl DurationWrapper {
     }
 }
 
+fn to_string(dw: &DurationWrapper) -> String {
+    let hours = dw.duration.as_secs() / 3600;
+    let minutes = (dw.duration.as_secs() % 3600) / 60;
+    let seconds = dw.duration.as_secs() % 60;
+
+    match hours {
+        0 => format!("{:02}:{:02}", minutes, seconds),
+        _ => format!("{:01}:{:02}:{:02}", hours, minutes, seconds),
+    }
+}
+
 impl Display for DurationWrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let hours = self.duration.as_secs() / 3600;
@@ -26,9 +37,9 @@ impl Display for DurationWrapper {
     }
 }
 
-impl Into<Duration> for DurationWrapper {
-    fn into(self) -> Duration {
-        self.duration
+impl From<DurationWrapper> for Duration {
+    fn from(duration_wrapper: DurationWrapper) -> Self {
+        duration_wrapper.duration
     }
 }
 

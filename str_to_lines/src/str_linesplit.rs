@@ -10,16 +10,16 @@ fn get_line_width(line: &Vec<&str>) -> usize {
 
 pub fn can_line_contain_word(line: &Vec<&str>, word_length: usize, line_width: usize) -> bool {
     let additional_space: usize = if line.is_empty() { 0 } else { 1 };
-    line_width < get_line_width(line) + word_length + additional_space
+    line_width >= get_line_width(line) + word_length + additional_space
 }
 
 pub fn str_to_lines_inner(input: &str, line_width: usize) -> Vec<String> {
     let words = input.split_whitespace().map(|s| (s, s.chars().count()));
     let mut lines: Vec<String> = vec![];
-    let mut current_line: Vec<&str> = vec![];
+    let mut current_line: Vec<&str> = vec![]; // TODO : Replace me by Vec<(&str, usize)>
 
     for (word, word_length) in words {
-        if can_line_contain_word(&current_line, word_length, line_width) {
+        if !can_line_contain_word(&current_line, word_length, line_width) {
             lines.push(current_line.join(" "));
             current_line = vec![];
         }

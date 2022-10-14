@@ -15,7 +15,9 @@ use tui::{
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
-use super::output_management::vec_list_items::build_list_item_from_podcast;
+use super::output_management::vec_list_items::{
+    build_list_item_from_episode, build_list_item_from_podcast,
+};
 use super::ui_drawer;
 
 pub struct MinimalisticUiDrawer {}
@@ -119,7 +121,10 @@ impl MinimalisticUiDrawer {
 
     fn build_output_field_list(context: &ScreenContext, available_width: usize) -> List {
         let last_command_output = match context.last_command_output {
-            OutputType::Episodes(ref _episodes) => unimplemented!(),
+            OutputType::Episodes(ref episodes) => episodes
+                .iter()
+                .map(move |e| build_list_item_from_episode(e, available_width))
+                .collect::<Vec<ListItem>>(),
             OutputType::Podcasts(ref podcasts) => podcasts
                 .iter()
                 .map(move |p| build_list_item_from_podcast(p, available_width))

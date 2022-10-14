@@ -15,3 +15,9 @@ abstract_frontend = { path = "../abstract_frontend" }
 business_core = { path = "../business_core" }
 command_management = { path = "../command_management" }
 simple_logger = "2.1.0"
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
