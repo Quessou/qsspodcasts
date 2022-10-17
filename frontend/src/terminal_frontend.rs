@@ -1,7 +1,6 @@
 use std::cell::RefCell;
 use std::io::stdout;
-use std::sync::{mpsc::channel, Arc};
-use std::thread;
+use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
 use command_management::output::output_type::OutputType;
@@ -15,7 +14,7 @@ use crossterm::{
 use podcast_management::podcast_library::PodcastLibrary;
 use podcast_player::player_status::PlayerStatus;
 use tokio::sync::Mutex as TokioMutex;
-use tokio::time::{sleep as tokio_sleep, Instant};
+use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
@@ -218,21 +217,6 @@ impl<D: UiDrawer> Frontend<D> {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
 
-        //let (tx, rx) = channel();
-        //thread::spawn(move || {
-        //    let input_polling_rate = Duration::from_millis(50);
-        //    log::info!("Launching input polling thread");
-        //    loop {
-        //        if crossterm::event::poll(input_polling_rate).unwrap() {
-        //            let event = Some(event::read().unwrap());
-        //            if let Err(e) = tx.send(event) {
-        //                log::error!("Send error while sending event {e}");
-        //            }
-        //        } else {
-        //            tx.send(None).unwrap();
-        //        }
-        //    }
-        //});
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
@@ -252,14 +236,6 @@ impl<D: UiDrawer> Frontend<D> {
             if last_tick.elapsed() >= tick_rate {
                 last_tick = Instant::now();
             }
-            //if let Some(event) = rx.recv().unwrap() {
-            //    if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
-            //        break;
-            //    }
-            //} else {
-            //    tokio_sleep(self.context.ui_refresh_tickrate).await;
-            //    self.update_screen_context().await;
-            //}
         }
         disable_raw_mode()?;
         execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;

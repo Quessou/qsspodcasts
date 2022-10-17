@@ -25,14 +25,7 @@ fn to_string(dw: &DurationWrapper) -> String {
 
 impl Display for DurationWrapper {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let hours = self.duration.as_secs() / 3600;
-        let minutes = (self.duration.as_secs() % 3600) / 60;
-        let seconds = self.duration.as_secs() % 60;
-
-        let duration = match hours {
-            0 => format!("{:02}:{:02}", minutes, seconds),
-            _ => format!("{:01}:{:02}:{:02}", hours, minutes, seconds),
-        };
+        let duration = to_string(self);
         write!(f, "{}", duration)
     }
 }
@@ -43,25 +36,25 @@ impl From<DurationWrapper> for Duration {
     }
 }
 
-//#[cfg(test)]
-//mod test {
-//    use std::time::Duration;
-//
-//    use super::DurationWrapper;
-//
-//#[test]
-//fn test_to_string_duration_smaller_than_one_hour() -> Result<(), String> {
-//    let duration = Duration::new(1801, 0);
-//    let duration_wrapper = DurationWrapper::new(duration);
-//    assert_eq!(duration_wrapper.to_string(), "30:01");
-//    Ok(())
-//}
-//
-//#[test]
-//fn test_to_string_duration_bigger_than_one_hour() -> Result<(), String> {
-//    let duration = Duration::new(3661, 0);
-//    let duration_wrapper = DurationWrapper::new(duration);
-//    assert_eq!(duration_wrapper.to_string(), "1:01:01");
-//    Ok(())
-//}
-//}
+#[cfg(test)]
+mod test {
+    use std::time::Duration;
+
+    use super::*;
+
+    #[test]
+    fn test_to_string_duration_smaller_than_one_hour() -> Result<(), String> {
+        let duration = Duration::new(1801, 0);
+        let duration_wrapper = DurationWrapper::new(duration);
+        assert_eq!(to_string(&duration_wrapper), "30:01");
+        Ok(())
+    }
+
+    #[test]
+    fn test_to_string_duration_bigger_than_one_hour() -> Result<(), String> {
+        let duration = Duration::new(3661, 0);
+        let duration_wrapper = DurationWrapper::new(duration);
+        assert_eq!(to_string(&duration_wrapper), "1:01:01");
+        Ok(())
+    }
+}
