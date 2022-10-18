@@ -42,12 +42,7 @@ pub struct Frontend<'a, D: UiDrawer> {
 }
 
 impl<D: UiDrawer> Frontend<'_, D> {
-    pub fn new(
-        business_core: BusinessCore,
-        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-        ui_drawer: Box<D>,
-    ) -> Frontend<'static, D> {
+    pub fn new(business_core: BusinessCore, ui_drawer: Box<D>) -> Frontend<'static, D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();

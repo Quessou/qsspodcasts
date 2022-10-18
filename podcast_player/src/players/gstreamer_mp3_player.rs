@@ -47,7 +47,7 @@ impl Mp3Player for GStreamerMp3Player {
     }
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
         self.selected_episode = episode;
-        let tmp_path = self.compute_episode_path(&self.selected_episode.as_ref().unwrap());
+        let tmp_path = self.compute_episode_path(self.selected_episode.as_ref().unwrap());
         let tmp_path = tmp_path.into_os_string().into_string();
         let tmp_path = tmp_path.unwrap();
         let tmp_path = &format!("file://{}", &tmp_path);

@@ -13,26 +13,15 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args = Args::parse();
-
     let mut core = BusinessCore::new();
     core.initialize();
     core.build_podcasts().await;
 
     let mut frontend = Frontend::new(
-        //core.player.clone(),
-        //core.podcast_library.clone(),
         core,
         Box::new(frontend::ui_drawers::minimalistic_ui_drawer::MinimalisticUiDrawer::new()),
     );
 
-    //if !args.add_url.is_empty() {
-    //    if core.add_url(&args.add_url).is_err() {
-    //        println!("Error registering the URL");
-    //    }
-    //    return Ok(());
-    //}
-    //let play_future = core.download_some_random_podcast();
     let command_frontend_future = frontend.run();
     if futures::join!(command_frontend_future).0.is_err() {
         println!("Not working !");

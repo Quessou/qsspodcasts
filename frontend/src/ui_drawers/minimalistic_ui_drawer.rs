@@ -86,7 +86,7 @@ impl MinimalisticUiDrawer<'_> {
             )
     }
 
-    fn build_podcast_progress_bar<'a>(context: &ScreenContext) -> Gauge {
+    fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
 
         let default_duration = DurationWrapper::default();
@@ -130,8 +130,8 @@ impl MinimalisticUiDrawer<'_> {
     }
 
     fn is_output_cache_invalidated(context: &ScreenContext, available_width: usize) -> bool {
-        return context.must_invalidate_cache.get()
-            || context.previous_output_pane_available_width.get().unwrap() != available_width;
+        context.must_invalidate_cache.get()
+            || context.previous_output_pane_available_width.get().unwrap() != available_width
     }
 
     fn build_output_field_list(&mut self, context: &ScreenContext, available_width: usize) -> List {
@@ -173,7 +173,7 @@ impl MinimalisticUiDrawer<'_> {
                             let description_style = Style::default().add_modifier(Modifier::ITALIC);
 
                             let description = &e.description;
-                            let lines = str_to_lines(&description, available_width)
+                            let lines = str_to_lines(description, available_width)
                                 .into_iter()
                                 .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
                             let vec_spans: Vec<Spans> =

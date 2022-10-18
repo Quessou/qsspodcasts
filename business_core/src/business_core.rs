@@ -4,8 +4,6 @@ use std::sync::Arc;
 
 use tokio::sync::Mutex as TokioMutex;
 
-use log::error;
-
 use rss_management::{
     local_storage::{
         application_dir_initializer::ApplicationDirInitializer, rss_provider::RssProvider,
@@ -82,8 +80,6 @@ impl BusinessCore {
     }
 
     pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
-        // TODO : Remove me
-        //let episode = &self.podcast_library.lock().await.podcasts[0].episodes[0];
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
             return Err(());
         }

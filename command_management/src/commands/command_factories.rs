@@ -28,7 +28,7 @@ pub fn build_list_episodes_command(_parameters: Vec<String>) -> Result<Command, 
 }
 
 fn is_hash(hash: &str) -> bool {
-    return i64::from_str_radix(hash, 16).is_ok();
+    i64::from_str_radix(hash, 16).is_ok()
 }
 
 pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandError> {
@@ -36,7 +36,7 @@ pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandE
     assert_eq!(parameters.len(), 1);
     assert_eq!(parameters[0].len(), HASH_LEN);
     let hash = &parameters[0];
-    assert!(is_hash(&hash));
+    assert!(is_hash(hash));
     Ok(Command::Select(hash.to_string()))
 }
 

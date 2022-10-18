@@ -8,23 +8,13 @@ use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
 
-use std::sync::Arc;
-use tokio::sync::Mutex as TokioMutex;
-
 pub struct CommandExecutor {
-    core: BusinessCore, //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-                        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    core: BusinessCore,
 }
 
 impl CommandExecutor {
-    pub fn new(
-        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        business_core: BusinessCore,
-    ) -> CommandExecutor {
+    pub fn new(business_core: BusinessCore) -> CommandExecutor {
         CommandExecutor {
-            //podcast_library,
-            //mp3_player,
             core: business_core,
         }
     }
@@ -72,8 +62,8 @@ impl CommandExecutor {
     }
 
     async fn select_episode(&mut self, hash: &str) -> Result<OutputType, CommandError> {
-        if let Some(ep) = self.search_episode(&hash).await {
-            if let Err(_) = self.core.download_episode(&ep).await {
+        if let Some(ep) = self.search_episode(hash).await {
+            if self.core.download_episode(&ep).await.is_err() {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::DownloadFailed,
@@ -81,7 +71,7 @@ impl CommandExecutor {
                     Some("Episode download failed".to_string()),
                 ));
             }
-            if let Err(_) = self.core.player.lock().await.select_episode(&ep) {
+            if self.core.player.lock().await.select_episode(&ep).is_err() {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::SelectionFailed,

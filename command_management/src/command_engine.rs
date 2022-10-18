@@ -15,11 +15,7 @@ pub struct CommandEngine<'a> {
 }
 
 impl CommandEngine<'_> {
-    pub fn new(
-        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-        business_core: BusinessCore,
-    ) -> CommandEngine<'static> {
+    pub fn new(business_core: BusinessCore) -> CommandEngine<'static> {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
             command_executor: CommandExecutor::new(business_core),
