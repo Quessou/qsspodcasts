@@ -1,6 +1,10 @@
 use command_management::output::output_type::OutputType;
+use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
+use std::borrow::Cow;
+use std::cell::{Cell, RefCell};
+use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
 use tui::style::Modifier;
@@ -15,16 +19,22 @@ use tui::{
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
-use super::output_management::vec_list_items::{
-    build_list_item_from_episode, build_list_item_from_podcast,
-};
+use str_to_lines::str_linesplit::str_to_lines;
+
+//use super::output_management::vec_list_items::{
+//    build_list_item_from_episode, build_list_item_from_podcast,
+//};
 use super::ui_drawer;
 
-pub struct MinimalisticUiDrawer {}
+pub struct MinimalisticUiDrawer<'a> {
+    pub cached_output: Cow<'a, Vec<ListItem<'a>>>,
+}
 
-impl MinimalisticUiDrawer {
-    pub fn new() -> MinimalisticUiDrawer {
-        MinimalisticUiDrawer {}
+impl MinimalisticUiDrawer<'_> {
+    pub fn new() -> Self {
+        MinimalisticUiDrawer {
+            cached_output: Cow::Owned(vec![]),
+        }
     }
 
     fn draw_log_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
@@ -76,7 +86,7 @@ impl MinimalisticUiDrawer {
             )
     }
 
-    fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
+    fn build_podcast_progress_bar<'a>(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
 
         let default_duration = DurationWrapper::default();
@@ -119,20 +129,100 @@ impl MinimalisticUiDrawer {
             .wrap(Wrap { trim: true })
     }
 
-    fn build_output_field_list(context: &ScreenContext, available_width: usize) -> List {
-        let last_command_output = match context.last_command_output {
-            OutputType::Episodes(ref episodes) => episodes
-                .iter()
-                .map(move |e| build_list_item_from_episode(e, available_width))
-                .collect::<Vec<ListItem>>(),
-            OutputType::Podcasts(ref podcasts) => podcasts
-                .iter()
-                .map(move |p| build_list_item_from_podcast(p, available_width))
-                .collect::<Vec<ListItem>>(),
-            _ => unimplemented!(),
-        };
+    fn is_output_cache_invalidated(context: &ScreenContext, available_width: usize) -> bool {
+        return context.must_invalidate_cache.get()
+            || context.previous_output_pane_available_width.get().unwrap() != available_width;
+    }
 
-        List::new(last_command_output)
+    fn build_output_field_list(&mut self, context: &ScreenContext, available_width: usize) -> List {
+        if MinimalisticUiDrawer::is_output_cache_invalidated(context, available_width) {
+            match &context.last_command_output {
+                OutputType::Episodes(episodes) => {
+                    let output = episodes
+                        .iter()
+                        .map(move |e| {
+                            let vec_spans = iter::once(Spans::from(Span::styled(
+                                e.title.clone(),
+                                Style::default().bg(Color::LightMagenta).fg(Color::Red),
+                            )));
+
+                            let metadata_display = iter::once(Spans::from(vec![
+                                Span::from("["),
+                                Span::styled(
+                                    e.hash(),
+                                    Style::default()
+                                        .add_modifier(Modifier::BOLD)
+                                        .fg(Color::LightGreen),
+                                ),
+                                Span::from("]"),
+                                Span::from("   "),
+                                Span::styled(
+                                    "Date:",
+                                    Style::default().add_modifier(Modifier::ITALIC),
+                                ),
+                                Span::from(" "),
+                                Span::styled(
+                                    format!("{}", e.pub_date.format("%d/%m/%Y")),
+                                    Style::default()
+                                        .bg(Color::Black)
+                                        .add_modifier(Modifier::ITALIC),
+                                ),
+                            ]));
+                            let vec_spans = vec_spans.chain(metadata_display);
+
+                            let description_style = Style::default().add_modifier(Modifier::ITALIC);
+
+                            let description = &e.description;
+                            let lines = str_to_lines(&description, available_width)
+                                .into_iter()
+                                .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
+                            let vec_spans: Vec<Spans> =
+                                vec_spans.chain(lines).collect::<Vec<Spans>>();
+
+                            ListItem::new(vec_spans)
+                        })
+                        .collect::<Vec<ListItem>>();
+                    self.cached_output = Cow::Owned(output);
+                }
+                OutputType::Podcasts(podcasts) => {
+                    let output = podcasts
+                        .iter()
+                        .map(move |p| {
+                            let vec_spans = iter::once(Spans::from(Span::styled::<String>(
+                                p.title.clone(),
+                                Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                            )));
+
+                            let hash_display = iter::once(Spans::from(vec![
+                                Span::from("["),
+                                Span::styled(
+                                    p.hash(),
+                                    Style::default()
+                                        .add_modifier(Modifier::BOLD)
+                                        .fg(Color::LightGreen),
+                                ),
+                                Span::from("]"),
+                            ]));
+                            let vec_spans = vec_spans.chain(hash_display);
+
+                            let description_style = Style::default().add_modifier(Modifier::ITALIC);
+
+                            let lines = str_to_lines(&p.description, available_width)
+                                .into_iter()
+                                .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
+                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Spans>>();
+
+                            ListItem::new(vec_spans)
+                        })
+                        .collect::<Vec<ListItem>>();
+                    self.cached_output = Cow::Owned(output);
+                }
+                _ => unimplemented!(),
+            };
+            context.must_invalidate_cache.set(false);
+        }
+
+        List::new(&self.cached_output[..])
             .style(match context.current_action {
                 ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
@@ -145,7 +235,7 @@ impl MinimalisticUiDrawer {
             )
     }
 
-    fn draw_main_screen<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+    fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
         let minimal_width: u16 = 15;
 
@@ -168,8 +258,7 @@ impl MinimalisticUiDrawer {
             f.render_widget(output_paragraph, output_layout[0]);
         } else {
             let available_width: usize = output_layout[0].width.into();
-            let output_list =
-                MinimalisticUiDrawer::build_output_field_list(context, available_width);
+            let output_list = self.build_output_field_list(context, available_width);
             f.render_stateful_widget(
                 output_list,
                 output_layout[0],
@@ -179,7 +268,11 @@ impl MinimalisticUiDrawer {
                     .unwrap()
                     .try_borrow_mut()
                     .unwrap(),
-            )
+            );
+
+            context
+                .previous_output_pane_available_width
+                .set(Some(available_width));
         }
 
         //if false {
@@ -202,15 +295,15 @@ impl MinimalisticUiDrawer {
     }
 }
 
-impl ui_drawer::UiDrawer for MinimalisticUiDrawer {
-    fn draw_ui<B: Backend>(&self, f: &mut Frame<B>, context: &ScreenContext) {
+impl ui_drawer::UiDrawer for MinimalisticUiDrawer<'_> {
+    fn draw_ui<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         match context.current_action {
             ScreenAction::ScrollingLogs => self.draw_log_screen(f, context),
             _ => self.draw_main_screen(f, context),
         }
     }
 }
-impl Default for MinimalisticUiDrawer {
+impl Default for MinimalisticUiDrawer<'_> {
     fn default() -> Self {
         Self::new()
     }
