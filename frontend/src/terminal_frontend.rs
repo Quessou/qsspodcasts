@@ -90,8 +90,8 @@ impl<D: UiDrawer> Frontend<D> {
                     {
                         Err(_) => return Ok(ActionPostEvent::DoNothing),
                         Ok(s) => {
-                            // TODO
                             self.context.last_command_output = s.clone();
+                            self.context.must_invalidate_cache.set(true);
                             if let OutputType::RawString(_) = s {
                                 self.context.list_output_state = None;
                             } else {

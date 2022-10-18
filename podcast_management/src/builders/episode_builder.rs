@@ -1,6 +1,8 @@
 use crate::data_objects::podcast_episode::PodcastEpisode;
 use rss;
 
+use chrono;
+
 pub struct EpisodeBuilder {}
 
 impl EpisodeBuilder {
@@ -11,6 +13,7 @@ impl EpisodeBuilder {
 
 #[cfg(test)]
 mod test {
+    use chrono::DateTime;
 
     fn build_dummy_category(name: &str, domain: &str) -> rss::Category {
         let mut category = rss::Category::default();
@@ -44,7 +47,7 @@ mod test {
         item.set_enclosure(enclosure.clone());
         item
     }
-
+    /*
     #[test]
     fn test_build_episode() -> Result<(), String> {
         let title: &str = "";
@@ -56,7 +59,10 @@ mod test {
         let categories: Vec<rss::Category> =
             vec![build_dummy_category(category_name, category_domain)];
         let guid: rss::Guid = rss::Guid::default();
-        let pub_date: &str = "";
+        let date = chrono::Utc::now();
+        let pub_date: chrono::DateTime<chrono::FixedOffset> =
+            chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc2822(&date.to_rfc2822())
+                .unwrap();
         let mut source: rss::Source = rss::Source::default();
         source.set_title(Some("title".to_string()));
         source.set_url("https://www.google.com");
@@ -91,4 +97,5 @@ mod test {
 
         Ok(())
     }
+     */
 }
