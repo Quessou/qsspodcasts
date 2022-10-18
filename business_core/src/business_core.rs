@@ -15,6 +15,7 @@ use rss_management::{
 
 use path_providing::default_path_provider::{DefaultPathProvider, PathProvider};
 use podcast_download::podcast_downloader::PodcastDownloader;
+use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
@@ -80,19 +81,10 @@ impl BusinessCore {
         self.podcast_library.lock().await.push(&mut podcasts);
     }
 
-    pub async fn download_some_random_podcast(&mut self) -> Result<(), ()> {
+    pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
         // TODO : Remove me
-        let episode = &self.podcast_library.lock().await.podcasts[0].episodes[0];
+        //let episode = &self.podcast_library.lock().await.podcasts[0].episodes[0];
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
-            return Err(());
-        }
-
-        if self.player.lock().await.select_episode(episode).is_err() {
-            error!("Selecting of episode failed");
-            return Err(());
-        }
-        if self.player.lock().await.play_selected_episode().is_err() {
-            error!("Playing of episode failed");
             return Err(());
         }
 

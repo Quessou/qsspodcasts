@@ -3,6 +3,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
+use business_core::business_core::BusinessCore;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
@@ -10,15 +11,14 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-
-use podcast_management::podcast_library::PodcastLibrary;
+use log::debug;
 use podcast_player::player_status::PlayerStatus;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
 use command_management::command_engine::CommandEngine;
-use podcast_player::{mp3_player_exposer::Mp3PlayerExposer, players::mp3_player::Mp3Player};
+use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
@@ -43,22 +43,21 @@ pub struct Frontend<'a, D: UiDrawer> {
 
 impl<D: UiDrawer> Frontend<'_, D> {
     pub fn new(
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        podcast_library: Arc<TokioMutex<PodcastLibrary>>,
+        business_core: BusinessCore,
+        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
     ) -> Frontend<'static, D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();
+        let mp3_player = business_core.player.clone();
         TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
         Frontend {
             terminal,
-            command_engine: Arc::new(TokioMutex::new(CommandEngine::new(
-                mp3_player.clone(),
-                podcast_library,
-            ))),
+            command_engine: Arc::new(TokioMutex::new(CommandEngine::new(business_core))),
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
@@ -211,6 +210,7 @@ impl<D: UiDrawer> Frontend<'_, D> {
         };
 
         self.context.player_status = player_status;
+        debug!("Screen context updated");
     }
 
     pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
@@ -223,16 +223,17 @@ impl<D: UiDrawer> Frontend<'_, D> {
             self.terminal
                 .draw(|f| self.ui_drawer.draw_ui(f, &self.context))?;
 
-            let timeout = tick_rate
+            let timeout: Duration = tick_rate
                 .checked_sub(last_tick.elapsed())
                 .unwrap_or_else(|| Duration::from_secs(0));
+            debug!("polling for {} ms", timeout.as_millis());
             if crossterm::event::poll(timeout)? {
                 let event = event::read().unwrap();
                 if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
                     break;
                 }
-                self.update_screen_context().await;
             }
+            self.update_screen_context().await;
             if last_tick.elapsed() >= tick_rate {
                 last_tick = Instant::now();
             }

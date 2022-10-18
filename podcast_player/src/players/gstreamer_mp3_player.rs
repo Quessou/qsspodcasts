@@ -2,8 +2,10 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use gstreamer::ClockTime;
 use gstreamer_player::{self, Player as GStreamerInnerPlayer};
 
+use log::{error, warn};
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
@@ -16,7 +18,7 @@ pub struct GStreamerMp3Player {
     selected_episode: Option<PodcastEpisode>,
     path_provider: Arc<Mutex<Box<dyn PathProvider>>>,
     is_paused: bool,
-    player: GStreamerInnerPlayer, // TODO : Add stuff
+    player: GStreamerInnerPlayer,
 }
 
 impl GStreamerMp3Player {
@@ -45,6 +47,18 @@ impl Mp3Player for GStreamerMp3Player {
     }
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
         self.selected_episode = episode;
+        let tmp_path = self.compute_episode_path(&self.selected_episode.as_ref().unwrap());
+        let tmp_path = tmp_path.into_os_string().into_string();
+        let tmp_path = tmp_path.unwrap();
+        let tmp_path = &format!("file://{}", &tmp_path);
+        let path: Option<&str> = if self.selected_episode.is_none() {
+            None
+        } else {
+            Some(tmp_path)
+        };
+        self.player.set_uri(path);
+        self.player.play();
+        self.player.pause();
     }
 
     fn is_paused(&self) -> bool {
@@ -72,7 +86,7 @@ impl Mp3Player for GStreamerMp3Player {
             return None;
         }
 
-        let duration = self.player.duration().unwrap_or_default();
+        let duration: ClockTime = self.player.duration().unwrap_or_default();
 
         let duration = Duration::new(duration.seconds(), 0);
         Some(DurationWrapper::new(duration))
@@ -87,6 +101,60 @@ impl Mp3Player for GStreamerMp3Player {
 
         let progression = Duration::new(progression.seconds(), 0);
         Some(DurationWrapper::new(progression))
+    }
+
+    fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
+        let episode_duration: Duration = match self.get_selected_episode_duration() {
+            Some(d) => d.into(),
+            None => return None,
+        };
+        let episode_duration = episode_duration.as_secs();
+
+        if episode_duration == 0 {
+            return Some(0);
+        }
+
+        let episode_progression: Duration = self
+            .get_selected_episode_progression()
+            .unwrap_or_default()
+            .into();
+        let episode_progression = episode_progression.as_secs();
+
+        Some(
+            (episode_progression * 100 / episode_duration)
+                .try_into()
+                .unwrap(),
+        )
+    }
+
+    fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+        if !self.compute_episode_path(episode).exists() {
+            warn!("Cannot select an episode which has not been downloaded first");
+            return Err(PlayerError::new(
+                None,
+                crate::player_error::ErrorKind::FileNotFound,
+            ));
+        }
+        self.set_selected_episode(Some(episode.clone()));
+        Ok(())
+    }
+
+    fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
+        let path = self
+            .compute_episode_path(self.get_selected_episode().as_ref().unwrap())
+            .into_os_string()
+            .into_string()
+            .unwrap();
+
+        if !std::path::Path::new(&path).exists() {
+            error!("Could not find file {path}, playing failed");
+            return Err(PlayerError::new(
+                None,
+                crate::player_error::ErrorKind::FileNotFound,
+            ));
+        }
+
+        self.play_file(&path)
     }
 }
 

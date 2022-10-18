@@ -2,6 +2,8 @@ use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
 
+use business_core::business_core::BusinessCore;
+
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -10,23 +12,25 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 pub struct CommandExecutor {
-    podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    core: BusinessCore, //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
+                        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
 }
 
 impl CommandExecutor {
     pub fn new(
-        podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
+        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        business_core: BusinessCore,
     ) -> CommandExecutor {
         CommandExecutor {
-            podcast_library,
-            mp3_player,
+            //podcast_library,
+            //mp3_player,
+            core: business_core,
         }
     }
 
     async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.mp3_player.lock().await;
+        let mut mp3_player = self.core.player.lock().await;
         if mp3_player.is_paused() {
             mp3_player.play();
         }
@@ -35,7 +39,7 @@ impl CommandExecutor {
     }
 
     async fn handle_pause(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.mp3_player.lock().await;
+        let mut mp3_player = self.core.player.lock().await;
         if !mp3_player.is_paused() {
             mp3_player.pause();
         }
@@ -44,7 +48,7 @@ impl CommandExecutor {
     }
 
     async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
-        let podcast_library = self.podcast_library.lock().await;
+        let podcast_library = self.core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let podcasts = podcasts.iter().map(|p| p.shallow_copy()).collect();
@@ -53,7 +57,7 @@ impl CommandExecutor {
     }
 
     async fn handle_list_episodes(&self, _: Command) -> Result<OutputType, CommandError> {
-        let podcast_library = self.podcast_library.lock().await;
+        let podcast_library = self.core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let mut episodes: Vec<PodcastEpisode> =
@@ -64,12 +68,27 @@ impl CommandExecutor {
     }
 
     async fn search_episode(&self, hash: &str) -> Option<PodcastEpisode> {
-        self.podcast_library.lock().await.search_episode(hash)
+        self.core.podcast_library.lock().await.search_episode(hash)
     }
 
     async fn select_episode(&mut self, hash: &str) -> Result<OutputType, CommandError> {
         if let Some(ep) = self.search_episode(&hash).await {
-            self.mp3_player.lock().await.set_selected_episode(Some(ep));
+            if let Err(_) = self.core.download_episode(&ep).await {
+                return Err(CommandError::new(
+                    None,
+                    CommandErrorKind::DownloadFailed,
+                    Some(format!("select {}", hash)),
+                    Some("Episode download failed".to_string()),
+                ));
+            }
+            if let Err(_) = self.core.player.lock().await.select_episode(&ep) {
+                return Err(CommandError::new(
+                    None,
+                    CommandErrorKind::SelectionFailed,
+                    Some(format!("select {}", hash)),
+                    Some("Episode selection failed".to_string()),
+                ));
+            }
         } else {
             return Err(CommandError::new(
                 None,

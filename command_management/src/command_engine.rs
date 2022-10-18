@@ -2,8 +2,7 @@ use log::error;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
-use podcast_management::podcast_library::PodcastLibrary;
-use podcast_player::players::mp3_player::Mp3Player;
+use business_core::business_core::BusinessCore;
 
 use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;
@@ -17,12 +16,13 @@ pub struct CommandEngine<'a> {
 
 impl CommandEngine<'_> {
     pub fn new(
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        podcast_library: Arc<TokioMutex<PodcastLibrary>>,
+        //mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        //podcast_library: Arc<TokioMutex<PodcastLibrary>>,
+        business_core: BusinessCore,
     ) -> CommandEngine<'static> {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
-            command_executor: CommandExecutor::new(podcast_library, mp3_player),
+            command_executor: CommandExecutor::new(business_core),
         }
     }
 

@@ -1,4 +1,5 @@
 use command_management::output::output_type::OutputType;
+use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
@@ -221,12 +222,14 @@ impl MinimalisticUiDrawer<'_> {
             context.must_invalidate_cache.set(false);
         }
 
+        let title = "Output";
+
         List::new(&self.cached_output[..])
             .style(match context.current_action {
                 ScreenAction::ScrollingOutput => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
             })
-            .block(Block::default().borders(Borders::ALL).title("Output"))
+            .block(Block::default().borders(Borders::ALL).title(title))
             .highlight_style(
                 Style::default()
                     .bg(Color::LightMagenta)
@@ -236,7 +239,7 @@ impl MinimalisticUiDrawer<'_> {
 
     fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
-        let minimal_width: u16 = 15;
+        const MINIMAL_WIDTH: u16 = 15;
 
         // Defining screen layout
         let chunks = MinimalisticUiDrawer::build_screen_layout(context, &size);
@@ -246,7 +249,7 @@ impl MinimalisticUiDrawer<'_> {
 
         let podcast_progress = MinimalisticUiDrawer::build_podcast_progress_bar(context);
 
-        if chunks[1].width > minimal_width {
+        if chunks[1].width > MINIMAL_WIDTH {
             f.render_widget(podcast_progress, chunks[1]);
         }
 
@@ -296,10 +299,12 @@ impl MinimalisticUiDrawer<'_> {
 
 impl ui_drawer::UiDrawer for MinimalisticUiDrawer<'_> {
     fn draw_ui<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
+        debug!("Starting drawing next frame");
         match context.current_action {
             ScreenAction::ScrollingLogs => self.draw_log_screen(f, context),
             _ => self.draw_main_screen(f, context),
         }
+        debug!("Finished drawing next frame");
     }
 }
 impl Default for MinimalisticUiDrawer<'_> {
