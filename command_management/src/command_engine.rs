@@ -10,16 +10,16 @@ use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 use crate::output::output_type::OutputType;
 
-pub struct CommandEngine {
-    command_parser: Arc<TokioMutex<CommandParser>>,
+pub struct CommandEngine<'a> {
+    command_parser: Arc<TokioMutex<CommandParser<'a>>>,
     command_executor: CommandExecutor,
 }
 
-impl CommandEngine {
+impl CommandEngine<'_> {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    ) -> CommandEngine {
+    ) -> CommandEngine<'static> {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
             command_executor: CommandExecutor::new(podcast_library, mp3_player),
@@ -61,7 +61,7 @@ mod tests {
     fn instanciate_engine(
         player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         library: Arc<TokioMutex<PodcastLibrary>>,
-    ) -> CommandEngine {
+    ) -> CommandEngine<'static> {
         CommandEngine::new(player, library)
     }
 

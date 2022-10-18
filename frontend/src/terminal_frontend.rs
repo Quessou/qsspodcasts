@@ -33,20 +33,20 @@ enum ActionPostEvent {
     Quit,
 }
 
-pub struct Frontend<D: UiDrawer> {
+pub struct Frontend<'a, D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
-    command_engine: Arc<TokioMutex<CommandEngine>>,
+    command_engine: Arc<TokioMutex<CommandEngine<'a>>>,
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
 }
 
-impl<D: UiDrawer> Frontend<D> {
+impl<D: UiDrawer> Frontend<'_, D> {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         podcast_library: Arc<TokioMutex<PodcastLibrary>>,
         ui_drawer: Box<D>,
-    ) -> Frontend<D> {
+    ) -> Frontend<'static, D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();

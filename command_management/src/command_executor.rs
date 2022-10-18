@@ -63,6 +63,24 @@ impl CommandExecutor {
         Ok(OutputType::Episodes(episodes))
     }
 
+    async fn search_episode(&self, hash: &str) -> Option<PodcastEpisode> {
+        self.podcast_library.lock().await.search_episode(hash)
+    }
+
+    async fn select_episode(&mut self, hash: &str) -> Result<OutputType, CommandError> {
+        if let Some(ep) = self.search_episode(&hash).await {
+            self.mp3_player.lock().await.set_selected_episode(Some(ep));
+        } else {
+            return Err(CommandError::new(
+                None,
+                CommandErrorKind::ObjectNotFound,
+                Some(format!("select {}", hash)),
+                Some("Episode not found".to_string()),
+            ));
+        }
+        Ok(OutputType::RawString(String::from("Episode selected")))
+    }
+
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
@@ -70,6 +88,7 @@ impl CommandExecutor {
             Command::Exit => OutputType::RawString(String::from("Exiting")),
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             Command::ListEpisodes => self.handle_list_episodes(command).await?,
+            Command::Select(hash) => self.select_episode(&hash).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

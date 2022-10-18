@@ -3,7 +3,6 @@ use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::Cow;
-use std::cell::{Cell, RefCell};
 use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
@@ -143,7 +142,7 @@ impl MinimalisticUiDrawer<'_> {
                         .map(move |e| {
                             let vec_spans = iter::once(Spans::from(Span::styled(
                                 e.title.clone(),
-                                Style::default().bg(Color::LightMagenta).fg(Color::Red),
+                                Style::default().bg(Color::LightGreen).fg(Color::Red),
                             )));
 
                             let metadata_display = iter::once(Spans::from(vec![
