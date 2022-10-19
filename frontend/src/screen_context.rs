@@ -26,6 +26,16 @@ pub struct ScreenContext {
     pub player_status: PlayerStatus,
 }
 
+impl ScreenContext {
+    pub fn get_output_list_length(&self) -> Option<usize> {
+        match &self.last_command_output {
+            OutputType::Episodes(l) => Some(l.len()),
+            OutputType::Podcasts(l) => Some(l.len()),
+            _ => None,
+        }
+    }
+}
+
 impl Default for ScreenContext {
     fn default() -> Self {
         ScreenContext {
