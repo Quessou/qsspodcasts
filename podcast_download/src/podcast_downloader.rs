@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::rc::Rc;
 
 use bytes::Bytes;
 use log::{debug, info};
@@ -12,11 +13,11 @@ use path_providing::path_provider::PathProvider;
 
 pub struct PodcastDownloader {
     client: reqwest::Client,
-    path_provider: Box<dyn PathProvider>,
+    path_provider: Rc<dyn PathProvider>,
 }
 
 impl PodcastDownloader {
-    pub fn new(path_provider: Box<dyn PathProvider>) -> PodcastDownloader {
+    pub fn new(path_provider: Rc<dyn PathProvider>) -> PodcastDownloader {
         PodcastDownloader {
             client: reqwest::Client::new(),
             path_provider,

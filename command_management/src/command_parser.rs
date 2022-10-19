@@ -8,12 +8,12 @@ use std::vec::Vec;
 use crate::commands::command_factories::{get_factory_hashmap, FactoryFn};
 
 #[derive(Default)]
-pub struct CommandParser {
-    factory_hashmap: HashMap<String, FactoryFn>,
+pub struct CommandParser<'a> {
+    factory_hashmap: HashMap<&'a str, FactoryFn>,
 }
 
-impl CommandParser {
-    pub fn new() -> CommandParser {
+impl CommandParser<'_> {
+    pub fn new() -> CommandParser<'static> {
         CommandParser {
             factory_hashmap: get_factory_hashmap(),
         }
@@ -26,7 +26,7 @@ impl CommandParser {
     /// * Add management of parameters
     pub fn parse_command(&self, command: &str) -> Result<Command, CommandError> {
         let mut command_components = command.split(' ');
-        let verb: String = command_components.next().unwrap().to_string();
+        let verb = command_components.next().unwrap();
         let parameters: Vec<String> = command_components.map(|s| s.to_string()).collect();
 
         if !parameters.is_empty() {
@@ -34,7 +34,7 @@ impl CommandParser {
             info!("There are parameters to parse !")
         }
 
-        let command = match self.factory_hashmap.get(&verb.to_lowercase()) {
+        let command = match self.factory_hashmap.get(&verb.to_lowercase() as &str) {
             Some(factory) => match factory(parameters) {
                 Ok(c) => c,
                 Err(e) => return Err(e),

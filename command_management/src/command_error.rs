@@ -8,6 +8,9 @@ pub enum ErrorKind {
     ParameterParsingFailed,
     ExecutionFailed,
     UnhandledCommand,
+    ObjectNotFound,
+    DownloadFailed,
+    SelectionFailed,
 }
 
 /// Error type that wraps error that can come from the command management, either its parsing, or its execution.

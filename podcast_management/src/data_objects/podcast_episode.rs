@@ -19,6 +19,7 @@ pub struct PodcastEpisode {
     pub content: String,
     pub url: String,
     pub download_path: Option<String>,
+    pub podcast_name: String,
 }
 
 impl PodcastEpisode {
@@ -59,6 +60,7 @@ impl PodcastEpisode {
             content: content.to_string(),
             url: url.to_string(),
             download_path: download_path.clone(),
+            podcast_name: "".to_string(),
         }
     }
 
@@ -76,6 +78,17 @@ impl PodcastEpisode {
             &item.enclosure.as_ref().unwrap().url,
             &None,
         )
+    }
+
+    pub fn set_podcast_name(&mut self, name: &str) {
+        self.podcast_name = name.to_string();
+    }
+
+    pub fn get_file_name(&self) -> String {
+        let mut file_name = self.podcast_name.clone();
+        file_name.push('_');
+        file_name.push_str(&self.hash());
+        file_name
     }
 }
 

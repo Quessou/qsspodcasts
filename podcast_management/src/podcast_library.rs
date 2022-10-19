@@ -1,4 +1,6 @@
+use crate::data_objects::hashable::Hashable;
 use crate::data_objects::podcast::Podcast;
+use crate::data_objects::podcast_episode::PodcastEpisode;
 
 pub struct PodcastLibrary {
     pub podcasts: Vec<Podcast>,
@@ -15,6 +17,17 @@ impl PodcastLibrary {
 
     pub fn push(&mut self, podcasts: &mut Vec<Podcast>) {
         self.podcasts.append(podcasts);
+    }
+
+    pub fn search_episode(&self, hash: &str) -> Option<PodcastEpisode> {
+        for p in &self.podcasts {
+            for e in &p.episodes {
+                if e.hash() == hash {
+                    return Some(e.clone());
+                }
+            }
+        }
+        None
     }
 }
 

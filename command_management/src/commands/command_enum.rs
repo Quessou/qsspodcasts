@@ -13,4 +13,5 @@ pub enum Command {
     VolumeDown,
     AddRss,
     DeleteRss,
+    Select(String),
 }

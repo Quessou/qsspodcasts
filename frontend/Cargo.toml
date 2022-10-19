@@ -12,6 +12,7 @@ tokio = { version = "1.17.0", features = ["full"] }
 command_management = { path = "../command_management" }
 podcast_player = { path = "../podcast_player" }
 podcast_management = { path = "../podcast_management" }
+business_core = {path = "../business_core" }
 log = "0.4.17"
 simple_logger = "2.1.0"
 str_to_lines = { path = "../str_to_lines" }

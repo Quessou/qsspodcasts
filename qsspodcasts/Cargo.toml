@@ -14,6 +14,8 @@ tokio = { version = "1.17.0", features = ["full"] }
 abstract_frontend = { path = "../abstract_frontend" }
 business_core = { path = "../business_core" }
 command_management = { path = "../command_management" }
+podcast_player = { path = "../podcast_player"}
+path_providing = { path = "../path_providing"}
 simple_logger = "2.1.0"
 
 [profile.dev]
