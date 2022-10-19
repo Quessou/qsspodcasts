@@ -3,7 +3,7 @@ use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
-use std::borrow::Cow;
+use std::borrow::{Borrow, Cow};
 use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
@@ -21,9 +21,6 @@ use crate::screen_context::ScreenContext;
 
 use str_to_lines::str_linesplit::str_to_lines;
 
-//use super::output_management::vec_list_items::{
-//    build_list_item_from_episode, build_list_item_from_podcast,
-//};
 use super::ui_drawer;
 
 pub struct MinimalisticUiDrawer<'a> {
@@ -277,23 +274,27 @@ impl MinimalisticUiDrawer<'_> {
                 .set(Some(available_width));
         }
 
-        //if false {
-        //    let progress_bar_height = chunks[2].height - 2;
-        //    let mut progress_bar_string = String::from("");
-        //    let progress_ratio = display_starting_index * usize::from(progress_bar_height)
-        //        / context.last_formatted_command_output.0.len();
-        //    progress_bar_string = "\n".repeat(progress_ratio);
-        //    let content_ratio = displayed_output_length * usize::from(progress_bar_height)
-        //        / context.last_formatted_command_output.0.len();
-        //    progress_bar_string += &String::from("#".repeat(content_ratio));
-        //    error!("{}", progress_bar_string);
-        //
-        //    let output_progress_bar = Paragraph::new(progress_bar_string)
-        //        .style(Style::default().bg(Color::Gray).fg(Color::Black))
-        //        .block(Block::default().borders(Borders::TOP | Borders::BOTTOM))
-        //        .wrap(Wrap { trim: true });
-        //    f.render_widget(output_progress_bar, output_layout[1]);
-        //}
+        let list_state = context.list_output_state.borrow();
+        if list_state.is_some() {
+            let progress_bar_height = chunks[2].height - 2;
+            let selected_index = list_state
+                .as_ref()
+                .unwrap()
+                .try_borrow()
+                .unwrap()
+                .selected()
+                .unwrap_or_default();
+            let list_length = context.get_output_list_length().unwrap();
+            let progress_ratio = selected_index * usize::from(progress_bar_height) / list_length;
+            let mut progress_bar_string = "\n".repeat(progress_ratio);
+            progress_bar_string.push('#');
+
+            let output_progress_bar = Paragraph::new(progress_bar_string)
+                .style(Style::default().bg(Color::Gray).fg(Color::Black))
+                .block(Block::default().borders(Borders::TOP | Borders::BOTTOM))
+                .wrap(Wrap { trim: true });
+            f.render_widget(output_progress_bar, output_layout[1]);
+        }
     }
 }
 
