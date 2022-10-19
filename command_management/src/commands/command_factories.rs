@@ -1,7 +1,9 @@
 use super::command_enum::Command;
-use crate::command_error::CommandError;
+use crate::command_error::{CommandError, ErrorKind};
 use std::collections::HashMap;
 use std::i64;
+
+use url::Url;
 
 const HASH_LEN: usize = 6;
 
@@ -40,6 +42,22 @@ pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandE
     Ok(Command::Select(hash.to_string()))
 }
 
+pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    assert_eq!(parameters.len(), 1);
+
+    let url = Url::parse(&parameters[0]);
+    if let Err(_) = url {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::ParameterParsingFailed,
+            Some("add_url".to_string()),
+            Some("Url parsing failed".to_string()),
+        ));
+    }
+
+    Ok(Command::AddRss(url.unwrap()))
+}
+
 pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
     let mut factory_hashmap: HashMap<&'static str, FactoryFn> = HashMap::new();
     factory_hashmap.insert("play", build_play_command);
@@ -48,6 +66,7 @@ pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
     factory_hashmap.insert("list_podcasts", build_list_podcasts_command);
     factory_hashmap.insert("list_episodes", build_list_episodes_command);
     factory_hashmap.insert("select", build_select_command);
+    factory_hashmap.insert("add_rss", build_add_rss_command);
     factory_hashmap
 }
 

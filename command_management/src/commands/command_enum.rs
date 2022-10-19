@@ -1,3 +1,5 @@
+use url::Url;
+
 #[allow(dead_code)]
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum Command {
@@ -11,7 +13,7 @@ pub enum Command {
     See,
     VolumeUp,
     VolumeDown,
-    AddRss,
+    AddRss(Url),
     DeleteRss,
     Select(String),
 }
