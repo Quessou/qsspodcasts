@@ -3,12 +3,13 @@ use log::{error, warn};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::result::Result;
 
 use path_providing::path_provider::PathProvider;
 
 pub struct ApplicationDirInitializer {
-    pub path_provider: Box<dyn PathProvider>,
+    pub path_provider: Rc<dyn PathProvider>,
 }
 
 impl ApplicationDirInitializer {
@@ -27,7 +28,7 @@ impl ApplicationDirInitializer {
             .exists()
     }
 
-    pub fn new(path_provider: Box<dyn PathProvider>) -> ApplicationDirInitializer {
+    pub fn new(path_provider: Rc<dyn PathProvider>) -> ApplicationDirInitializer {
         ApplicationDirInitializer { path_provider }
     }
 
@@ -90,6 +91,7 @@ impl ApplicationDirInitializer {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use std::fs;
 
     #[test]
@@ -200,7 +202,7 @@ mod tests {
 
         let dummy_app_dir = "/tmp/.qsspodcasts";
         let app_dir_initializer = ApplicationDirInitializer {
-            path_provider: Box::new(DummyPathProvider::new(dummy_app_dir)),
+            path_provider: Rc::new(DummyPathProvider::new(dummy_app_dir)),
         };
         assert!(!PathBuf::from(dummy_app_dir).is_dir());
         app_dir_initializer

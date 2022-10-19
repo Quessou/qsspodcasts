@@ -118,8 +118,12 @@ mod tests {
     use super::*;
     use crate::mocks::mp3_player::MockMp3Player;
 
+    use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::players::mp3_player::Mp3Player as TraitMp3Player;
+    use std::rc::Rc;
+    use std::sync::Arc;
     use test_case::test_case;
+    use tokio::sync::Mutex as TokioMutex;
 
     use tokio_test;
     macro_rules! aw {
@@ -135,8 +139,8 @@ mod tests {
     fn instanciate_executor(
         mp3_player: Arc<TokioMutex<dyn TraitMp3Player + Send>>,
     ) -> CommandExecutor {
-        let podcast_library = PodcastLibrary::new();
-        CommandExecutor::new(Arc::new(TokioMutex::new(podcast_library)), mp3_player)
+        let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")));
+        CommandExecutor::new(core)
     }
 
     #[test]

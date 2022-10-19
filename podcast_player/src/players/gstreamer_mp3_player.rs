@@ -22,7 +22,7 @@ pub struct GStreamerMp3Player {
 }
 
 impl GStreamerMp3Player {
-    pub fn new(path_provider: Box<dyn PathProvider>) -> GStreamerMp3Player {
+    pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
         GStreamerMp3Player {
             selected_episode: None,
             path_provider: Arc::new(Mutex::new(path_provider)),

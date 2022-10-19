@@ -1,5 +1,6 @@
 use std::io::Error as IoError;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use tokio::sync::Mutex as TokioMutex;
@@ -27,26 +28,25 @@ pub struct BusinessCore {
     podcast_downloader: PodcastDownloader,
     pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    path_provider: DefaultPathProvider,
+    path_provider: Rc<dyn PathProvider>,
 }
 
 impl BusinessCore {
-    pub fn new() -> BusinessCore {
-        let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
-            path_provider,
-        ))));
+    pub fn new(
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        path_provider: Rc<dyn PathProvider>,
+    ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(
                 path_provider.rss_feed_list_file_path().to_str().unwrap(),
             ))),
             podcast_builder: PodcastBuilder::new(),
-            podcast_downloader: PodcastDownloader::new(Box::new(path_provider)),
+            podcast_downloader: PodcastDownloader::new(path_provider.clone()),
             player: mp3_player,
             podcast_library,
             application_dir_initializer: ApplicationDirInitializer {
-                path_provider: Box::new(path_provider),
+                path_provider: path_provider.clone(),
             },
             path_provider,
         }
@@ -90,6 +90,10 @@ impl BusinessCore {
 
 impl Default for BusinessCore {
     fn default() -> Self {
-        Self::new()
+        let path_provider = DefaultPathProvider {};
+        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
+            path_provider,
+        ))));
+        Self::new(mp3_player, Rc::new(DefaultPathProvider {}))
     }
 }
