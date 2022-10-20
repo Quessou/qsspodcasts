@@ -7,6 +7,7 @@ use business_core::business_core::BusinessCore;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
+use url::Url;
 
 pub struct CommandExecutor {
     core: BusinessCore,
@@ -90,6 +91,21 @@ impl CommandExecutor {
         Ok(OutputType::RawString(String::from("Episode selected")))
     }
 
+    async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
+        let url = url.to_string();
+        if let Err(e) = self.core.add_url(&url) {
+            return Err(CommandError::new(
+                Some(Box::new(e)),
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("URL writing failed".to_string()),
+            ));
+        }
+        // TODO : Handle error
+        self.core.load_feed(&url).await;
+        Ok(OutputType::RawString(String::from("Rss feed added")))
+    }
+
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
@@ -98,6 +114,7 @@ impl CommandExecutor {
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             Command::ListEpisodes => self.handle_list_episodes(command).await?,
             Command::Select(hash) => self.select_episode(&hash).await?,
+            Command::AddRss(url) => self.add_rss(&url).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

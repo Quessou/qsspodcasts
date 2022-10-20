@@ -1,10 +1,11 @@
+use crate::channel_tuple::ChannelTuple;
 use rss::Channel;
 use std::error::Error;
 
-pub async fn get_feed(url: &str) -> Result<Channel, Box<dyn Error>> {
+pub async fn get_feed(url: &str) -> Result<ChannelTuple, Box<dyn Error>> {
     let content = reqwest::get(url).await?.bytes().await?;
     let channel = Channel::read_from(&content[..])?;
-    Ok(channel)
+    Ok((url, channel))
 }
 
 #[cfg(test)]
@@ -16,9 +17,9 @@ mod tests {
             tokio_test::block_on($e)
         };
     }
-    use rss::Channel;
 
-    use super::get_feed;
+    use super::*;
+
     #[test]
     fn test_get_channel() -> Result<(), String> {
         // TODO : When I'll be motivated, prefer launching a webserver locally in order to make these tests independant from any online third-party
@@ -27,10 +28,8 @@ mod tests {
         if let Err(_) = channel {
             return Err(String::from("Test failed"));
         }
-        let channel: Channel = channel.unwrap();
-        // WTF was that assert_eq ?
-        //assert_eq!(channel.items().len(), 0);
-        assert_eq!(channel.link(), url);
+        let channel: ChannelTuple = channel.unwrap();
+        assert_eq!(channel.1.link(), url);
         Ok(())
     }
 }

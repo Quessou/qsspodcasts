@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use log::{error, info};
 use tokio::sync::Mutex as TokioMutex;
 
 use rss_management::{
@@ -66,7 +67,21 @@ impl BusinessCore {
     }
 
     pub fn add_url(&mut self, url: &str) -> Result<(), IoError> {
+        // TODO : Prevent adding an url several times
         self.rss_provider.add_url(url)?;
+        info!("Url added successfully");
+        Ok(())
+    }
+
+    pub async fn load_feed(&mut self, url: &str) -> Result<(), ()> {
+        let feeds = self.rss_provider.get_all_feeds().await;
+        let channel = feeds.iter().find(|c| c.0 == url);
+        if let None = channel {
+            error!("Could not find channel matching URL {}", url);
+            return Err(());
+        }
+        let podcast = self.podcast_builder.build(&channel.unwrap().1);
+        self.podcast_library.lock().await.push(podcast);
         Ok(())
     }
 
@@ -74,9 +89,9 @@ impl BusinessCore {
         let channels = self.rss_provider.get_all_feeds().await;
         let mut podcasts: Vec<Podcast> = vec![];
         for channel in &channels {
-            podcasts.push(self.podcast_builder.build(channel))
+            podcasts.push(self.podcast_builder.build(&channel.1))
         }
-        self.podcast_library.lock().await.push(&mut podcasts);
+        self.podcast_library.lock().await.push(podcasts);
     }
 
     pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {

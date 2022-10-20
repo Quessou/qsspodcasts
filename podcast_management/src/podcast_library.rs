@@ -15,8 +15,8 @@ impl PodcastLibrary {
         self.podcasts = vec![];
     }
 
-    pub fn push(&mut self, podcasts: &mut Vec<Podcast>) {
-        self.podcasts.append(podcasts);
+    pub fn push(&mut self, podcasts: impl Into<Vec<Podcast>>) {
+        self.podcasts.append(&mut podcasts.into());
     }
 
     pub fn search_episode(&self, hash: &str) -> Option<PodcastEpisode> {
@@ -49,7 +49,7 @@ mod tests {
         let mut library = PodcastLibrary::new();
         assert_eq!(library.podcasts.len(), 0);
         let mut podcasts = vec![podcast_builder.build(&rss::Channel::default())];
-        library.push(&mut podcasts);
+        library.push(podcasts);
         assert_eq!(library.podcasts.len(), 1);
         Ok(())
     }
@@ -59,7 +59,7 @@ mod tests {
         let podcast_builder = PodcastBuilder::new();
         let mut library = PodcastLibrary::new();
         let mut podcasts = vec![podcast_builder.build(&rss::Channel::default())];
-        library.push(&mut podcasts);
+        library.push(podcasts);
         assert_eq!(library.podcasts.len(), 1);
         library.clear();
         assert_eq!(library.podcasts.len(), 0);

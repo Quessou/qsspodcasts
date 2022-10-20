@@ -11,7 +11,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use log::debug;
+use log::{debug, error};
 use podcast_player::player_status::PlayerStatus;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
@@ -82,7 +82,10 @@ impl<D: UiDrawer> Frontend<'_, D> {
                         .handle_command(&command)
                         .await
                     {
-                        Err(_) => return Ok(ActionPostEvent::DoNothing),
+                        Err(e) => {
+                            error!("{}", e);
+                            return Ok(ActionPostEvent::DoNothing);
+                        }
                         Ok(s) => {
                             self.context.last_command_output = s.clone();
                             self.context.must_invalidate_cache.set(true);

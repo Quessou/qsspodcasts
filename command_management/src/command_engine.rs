@@ -31,12 +31,7 @@ impl CommandEngine<'_> {
             }
         };
 
-        let output = self
-            .command_executor
-            .execute_command(command)
-            .await
-            .unwrap();
-        Ok(output)
+        self.command_executor.execute_command(command).await
     }
 }
 

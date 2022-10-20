@@ -82,3 +82,9 @@ mod tests {
         assert_ne!(p1.hash(), p2.hash())
     }
 }
+
+impl From<Podcast> for Vec<Podcast> {
+    fn from(p: Podcast) -> Self {
+        vec![p]
+    }
+}
