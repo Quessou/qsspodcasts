@@ -45,6 +45,7 @@ pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandE
 pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     assert_eq!(parameters.len(), 1);
 
+    let parse_options = Url::options();
     let url = Url::parse(&parameters[0]);
     if let Err(_) = url {
         return Err(CommandError::new(

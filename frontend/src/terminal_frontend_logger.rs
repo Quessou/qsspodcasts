@@ -13,7 +13,7 @@ impl TerminalFrontendLogger {
     }
 
     pub fn init(self) -> Result<(), SetLoggerError> {
-        log::set_max_level(log::LevelFilter::Trace);
+        log::set_max_level(log::LevelFilter::Info);
         log::set_boxed_logger(Box::new(self))?;
         Ok(())
     }

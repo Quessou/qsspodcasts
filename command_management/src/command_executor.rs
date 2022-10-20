@@ -1,5 +1,3 @@
-use std::process::Output;
-
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
@@ -94,7 +92,8 @@ impl CommandExecutor {
     }
 
     async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
-        if let Err(e) = self.core.add_url(&url.to_string()) {
+        let url = url.to_string();
+        if let Err(e) = self.core.add_url(&url) {
             return Err(CommandError::new(
                 Some(Box::new(e)),
                 crate::command_error::ErrorKind::ExecutionFailed,
@@ -102,7 +101,8 @@ impl CommandExecutor {
                 Some("URL writing failed".to_string()),
             ));
         }
-        // TODO : Update the library
+        // TODO : Handle error
+        self.core.load_feed(&url).await;
         Ok(OutputType::RawString(String::from("Rss feed added")))
     }
 

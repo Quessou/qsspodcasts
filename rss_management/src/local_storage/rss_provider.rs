@@ -2,6 +2,7 @@ use std::io;
 
 use rss::Channel;
 
+use crate::channel_tuple::ChannelTuple;
 use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
 use crate::url_storage::url_storer::UrlStorer;
 
@@ -21,24 +22,33 @@ impl<T: UrlStorer> RssProvider<T> {
     }
 
     pub fn add_url(&mut self, url: &str) -> Result<(), io::Error> {
-        // TODO : Add check on the fact that the str given in parameter is actually a URL
-        self.rss_feeds.push(String::from(url));
-        self.url_storer.write_url(url)?;
+        let url_string = String::from(url);
+        if !self.rss_feeds.contains(&url_string) {
+            self.rss_feeds.push(url_string);
+            self.url_storer.write_url(&url)?;
+        }
         Ok(())
     }
 
-    pub async fn get_feed(&mut self, url: &str) -> Channel {
+    pub async fn get_feed<'a>(&'a self, url: &'a str) -> ChannelTuple<'a> {
         self.feed_downloader.download_feed(url).await.unwrap()
     }
 
-    pub async fn get_all_feeds(&mut self) -> Vec<Channel> {
+    pub async fn get_all_feeds(&mut self) -> Vec<ChannelTuple> {
         // Note : This is bad AF
-        let rss_feeds = self.rss_feeds.clone();
-        let mut feeds = vec![];
-        for f in rss_feeds {
-            feeds.push(self.get_feed(&f).await)
-        }
+        let rss_feeds = &self.rss_feeds;
 
+        let mut feeds: Vec<ChannelTuple> = vec![];
+        for f in rss_feeds {
+            feeds.push(self.get_feed(&f).await);
+        }
+        //self.rss_feeds.iter().fold(vec![], async |accum, f| {
+        //    accum.push(self.get_feed(f).await);
+        //    return accum;
+        //    //for feed_url in rss_feeds {
+        //    //    feeds.push(self.get_feed(&feed_url).await)
+        //    //}
+        //});
         feeds
     }
 }
