@@ -87,13 +87,15 @@ impl<D: UiDrawer> Frontend<'_, D> {
                             return Ok(ActionPostEvent::DoNothing);
                         }
                         Ok(s) => {
-                            self.context.last_command_output = s.clone();
-                            self.context.must_invalidate_cache.set(true);
-                            if let OutputType::RawString(_) = s {
-                                self.context.list_output_state = None;
-                            } else {
-                                self.context.list_output_state =
-                                    Some(RefCell::new(ListState::default()));
+                            if s != OutputType::None {
+                                self.context.last_command_output = s.clone();
+                                self.context.must_invalidate_cache.set(true);
+                                if let OutputType::RawString(_) = s {
+                                    self.context.list_output_state = None;
+                                } else {
+                                    self.context.list_output_state =
+                                        Some(RefCell::new(ListState::default()));
+                                }
                             }
                         }
                     }
@@ -131,7 +133,7 @@ impl<D: UiDrawer> Frontend<'_, D> {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
                             OutputType::Podcasts(ref v) => v.len(),
-                            OutputType::RawString(_) => 0,
+                            _ => 0,
                         };
 
                         let mut state = state.borrow_mut();
@@ -147,7 +149,7 @@ impl<D: UiDrawer> Frontend<'_, D> {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
                             OutputType::Podcasts(ref v) => v.len(),
-                            OutputType::RawString(_) => 0,
+                            _ => 0,
                         };
 
                         let mut state = state.borrow_mut();

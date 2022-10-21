@@ -9,6 +9,8 @@ edition = "2021"
 tokio = { version = "1.17.0", features = ["full"] }
 log = "0.4.17"
 url = "2.3.1"
+chrono = "0.4"
+
 podcast_management = {path = "../podcast_management"}
 podcast_player = {path = "../podcast_player"}
 abstract_frontend = { path = "../abstract_frontend" }

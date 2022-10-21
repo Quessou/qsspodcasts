@@ -1,8 +1,8 @@
 use super::command_enum::Command;
+use super::duration_utils::string_to_duration;
+use super::hash_utils::is_hash;
 use crate::command_error::{CommandError, ErrorKind};
 use std::collections::HashMap;
-use std::i64;
-
 use url::Url;
 
 const HASH_LEN: usize = 6;
@@ -29,23 +29,38 @@ pub fn build_list_episodes_command(_parameters: Vec<String>) -> Result<Command, 
     Ok(Command::ListEpisodes)
 }
 
-fn is_hash(hash: &str) -> bool {
-    i64::from_str_radix(hash, 16).is_ok()
-}
-
 pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandError> {
-    // TODO : Return Err(CommandError) when the hash parsing fails
-    assert_eq!(parameters.len(), 1);
-    assert_eq!(parameters[0].len(), HASH_LEN);
+    if parameters.len() != 1 {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::BadParameterCount,
+            Some("select".to_string()),
+            Some("Bad parameter count".to_string()),
+        ));
+    }
+
     let hash = &parameters[0];
-    assert!(is_hash(hash));
+    if hash.len() != HASH_LEN || !is_hash(hash) {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::ParameterParsingFailed,
+            Some("select".to_string()),
+            Some("Parameter parsing failed".to_string()),
+        ));
+    }
     Ok(Command::Select(hash.to_string()))
 }
 
 pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, CommandError> {
-    assert_eq!(parameters.len(), 1);
+    if parameters.len() != 1 {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::BadParameterCount,
+            Some("add_rss".to_string()),
+            Some("Bad parameter count".to_string()),
+        ));
+    }
 
-    let parse_options = Url::options();
     let url = Url::parse(&parameters[0]);
     if let Err(_) = url {
         return Err(CommandError::new(
@@ -59,6 +74,48 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
     Ok(Command::AddRss(url.unwrap()))
 }
 
+pub fn build_advance_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::BadParameterCount,
+            Some("advance".to_string()),
+            Some("Bad parameter count".to_string()),
+        ));
+    }
+
+    match string_to_duration(&parameters[0]) {
+        Ok(o) => Ok(Command::Advance(o)),
+        Err(_) => Err(CommandError::new(
+            None,
+            ErrorKind::ParameterParsingFailed,
+            Some("advance".to_string()),
+            Some("duration parsing failed".to_string()),
+        )),
+    }
+}
+
+pub fn build_go_back_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(CommandError::new(
+            None,
+            ErrorKind::BadParameterCount,
+            Some("go_back".to_string()),
+            Some("Bad parameter count".to_string()),
+        ));
+    }
+
+    match string_to_duration(&parameters[0]) {
+        Ok(o) => Ok(Command::GoBack(o)),
+        Err(_) => Err(CommandError::new(
+            None,
+            ErrorKind::ParameterParsingFailed,
+            Some("go_back".to_string()),
+            Some("duration parsing failed".to_string()),
+        )),
+    }
+}
+
 pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
     let mut factory_hashmap: HashMap<&'static str, FactoryFn> = HashMap::new();
     factory_hashmap.insert("play", build_play_command);
@@ -68,6 +125,8 @@ pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
     factory_hashmap.insert("list_episodes", build_list_episodes_command);
     factory_hashmap.insert("select", build_select_command);
     factory_hashmap.insert("add_rss", build_add_rss_command);
+    factory_hashmap.insert("advance", build_advance_command);
+    factory_hashmap.insert("go_back", build_go_back_command);
     factory_hashmap
 }
 

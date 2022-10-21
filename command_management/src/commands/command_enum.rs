@@ -1,3 +1,4 @@
+use chrono;
 use url::Url;
 
 #[allow(dead_code)]
@@ -16,4 +17,6 @@ pub enum Command {
     AddRss(Url),
     DeleteRss,
     Select(String),
+    Advance(chrono::Duration),
+    GoBack(chrono::Duration),
 }

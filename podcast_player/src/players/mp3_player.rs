@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use path_providing::path_provider::PodcastEpisode;
 
+use chrono;
 use log::{error, warn};
 
 use crate::{
@@ -15,6 +16,7 @@ pub trait Mp3Player {
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
     fn pause(&mut self);
     fn play(&mut self);
+    fn seek(&mut self, duration: chrono::Duration) -> Result<(), ()>;
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;

@@ -11,6 +11,7 @@ pub enum ErrorKind {
     ObjectNotFound,
     DownloadFailed,
     SelectionFailed,
+    BadParameterCount,
 }
 
 /// Error type that wraps error that can come from the command management, either its parsing, or its execution.

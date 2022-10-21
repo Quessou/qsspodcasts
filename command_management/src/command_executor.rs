@@ -4,6 +4,7 @@ use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
 
+use chrono;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -101,9 +102,31 @@ impl CommandExecutor {
                 Some("URL writing failed".to_string()),
             ));
         }
-        // TODO : Handle error
-        self.core.load_feed(&url).await;
+        if let Err(_) = self.core.load_feed(&url).await {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Loading of new RSS feed failed".to_string()),
+            ));
+        }
         Ok(OutputType::RawString(String::from("Rss feed added")))
+    }
+
+    async fn advance_in_podcast(
+        &mut self,
+        duration: chrono::Duration,
+    ) -> Result<OutputType, CommandError> {
+        self.core.player.lock().await.seek(duration);
+        Ok(OutputType::None)
+    }
+
+    async fn go_back_in_podcast(
+        &mut self,
+        duration: chrono::Duration,
+    ) -> Result<OutputType, CommandError> {
+        self.core.player.lock().await.seek(duration * -1);
+        Ok(OutputType::None)
     }
 
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
@@ -115,6 +138,8 @@ impl CommandExecutor {
             Command::ListEpisodes => self.handle_list_episodes(command).await?,
             Command::Select(hash) => self.select_episode(&hash).await?,
             Command::AddRss(url) => self.add_rss(&url).await?,
+            Command::Advance(duration) => self.advance_in_podcast(duration).await?,
+            Command::GoBack(duration) => self.go_back_in_podcast(duration).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

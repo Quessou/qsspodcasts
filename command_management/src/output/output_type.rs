@@ -2,6 +2,7 @@ use podcast_management::data_objects::{podcast::Podcast, podcast_episode::Podcas
 
 #[derive(Clone)]
 pub enum OutputType {
+    None,
     Podcasts(Vec<Podcast>),
     Episodes(Vec<PodcastEpisode>),
     RawString(String),
@@ -14,6 +15,7 @@ impl PartialEq for OutputType {
             (Self::Podcasts(_), Self::Podcasts(_))
                 | (Self::Episodes(_), Self::Episodes(_))
                 | (Self::RawString(_), Self::RawString(_))
+                | (Self::None, Self::None)
         )
     }
 }
