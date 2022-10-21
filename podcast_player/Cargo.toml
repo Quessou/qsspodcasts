@@ -10,7 +10,7 @@ tokio = { version = "1.17.0", features = ["full"] }
 rodio = "0.15.0"
 gstreamer = "0.18"
 gstreamer-player = "0.18"
-
+chrono = "0.4"
 log = "0.4.17"
 podcast_management = { path = "../podcast_management" }
 path_providing = { path = "../path_providing" }

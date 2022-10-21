@@ -42,13 +42,6 @@ impl<T: UrlStorer> RssProvider<T> {
         for f in rss_feeds {
             feeds.push(self.get_feed(&f).await);
         }
-        //self.rss_feeds.iter().fold(vec![], async |accum, f| {
-        //    accum.push(self.get_feed(f).await);
-        //    return accum;
-        //    //for feed_url in rss_feeds {
-        //    //    feeds.push(self.get_feed(&feed_url).await)
-        //    //}
-        //});
         feeds
     }
 }
