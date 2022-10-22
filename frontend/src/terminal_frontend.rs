@@ -227,12 +227,15 @@ impl<D: UiDrawer> Frontend<'_, D> {
                 .checked_sub(last_tick.elapsed())
                 .unwrap_or_else(|| Duration::from_secs(0));
             debug!("polling for {} ms", timeout.as_millis());
-            if poll(timeout).await {
-                //crossterm::event::poll(timeout)? {
+            let r = poll(timeout).await;
+            if r.is_ok() && r.unwrap() {
                 let event = event::read().unwrap();
                 if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
                     break;
                 }
+            } else if r.is_err() {
+                // TODO
+                error!("Error while handling incoming crossterm event")
             }
             self.update_screen_context().await;
             if last_tick.elapsed() >= tick_rate {

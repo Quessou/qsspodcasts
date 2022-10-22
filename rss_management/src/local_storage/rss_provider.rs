@@ -1,7 +1,5 @@
 use std::io;
 
-use rss::Channel;
-
 use crate::channel_tuple::ChannelTuple;
 use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
 use crate::url_storage::url_storer::UrlStorer;
@@ -25,7 +23,7 @@ impl<T: UrlStorer> RssProvider<T> {
         let url_string = String::from(url);
         if !self.rss_feeds.contains(&url_string) {
             self.rss_feeds.push(url_string);
-            self.url_storer.write_url(&url)?;
+            self.url_storer.write_url(url)?;
         }
         Ok(())
     }
@@ -40,7 +38,7 @@ impl<T: UrlStorer> RssProvider<T> {
 
         let mut feeds: Vec<ChannelTuple> = vec![];
         for f in rss_feeds {
-            feeds.push(self.get_feed(&f).await);
+            feeds.push(self.get_feed(f).await);
         }
         feeds
     }

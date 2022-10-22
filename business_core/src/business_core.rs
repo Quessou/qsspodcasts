@@ -76,7 +76,7 @@ impl BusinessCore {
     pub async fn load_feed(&mut self, url: &str) -> Result<(), ()> {
         let feeds = self.rss_provider.get_all_feeds().await;
         let channel = feeds.iter().find(|c| c.0 == url);
-        if let None = channel {
+        if channel.is_none() {
             error!("Could not find channel matching URL {}", url);
             return Err(());
         }

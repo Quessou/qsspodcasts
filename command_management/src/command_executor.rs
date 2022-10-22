@@ -4,7 +4,6 @@ use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
 
-use chrono;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -102,7 +101,7 @@ impl CommandExecutor {
                 Some("URL writing failed".to_string()),
             ));
         }
-        if let Err(_) = self.core.load_feed(&url).await {
+        if self.core.load_feed(&url).await.is_err() {
             return Err(CommandError::new(
                 None,
                 crate::command_error::ErrorKind::ExecutionFailed,
@@ -117,7 +116,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        self.core.player.lock().await.seek(duration);
+        if self.core.player.lock().await.seek(duration).is_err() {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Seeking failed".to_string()),
+            ));
+        }
         Ok(OutputType::None)
     }
 
@@ -125,7 +131,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        self.core.player.lock().await.seek(duration * -1);
+        if self.core.player.lock().await.seek(duration * -1).is_err() {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Seeking failed".to_string()),
+            ));
+        }
         Ok(OutputType::None)
     }
 

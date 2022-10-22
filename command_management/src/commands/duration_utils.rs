@@ -1,6 +1,6 @@
 use chrono::Duration;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 struct Parsed {
     pub seconds: Option<u32>,
     pub minutes: Option<u32>,
@@ -151,19 +151,8 @@ impl TryFrom<&str> for Parsed {
         }
     }
 }
-
-impl Default for Parsed {
-    fn default() -> Self {
-        Self {
-            seconds: Default::default(),
-            minutes: Default::default(),
-            hours: Default::default(),
-        }
-    }
-}
-
 pub fn string_to_duration(s: &str) -> Result<Duration, ()> {
-    let mut parsed = Parsed::try_from(s);
+    let parsed = Parsed::try_from(s);
 
     if let Ok(p) = parsed {
         let mut seconds = p.seconds.unwrap_or_default();
