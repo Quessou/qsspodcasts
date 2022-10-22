@@ -20,11 +20,11 @@ use tui::{backend::CrosstermBackend, Terminal};
 use command_management::command_engine::CommandEngine;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
+use crate::crossterm_async_event::poll;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
-
 use tui::widgets::ListState;
 
 /// TODO : Find a better name
@@ -227,7 +227,8 @@ impl<D: UiDrawer> Frontend<'_, D> {
                 .checked_sub(last_tick.elapsed())
                 .unwrap_or_else(|| Duration::from_secs(0));
             debug!("polling for {} ms", timeout.as_millis());
-            if crossterm::event::poll(timeout)? {
+            if poll(timeout).await {
+                //crossterm::event::poll(timeout)? {
                 let event = event::read().unwrap();
                 if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
                     break;
