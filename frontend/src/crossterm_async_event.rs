@@ -4,7 +4,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 
 pub async fn poll(d: Duration) -> Result<bool, ()> {
-    let mdr = async {
+    let crossterm_event_future = async {
         loop {
             let a = crossterm_poll(Duration::from_secs(0));
             if a.is_ok() && a.unwrap() {
@@ -15,8 +15,8 @@ pub async fn poll(d: Duration) -> Result<bool, ()> {
         true
     };
 
-    match timeout(d, mdr).await {
+    match timeout(d, crossterm_event_future).await {
         Ok(b) => Ok(b),
-        Err(_) => Err(()),
+        Err(_) => Ok(false),
     }
 }

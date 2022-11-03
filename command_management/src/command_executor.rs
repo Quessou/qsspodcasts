@@ -3,7 +3,6 @@ use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
-use tokio::sync::mpsc::Receiver;
 
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
@@ -12,15 +11,18 @@ use url::Url;
 
 pub struct CommandExecutor {
     core: BusinessCore,
-    receiver: Receiver<Command>,
 }
 
 impl CommandExecutor {
-    pub fn new(business_core: BusinessCore, receiver: Receiver<Command>) -> CommandExecutor {
+    pub fn new(business_core: BusinessCore) -> CommandExecutor {
         CommandExecutor {
             core: business_core,
-            receiver,
         }
+    }
+
+    pub async fn initialize(&mut self) {
+        self.core.initialize();
+        self.core.build_podcasts().await;
     }
 
     async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
@@ -167,12 +169,6 @@ impl CommandExecutor {
         };
 
         Ok(command_output)
-    }
-
-    pub async fn run(&mut self) {
-        loop {
-            let command = self.receiver.recv().await;
-        }
     }
 }
 

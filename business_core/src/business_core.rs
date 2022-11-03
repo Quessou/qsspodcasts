@@ -22,6 +22,7 @@ use podcast_management::{
 };
 use podcast_player::players::{gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player};
 
+// TODO : Add concept of InitializedBusinessCore which is returned by BusinessCore::initialize, and consumes self
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
     rss_provider: RssProvider<FileUrlStorer>,

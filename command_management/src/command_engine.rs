@@ -4,20 +4,31 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::command_error::{CommandError, ErrorKind};
+use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
 
+pub type CommandResult = Result<OutputType, CommandError>;
+
 pub struct CommandEngine {
     command_parser: Arc<TokioMutex<CommandParser>>,
-    command_sender: Sender<Command>,
+    command_executor: CommandExecutor,
+    command_receiver: Receiver<String>,
+    output_sender: Sender<CommandResult>,
 }
 
 impl CommandEngine {
-    pub fn new(sender: Sender<Command>) -> CommandEngine {
+    pub fn new(
+        command_executor: CommandExecutor,
+        command_receiver: Receiver<String>,
+        output_sender: Sender<CommandResult>,
+    ) -> CommandEngine {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
-            command_sender: sender,
+            command_executor,
+            command_receiver,
+            output_sender,
         }
     }
 
@@ -29,17 +40,23 @@ impl CommandEngine {
                 return Err(e);
             }
         };
-        match self.command_sender.send(command).await {
-            Ok(_) => Ok(OutputType::None),
-            Err(_) => Err(CommandError::new(
-                None,
-                ErrorKind::CommandSendingFailed,
-                None,
-                None,
-            )),
+
+        if command == Command::Exit {
+            self.command_receiver.close();
+        }
+
+        self.command_executor.execute_command(command).await
+    }
+
+    pub async fn run(&mut self) {
+        self.command_executor.initialize().await;
+        while let Some(command) = self.command_receiver.recv().await {
+            let output = self.handle_command(&command).await;
+            if let Err(_) = self.output_sender.send(output).await {
+                error!("Could not send output in channel");
+            }
         }
     }
-    // TODO : Find a way to handle Outputs and bring them up
 }
 
 #[cfg(test)]

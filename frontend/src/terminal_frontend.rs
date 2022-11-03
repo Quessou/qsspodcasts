@@ -3,7 +3,6 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
-use business_core::business_core::BusinessCore;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
@@ -14,11 +13,12 @@ use crossterm::{
 use log::{debug, error};
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
+use tokio::sync::mpsc::error::TryRecvError;
+use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
-use command_management::command_engine::CommandEngine;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
@@ -26,6 +26,7 @@ use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
+use command_management::command_engine::CommandResult;
 use tui::widgets::ListState;
 
 /// TODO : Find a better name
@@ -36,7 +37,8 @@ enum ActionPostEvent {
 
 pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
-    command_engine: Arc<TokioMutex<CommandEngine>>,
+    command_sender: Sender<String>,
+    output_receiver: Receiver<CommandResult>,
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
@@ -44,23 +46,36 @@ pub struct Frontend<D: UiDrawer> {
 
 impl<D: UiDrawer> Frontend<D> {
     pub fn new(
-        command_engine: Arc<TokioMutex<CommandEngine>>,
+        command_sender: Sender<String>,
+        output_receiver: Receiver<CommandResult>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();
-        //let mp3_player = business_core.player.clone();
         TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
         Frontend {
             terminal,
-            command_engine, //Arc::new(TokioMutex::new(CommandEngine::new(business_core))),
+            command_sender,
+            output_receiver,
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
+        }
+    }
+
+    fn handle_output(&mut self, output: OutputType) {
+        if output != OutputType::None {
+            self.context.last_command_output = output.clone();
+            self.context.must_invalidate_cache.set(true);
+            if let OutputType::RawString(_) = output {
+                self.context.list_output_state = None;
+            } else {
+                self.context.list_output_state = Some(RefCell::new(ListState::default()));
+            }
         }
     }
 
@@ -74,35 +89,11 @@ impl<D: UiDrawer> Frontend<D> {
                     if self.context.command.is_empty() {
                         return Ok(ActionPostEvent::DoNothing);
                     }
-                    if self.context.command.to_lowercase() == "exit" {
-                        return Ok(ActionPostEvent::Quit);
-                    }
+
                     let command = self.context.command.clone();
                     self.context.command = String::from("");
-
-                    match self
-                        .command_engine
-                        .lock()
-                        .await
-                        .handle_command(&command)
-                        .await
-                    {
-                        Err(e) => {
-                            error!("{}", e);
-                            return Ok(ActionPostEvent::DoNothing);
-                        }
-                        Ok(s) => {
-                            if s != OutputType::None {
-                                self.context.last_command_output = s.clone();
-                                self.context.must_invalidate_cache.set(true);
-                                if let OutputType::RawString(_) = s {
-                                    self.context.list_output_state = None;
-                                } else {
-                                    self.context.list_output_state =
-                                        Some(RefCell::new(ListState::default()));
-                                }
-                            }
-                        }
+                    if let Err(e) = self.command_sender.send(command).await {
+                        error!("Could not send command. Error : {}", e)
                     }
                 }
                 KeyCode::Char(c) => {
@@ -239,9 +230,20 @@ impl<D: UiDrawer> Frontend<D> {
                     break;
                 }
             } else if r.is_err() {
-                // TODO
                 error!("Error while handling incoming crossterm event")
             }
+
+            if let Ok(output) = self.output_receiver.try_recv() {
+                match output {
+                    Err(e) => error!("{}", e),
+                    Ok(o) => self.handle_output(o),
+                }
+            }
+
+            if self.command_sender.is_closed() {
+                break;
+            }
+
             self.update_screen_context().await;
             if last_tick.elapsed() >= tick_rate {
                 last_tick = Instant::now();
