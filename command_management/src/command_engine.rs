@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 
-use crate::command_error::{CommandError, ErrorKind};
+use crate::command_error::CommandError;
 use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 use crate::commands::command_enum::Command;
@@ -52,7 +52,7 @@ impl CommandEngine {
         self.command_executor.initialize().await;
         while let Some(command) = self.command_receiver.recv().await {
             let output = self.handle_command(&command).await;
-            if let Err(_) = self.output_sender.send(output).await {
+            if self.output_sender.send(output).await.is_err() {
                 error!("Could not send output in channel");
             }
         }

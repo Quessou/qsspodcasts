@@ -13,7 +13,6 @@ use crossterm::{
 use log::{debug, error};
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
-use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
@@ -28,12 +27,6 @@ use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
 use command_management::command_engine::CommandResult;
 use tui::widgets::ListState;
-
-/// TODO : Find a better name
-enum ActionPostEvent {
-    DoNothing,
-    Quit,
-}
 
 pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
@@ -79,15 +72,12 @@ impl<D: UiDrawer> Frontend<D> {
         }
     }
 
-    async fn handle_key_event(
-        &mut self,
-        key_event: KeyEvent,
-    ) -> Result<ActionPostEvent, Box<dyn Error>> {
+    async fn handle_key_event(&mut self, key_event: KeyEvent) -> Result<(), Box<dyn Error>> {
         match self.context.current_action {
             ScreenAction::TypingCommand => match key_event.code {
                 KeyCode::Enter => {
                     if self.context.command.is_empty() {
-                        return Ok(ActionPostEvent::DoNothing);
+                        return Ok(());
                     }
 
                     let command = self.context.command.clone();
@@ -166,17 +156,14 @@ impl<D: UiDrawer> Frontend<D> {
             },
         }
 
-        Ok(ActionPostEvent::DoNothing)
+        Ok(())
     }
 
-    async fn handle_event(
-        &mut self,
-        event: CrosstermEvent,
-    ) -> Result<ActionPostEvent, Box<dyn Error>> {
+    async fn handle_event(&mut self, event: CrosstermEvent) -> Result<(), Box<dyn Error>> {
         if let CrosstermEvent::Key(key_event) = event {
             return self.handle_key_event(key_event).await;
         }
-        Ok(ActionPostEvent::DoNothing)
+        Ok(())
     }
 
     /// Updates the screen context according to the entire system state (Mp3Player, and so on...)
@@ -226,8 +213,8 @@ impl<D: UiDrawer> Frontend<D> {
             let r = poll(timeout).await;
             if r.is_ok() && r.unwrap() {
                 let event = event::read().unwrap();
-                if let ActionPostEvent::Quit = self.handle_event(event).await.unwrap() {
-                    break;
+                if self.handle_event(event).await.is_err() {
+                    // TODO
                 }
             } else if r.is_err() {
                 error!("Error while handling incoming crossterm event")

@@ -11,7 +11,7 @@ use command_management::{command_engine::CommandEngine, command_executor::Comman
 use path_providing::default_path_provider::DefaultPathProvider;
 use podcast_player::players::gstreamer_mp3_player::GStreamerMp3Player;
 
-use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::mpsc::channel;
 
 /// Lame podcast manager
 #[derive(Parser, Debug)]
