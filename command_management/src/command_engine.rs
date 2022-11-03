@@ -1,24 +1,23 @@
 use log::error;
 use std::sync::Arc;
+use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 
-use business_core::business_core::BusinessCore;
-
-use crate::command_error::CommandError;
-use crate::command_executor::CommandExecutor;
+use crate::command_error::{CommandError, ErrorKind};
 use crate::command_parser::CommandParser;
+use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
 
-pub struct CommandEngine<'a> {
-    command_parser: Arc<TokioMutex<CommandParser<'a>>>,
-    command_executor: CommandExecutor,
+pub struct CommandEngine {
+    command_parser: Arc<TokioMutex<CommandParser>>,
+    command_sender: Sender<Command>,
 }
 
-impl CommandEngine<'_> {
-    pub fn new(business_core: BusinessCore) -> CommandEngine<'static> {
+impl CommandEngine {
+    pub fn new(sender: Sender<Command>) -> CommandEngine {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
-            command_executor: CommandExecutor::new(business_core),
+            command_sender: sender,
         }
     }
 
@@ -30,9 +29,17 @@ impl CommandEngine<'_> {
                 return Err(e);
             }
         };
-
-        self.command_executor.execute_command(command).await
+        match self.command_sender.send(command).await {
+            Ok(_) => Ok(OutputType::None),
+            Err(_) => Err(CommandError::new(
+                None,
+                ErrorKind::CommandSendingFailed,
+                None,
+                None,
+            )),
+        }
     }
+    // TODO : Find a way to handle Outputs and bring them up
 }
 
 #[cfg(test)]

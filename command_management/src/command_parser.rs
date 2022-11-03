@@ -8,12 +8,12 @@ use std::vec::Vec;
 use crate::commands::command_factories::{get_factory_hashmap, FactoryFn};
 
 #[derive(Default)]
-pub struct CommandParser<'a> {
-    factory_hashmap: HashMap<&'a str, FactoryFn>,
+pub struct CommandParser {
+    factory_hashmap: HashMap<&'static str, FactoryFn>,
 }
 
-impl CommandParser<'_> {
-    pub fn new() -> CommandParser<'static> {
+impl CommandParser {
+    pub fn new() -> CommandParser {
         CommandParser {
             factory_hashmap: get_factory_hashmap(),
         }

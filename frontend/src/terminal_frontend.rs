@@ -13,6 +13,7 @@ use crossterm::{
 };
 use log::{debug, error};
 use podcast_player::player_status::PlayerStatus;
+use podcast_player::players::mp3_player::Mp3Player;
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
@@ -33,26 +34,30 @@ enum ActionPostEvent {
     Quit,
 }
 
-pub struct Frontend<'a, D: UiDrawer> {
+pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
-    command_engine: Arc<TokioMutex<CommandEngine<'a>>>,
+    command_engine: Arc<TokioMutex<CommandEngine>>,
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
 }
 
-impl<D: UiDrawer> Frontend<'_, D> {
-    pub fn new(business_core: BusinessCore, ui_drawer: Box<D>) -> Frontend<'static, D> {
+impl<D: UiDrawer> Frontend<D> {
+    pub fn new(
+        command_engine: Arc<TokioMutex<CommandEngine>>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        ui_drawer: Box<D>,
+    ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
         let context = ScreenContext::default();
-        let mp3_player = business_core.player.clone();
+        //let mp3_player = business_core.player.clone();
         TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
         Frontend {
             terminal,
-            command_engine: Arc::new(TokioMutex::new(CommandEngine::new(business_core))),
+            command_engine, //Arc::new(TokioMutex::new(CommandEngine::new(business_core))),
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
