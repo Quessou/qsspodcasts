@@ -4,7 +4,6 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use log::{error, info};
-use tokio::sync::mpsc::Sender;
 use tokio::sync::Mutex as TokioMutex;
 
 use rss_management::{
@@ -23,7 +22,7 @@ use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::players::mp3_player::Mp3Player;
+use podcast_player::{player_error::PlayerError, players::mp3_player::Mp3Player};
 
 // TODO : Add concept of InitializedBusinessCore which is returned by BusinessCore::initialize, and consumes self
 pub struct BusinessCore {
@@ -31,7 +30,7 @@ pub struct BusinessCore {
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: Rc<dyn PathProvider>,
     notifications_sender: DataSender<Notification>,
@@ -124,5 +123,44 @@ impl BusinessCore {
             .send(notification)
             .await
             .expect("Writing notification in channel failed");
+    }
+
+    pub async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
+        self.player.lock().await.seek(duration)
+    }
+
+    pub async fn play(&mut self) {
+        if self.player.lock().await.is_paused() {
+            self.player.lock().await.play();
+            self.send_notification("Player launched".to_string()).await;
+        } else {
+            self.send_notification("Player already running".to_string())
+                .await;
+        }
+    }
+
+    pub async fn pause(&mut self) {
+        if !self.player.lock().await.is_paused() {
+            self.player.lock().await.pause();
+            self.send_notification("Player paused".to_string()).await;
+        } else {
+            self.send_notification("Player already paused".to_string())
+                .await;
+        }
+    }
+
+    pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+        let r = self.player.lock().await.select_episode(episode);
+        match r {
+            Ok(_) => {
+                self.send_notification("Episode selection successful".to_string())
+                    .await
+            }
+            Err(_) => {
+                self.send_notification("Episode selection failed".to_string())
+                    .await
+            }
+        };
+        r
     }
 }

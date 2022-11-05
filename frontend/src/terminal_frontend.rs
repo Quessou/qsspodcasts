@@ -232,7 +232,7 @@ impl<D: UiDrawer> Frontend<D> {
 
             if let Ok(n) = self.notification_receiver.try_receive() {
                 self.context.notifications_buffer.push_front(n);
-                self.context.notifications_buffer.truncate(5);
+                self.context.notifications_buffer.truncate(4);
             }
 
             if self.command_sender.is_closed() {

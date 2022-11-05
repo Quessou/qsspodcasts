@@ -244,9 +244,9 @@ impl MinimalisticUiDrawer<'_> {
             .map(|s| Spans::from(s.as_ref()));
 
         let empty_lines_count: i16 =
-            std::cmp::max(0, (context.notifications_buffer.len() as i16) - 5);
+            std::cmp::max(0, 4 - (context.notifications_buffer.len() as i16));
         let empty_spaces =
-            iter::repeat(Spans::from("")).take(empty_lines_count.try_into().unwrap());
+            iter::repeat(Spans::from(" ")).take(empty_lines_count.try_into().unwrap());
 
         let notifications = empty_spaces.chain(notifications);
         let notifications: Vec<Spans> = notifications.collect();

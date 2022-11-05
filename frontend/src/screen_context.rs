@@ -52,7 +52,7 @@ impl Default for ScreenContext {
             current_action: ScreenAction::TypingCommand,
             ui_refresh_tickrate: Duration::from_millis(20),
             player_status: PlayerStatus::Stopped,
-            notifications_buffer: VecDeque::with_capacity(5),
+            notifications_buffer: VecDeque::with_capacity(4),
         }
     }
 }

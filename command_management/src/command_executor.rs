@@ -25,22 +25,14 @@ impl CommandExecutor {
         self.core.build_podcasts().await;
     }
 
-    async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.core.player.lock().await;
-        if mp3_player.is_paused() {
-            mp3_player.play();
-        }
-        let return_message = String::from("Player launched");
-        Ok(OutputType::RawString(return_message))
+    async fn handle_play(&mut self, _: Command) -> Result<OutputType, CommandError> {
+        self.core.play().await;
+        Ok(OutputType::None)
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.core.player.lock().await;
-        if !mp3_player.is_paused() {
-            mp3_player.pause();
-        }
-        let return_message = String::from("Player paused");
-        Ok(OutputType::RawString(return_message))
+    async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
+        self.core.pause().await;
+        Ok(OutputType::None)
     }
 
     async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
@@ -77,7 +69,7 @@ impl CommandExecutor {
                     Some("Episode download failed".to_string()),
                 ));
             }
-            if self.core.player.lock().await.select_episode(&ep).is_err() {
+            if self.core.select_episode(&ep).await.is_err() {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::SelectionFailed,
@@ -93,7 +85,7 @@ impl CommandExecutor {
                 Some("Episode not found".to_string()),
             ));
         }
-        Ok(OutputType::RawString(String::from("Episode selected")))
+        Ok(OutputType::None)
     }
 
     async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
@@ -121,7 +113,7 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        if self.core.player.lock().await.seek(duration).is_err() {
+        if self.core.seek(duration).await.is_err() {
             return Err(CommandError::new(
                 None,
                 crate::command_error::ErrorKind::ExecutionFailed,
@@ -136,7 +128,7 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        if self.core.player.lock().await.seek(duration * -1).is_err() {
+        if self.core.seek(duration * -1).await.is_err() {
             return Err(CommandError::new(
                 None,
                 crate::command_error::ErrorKind::ExecutionFailed,
