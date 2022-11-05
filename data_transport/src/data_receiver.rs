@@ -1,4 +1,5 @@
 use log::error;
+use tokio::sync::mpsc::error::TryRecvError;
 use tokio::sync::mpsc::Receiver;
 
 /// Dumb wrapper on a Receiver end of a channel
@@ -20,12 +21,12 @@ impl<T> DataReceiver<T> {
         self.receiver.recv().await
     }
 
-    pub fn try_receive(&mut self) -> Result<T, ()> {
+    pub fn try_receive(&mut self) -> Result<T, TryRecvError> {
         match self.receiver.try_recv() {
             Ok(d) => Ok(d),
             Err(e) => {
                 error!("{}", e);
-                Err(())
+                Err(e)
             }
         }
     }

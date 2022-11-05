@@ -86,7 +86,7 @@ impl<D: UiDrawer> Frontend<D> {
 
                     let command = self.context.command.clone();
                     self.context.command = String::from("");
-                    if let Err(_) = self.command_sender.send(command).await {
+                    if self.command_sender.send(command).await.is_err() {
                         error!("Could not send command.");
                     }
                 }
@@ -224,10 +224,8 @@ impl<D: UiDrawer> Frontend<D> {
                 error!("Error while handling incoming crossterm event")
             }
 
-            if let Ok(output) = self.output_receiver.try_receive() {
-                if let Ok(o) = output {
-                    self.handle_output(o)
-                }
+            if let Ok(Ok(output)) = self.output_receiver.try_receive() {
+                self.handle_output(output);
             }
 
             if let Ok(n) = self.notification_receiver.try_receive() {
