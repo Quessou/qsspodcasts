@@ -98,7 +98,7 @@ impl CommandExecutor {
 
     async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
         let url = url.to_string();
-        if let Err(e) = self.core.add_url(&url) {
+        if let Err(e) = self.core.add_url(&url).await {
             return Err(CommandError::new(
                 Some(Box::new(e)),
                 crate::command_error::ErrorKind::ExecutionFailed,

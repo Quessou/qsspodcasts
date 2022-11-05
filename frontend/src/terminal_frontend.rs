@@ -18,6 +18,7 @@ use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
+use business_core::notification::Notification;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
@@ -32,6 +33,7 @@ pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_sender: Sender<String>,
     output_receiver: Receiver<CommandResult>,
+    notification_receiver: Receiver<Notification>,
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
@@ -41,6 +43,7 @@ impl<D: UiDrawer> Frontend<D> {
     pub fn new(
         command_sender: Sender<String>,
         output_receiver: Receiver<CommandResult>,
+        notification_receiver: Receiver<Notification>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
@@ -54,6 +57,7 @@ impl<D: UiDrawer> Frontend<D> {
             terminal,
             command_sender,
             output_receiver,
+            notification_receiver,
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),

@@ -11,7 +11,6 @@ podcast_download= { path = "../podcast_download" }
 podcast_management= { path = "../podcast_management" }
 podcast_player= { path = "../podcast_player" }
 path_providing = { path = "../path_providing" }
-#command_management = { path = "../command_management" }
 
 tokio = { version = "1.17.0", features = ["full"] }
 log = "0.4.17"

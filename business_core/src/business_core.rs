@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use log::{error, info};
+use tokio::sync::mpsc::Sender;
 use tokio::sync::Mutex as TokioMutex;
 
 use rss_management::{
@@ -13,6 +14,7 @@ use rss_management::{
     url_storage::file_url_storer::FileUrlStorer,
 };
 
+use crate::notification::Notification;
 use path_providing::default_path_provider::{DefaultPathProvider, PathProvider};
 use podcast_download::podcast_downloader::PodcastDownloader;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
@@ -31,12 +33,14 @@ pub struct BusinessCore {
     pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: Rc<dyn PathProvider>,
+    notifications_sender: Sender<Notification>,
 }
 
 impl BusinessCore {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         path_provider: Rc<dyn PathProvider>,
+        notifications_sender: Sender<Notification>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
@@ -51,6 +55,7 @@ impl BusinessCore {
                 path_provider: path_provider.clone(),
             },
             path_provider,
+            notifications_sender,
         }
     }
 
@@ -67,10 +72,12 @@ impl BusinessCore {
         }
     }
 
-    pub fn add_url(&mut self, url: &str) -> Result<(), IoError> {
+    pub async fn add_url(&mut self, url: &str) -> Result<(), IoError> {
         // TODO : Prevent adding an url several times
         self.rss_provider.add_url(url)?;
         info!("Url added successfully");
+        self.send_notification(format!("Url {} added successfully", url))
+            .await;
         Ok(())
     }
 
@@ -93,23 +100,28 @@ impl BusinessCore {
             podcasts.push(self.podcast_builder.build(&channel.1))
         }
         self.podcast_library.lock().await.push(podcasts);
+        self.send_notification("Building library done".to_string())
+            .await;
     }
 
     pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
+        self.send_notification(format!("Downloading \"{}\"", episode.title))
+            .await;
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
+            self.send_notification("Downloading failed".to_string())
+                .await;
             return Err(());
         }
+        self.send_notification("Downloading successful".to_string())
+            .await;
 
         Ok(())
     }
-}
 
-impl Default for BusinessCore {
-    fn default() -> Self {
-        let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
-            path_provider,
-        ))));
-        Self::new(mp3_player, Rc::new(DefaultPathProvider {}))
+    async fn send_notification(&mut self, notification: Notification) {
+        self.notifications_sender
+            .send(notification)
+            .await
+            .expect("Writing notification in channel failed");
     }
 }
