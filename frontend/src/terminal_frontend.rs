@@ -86,7 +86,7 @@ impl<D: UiDrawer> Frontend<D> {
 
                     let command = self.context.command.clone();
                     self.context.command = String::from("");
-                    if let Err(e) = self.command_sender.send(command).await {
+                    if let Err(_) = self.command_sender.send(command).await {
                         error!("Could not send command.");
                     }
                 }

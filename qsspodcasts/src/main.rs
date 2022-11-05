@@ -49,11 +49,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let core = BusinessCore::new(
         mp3_player.clone(),
         Rc::new(path_provider),
-        notifications_sender,
+        Some(notifications_sender),
     );
 
     let executor = CommandExecutor::new(core);
-    let mut command_engine = CommandEngine::new(executor, command_reader, output_sender);
+    let mut command_engine =
+        CommandEngine::new(executor, Some(command_reader), Some(output_sender));
 
     let mut frontend = Frontend::new(
         command_sender,

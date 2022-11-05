@@ -4,7 +4,6 @@ use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::{Borrow, Cow};
-use std::collections::VecDeque;
 use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};

@@ -33,14 +33,14 @@ pub struct BusinessCore {
     player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: Rc<dyn PathProvider>,
-    notifications_sender: DataSender<Notification>,
+    notifications_sender: Option<DataSender<Notification>>,
 }
 
 impl BusinessCore {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         path_provider: Rc<dyn PathProvider>,
-        notifications_sender: DataSender<Notification>,
+        notifications_sender: Option<DataSender<Notification>>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
@@ -119,7 +119,12 @@ impl BusinessCore {
     }
 
     async fn send_notification(&mut self, notification: Notification) {
+        if self.notifications_sender.is_none() {
+            return;
+        }
         self.notifications_sender
+            .as_mut()
+            .unwrap()
             .send(notification)
             .await
             .expect("Writing notification in channel failed");

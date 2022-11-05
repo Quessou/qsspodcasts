@@ -1,6 +1,5 @@
 use log::error;
 use std::sync::Arc;
-use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::command_error::CommandError;
@@ -15,15 +14,15 @@ pub type CommandResult = Result<OutputType, CommandError>;
 pub struct CommandEngine {
     command_parser: Arc<TokioMutex<CommandParser>>,
     command_executor: CommandExecutor,
-    command_receiver: DataReceiver<String>,
-    output_sender: DataSender<CommandResult>,
+    command_receiver: Option<DataReceiver<String>>,
+    output_sender: Option<DataSender<CommandResult>>,
 }
 
 impl CommandEngine {
     pub fn new(
         command_executor: CommandExecutor,
-        command_receiver: DataReceiver<String>,
-        output_sender: DataSender<CommandResult>,
+        command_receiver: Option<DataReceiver<String>>,
+        output_sender: Option<DataSender<CommandResult>>,
     ) -> CommandEngine {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
@@ -43,17 +42,28 @@ impl CommandEngine {
         };
 
         if command == Command::Exit {
-            self.command_receiver.close();
+            self.command_receiver.as_mut().unwrap().close();
         }
 
         self.command_executor.execute_command(command).await
     }
 
     pub async fn run(&mut self) {
+        if self.command_receiver.is_none() {
+            error!("Need a command receiver to use the run method");
+            return;
+        }
         self.command_executor.initialize().await;
-        while let Some(command) = self.command_receiver.receive().await {
+        while let Some(command) = self.command_receiver.as_mut().unwrap().receive().await {
             let output = self.handle_command(&command).await;
-            if self.output_sender.send(output).await.is_err() {
+            if self
+                .output_sender
+                .as_mut()
+                .unwrap()
+                .send(output)
+                .await
+                .is_err()
+            {
                 error!("Could not send output in channel");
             }
         }
@@ -65,6 +75,7 @@ mod tests {
 
     use std::rc::Rc;
 
+    use business_core::business_core::BusinessCore;
     use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::players::mp3_player::Mp3Player;
     use tokio_test;
@@ -78,11 +89,10 @@ mod tests {
     use crate::mocks::mp3_player::MockMp3Player;
     use test_case::test_case;
 
-    fn instanciate_engine(player: Arc<TokioMutex<dyn Mp3Player + Send>>) -> CommandEngine<'static> {
-        CommandEngine::new(BusinessCore::new(
-            player,
-            Rc::new(DummyPathProvider::new("")),
-        ))
+    fn instanciate_engine(player: Arc<TokioMutex<dyn Mp3Player + Send>>) -> CommandEngine {
+        let core = BusinessCore::new(player, Rc::new(DummyPathProvider::new("")), None);
+        let executor = CommandExecutor::new(core);
+        CommandEngine::new(executor, None, None)
     }
 
     #[test]

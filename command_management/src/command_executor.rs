@@ -191,7 +191,7 @@ mod tests {
     fn instanciate_executor(
         mp3_player: Arc<TokioMutex<dyn TraitMp3Player + Send>>,
     ) -> CommandExecutor {
-        let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")));
+        let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")), None);
         CommandExecutor::new(core)
     }
 
