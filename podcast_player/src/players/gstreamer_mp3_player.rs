@@ -81,10 +81,10 @@ impl Mp3Player for GStreamerMp3Player {
         self.is_paused = false;
     }
 
-    fn seek(&mut self, duration: chrono::Duration) -> Result<(), ()> {
+    fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
         match self.player.position() {
             Some(p) => {
-                let mut p = p.seconds();
+                let p = p.seconds();
                 let offset = duration.num_seconds();
                 let episode_duration = self.player.duration().unwrap().seconds();
                 let p: u64 = if offset + (p as i64) < 0 {
@@ -99,9 +99,7 @@ impl Mp3Player for GStreamerMp3Player {
                 self.player.seek(ClockTime::from_seconds(p));
                 Ok(())
             }
-            None => {
-                return Ok(());
-            }
+            None => Ok(()),
         }
     }
 

@@ -11,5 +11,6 @@ members = [
 	"path_providing",
 	"frontend",
 	"abstract_frontend",
-	"str_to_lines"
+	"str_to_lines",
+	"data_transport"
 ]

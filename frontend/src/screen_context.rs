@@ -1,7 +1,9 @@
 use std::cell::{Cell, RefCell};
+use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use business_core::notification::Notification;
 use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
@@ -24,6 +26,7 @@ pub struct ScreenContext {
     pub current_action: ScreenAction,
     pub ui_refresh_tickrate: Duration,
     pub player_status: PlayerStatus,
+    pub notifications_buffer: VecDeque<Notification>,
 }
 
 impl ScreenContext {
@@ -49,6 +52,7 @@ impl Default for ScreenContext {
             current_action: ScreenAction::TypingCommand,
             ui_refresh_tickrate: Duration::from_millis(20),
             player_status: PlayerStatus::Stopped,
+            notifications_buffer: VecDeque::with_capacity(4),
         }
     }
 }

@@ -16,6 +16,7 @@ business_core = {path = "../business_core" }
 log = "0.4.17"
 simple_logger = "2.1.0"
 str_to_lines = { path = "../str_to_lines" }
+data_transport = { path = "../data_transport" }
 
 [dev-dependencies]
 test-case = "1.1.0"

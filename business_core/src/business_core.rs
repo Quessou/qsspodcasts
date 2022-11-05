@@ -13,29 +13,34 @@ use rss_management::{
     url_storage::file_url_storer::FileUrlStorer,
 };
 
-use path_providing::default_path_provider::{DefaultPathProvider, PathProvider};
+use crate::notification::Notification;
+use data_transport::data_sender::DataSender;
+use path_providing::default_path_provider::PathProvider;
 use podcast_download::podcast_downloader::PodcastDownloader;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::players::{gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player};
+use podcast_player::{player_error::PlayerError, players::mp3_player::Mp3Player};
 
+// TODO : Add concept of InitializedBusinessCore which is returned by BusinessCore::initialize, and consumes self
 pub struct BusinessCore {
     application_dir_initializer: ApplicationDirInitializer,
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: Rc<dyn PathProvider>,
+    notifications_sender: Option<DataSender<Notification>>,
 }
 
 impl BusinessCore {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         path_provider: Rc<dyn PathProvider>,
+        notifications_sender: Option<DataSender<Notification>>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {
@@ -50,6 +55,7 @@ impl BusinessCore {
                 path_provider: path_provider.clone(),
             },
             path_provider,
+            notifications_sender,
         }
     }
 
@@ -66,17 +72,19 @@ impl BusinessCore {
         }
     }
 
-    pub fn add_url(&mut self, url: &str) -> Result<(), IoError> {
+    pub async fn add_url(&mut self, url: &str) -> Result<(), IoError> {
         // TODO : Prevent adding an url several times
         self.rss_provider.add_url(url)?;
         info!("Url added successfully");
+        self.send_notification(format!("Url {} added successfully", url))
+            .await;
         Ok(())
     }
 
     pub async fn load_feed(&mut self, url: &str) -> Result<(), ()> {
         let feeds = self.rss_provider.get_all_feeds().await;
         let channel = feeds.iter().find(|c| c.0 == url);
-        if let None = channel {
+        if channel.is_none() {
             error!("Could not find channel matching URL {}", url);
             return Err(());
         }
@@ -92,23 +100,72 @@ impl BusinessCore {
             podcasts.push(self.podcast_builder.build(&channel.1))
         }
         self.podcast_library.lock().await.push(podcasts);
+        self.send_notification("Building library done".to_string())
+            .await;
     }
 
     pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
+        self.send_notification(format!("Downloading \"{}\"", episode.title))
+            .await;
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
+            self.send_notification("Downloading failed".to_string())
+                .await;
             return Err(());
         }
+        self.send_notification("Downloading successful".to_string())
+            .await;
 
         Ok(())
     }
-}
 
-impl Default for BusinessCore {
-    fn default() -> Self {
-        let path_provider = DefaultPathProvider {};
-        let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
-            path_provider,
-        ))));
-        Self::new(mp3_player, Rc::new(DefaultPathProvider {}))
+    async fn send_notification(&mut self, notification: Notification) {
+        if self.notifications_sender.is_none() {
+            return;
+        }
+        self.notifications_sender
+            .as_mut()
+            .unwrap()
+            .send(notification)
+            .await
+            .expect("Writing notification in channel failed");
+    }
+
+    pub async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
+        self.player.lock().await.seek(duration)
+    }
+
+    pub async fn play(&mut self) {
+        if self.player.lock().await.is_paused() {
+            self.player.lock().await.play();
+            self.send_notification("Player launched".to_string()).await;
+        } else {
+            self.send_notification("Player already running".to_string())
+                .await;
+        }
+    }
+
+    pub async fn pause(&mut self) {
+        if !self.player.lock().await.is_paused() {
+            self.player.lock().await.pause();
+            self.send_notification("Player paused".to_string()).await;
+        } else {
+            self.send_notification("Player already paused".to_string())
+                .await;
+        }
+    }
+
+    pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+        let r = self.player.lock().await.select_episode(episode);
+        match r {
+            Ok(_) => {
+                self.send_notification("Episode selection successful".to_string())
+                    .await
+            }
+            Err(_) => {
+                self.send_notification("Episode selection failed".to_string())
+                    .await
+            }
+        };
+        r
     }
 }

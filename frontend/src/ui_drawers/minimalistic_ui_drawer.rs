@@ -64,6 +64,7 @@ impl MinimalisticUiDrawer<'_> {
                     Constraint::Length(3),
                     Constraint::Length(3),
                     Constraint::Min(1),
+                    Constraint::Length(6),
                 ]
                 .as_ref(),
             )
@@ -234,6 +235,27 @@ impl MinimalisticUiDrawer<'_> {
             )
     }
 
+    fn build_notifications_field(context: &ScreenContext) -> Paragraph {
+        let notifications = context
+            .notifications_buffer
+            .iter()
+            .rev()
+            .map(|s| Spans::from(s.as_ref()));
+
+        let empty_lines_count: i16 =
+            std::cmp::max(0, 4 - (context.notifications_buffer.len() as i16));
+        let empty_spaces =
+            iter::repeat(Spans::from(" ")).take(empty_lines_count.try_into().unwrap());
+
+        let notifications = empty_spaces.chain(notifications);
+        let notifications: Vec<Spans> = notifications.collect();
+
+        Paragraph::new(notifications)
+            .style(Style::default().fg(Color::LightBlue))
+            .block(Block::default().borders(Borders::ALL))
+            .wrap(Wrap { trim: true })
+    }
+
     fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
         const MINIMAL_WIDTH: u16 = 15;
@@ -295,6 +317,9 @@ impl MinimalisticUiDrawer<'_> {
                 .wrap(Wrap { trim: true });
             f.render_widget(output_progress_bar, output_layout[1]);
         }
+
+        let notifications_layout = MinimalisticUiDrawer::build_notifications_field(context);
+        f.render_widget(notifications_layout, chunks[3]);
     }
 }
 

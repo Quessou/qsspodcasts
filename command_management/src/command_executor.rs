@@ -4,7 +4,6 @@ use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
 
-use chrono;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
@@ -21,22 +20,19 @@ impl CommandExecutor {
         }
     }
 
-    async fn handle_play(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.core.player.lock().await;
-        if mp3_player.is_paused() {
-            mp3_player.play();
-        }
-        let return_message = String::from("Player launched");
-        Ok(OutputType::RawString(return_message))
+    pub async fn initialize(&mut self) {
+        self.core.initialize();
+        self.core.build_podcasts().await;
     }
 
-    async fn handle_pause(&self, _: Command) -> Result<OutputType, CommandError> {
-        let mut mp3_player = self.core.player.lock().await;
-        if !mp3_player.is_paused() {
-            mp3_player.pause();
-        }
-        let return_message = String::from("Player paused");
-        Ok(OutputType::RawString(return_message))
+    async fn handle_play(&mut self, _: Command) -> Result<OutputType, CommandError> {
+        self.core.play().await;
+        Ok(OutputType::None)
+    }
+
+    async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
+        self.core.pause().await;
+        Ok(OutputType::None)
     }
 
     async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
@@ -73,7 +69,7 @@ impl CommandExecutor {
                     Some("Episode download failed".to_string()),
                 ));
             }
-            if self.core.player.lock().await.select_episode(&ep).is_err() {
+            if self.core.select_episode(&ep).await.is_err() {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::SelectionFailed,
@@ -89,12 +85,12 @@ impl CommandExecutor {
                 Some("Episode not found".to_string()),
             ));
         }
-        Ok(OutputType::RawString(String::from("Episode selected")))
+        Ok(OutputType::None)
     }
 
     async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
         let url = url.to_string();
-        if let Err(e) = self.core.add_url(&url) {
+        if let Err(e) = self.core.add_url(&url).await {
             return Err(CommandError::new(
                 Some(Box::new(e)),
                 crate::command_error::ErrorKind::ExecutionFailed,
@@ -102,7 +98,7 @@ impl CommandExecutor {
                 Some("URL writing failed".to_string()),
             ));
         }
-        if let Err(_) = self.core.load_feed(&url).await {
+        if self.core.load_feed(&url).await.is_err() {
             return Err(CommandError::new(
                 None,
                 crate::command_error::ErrorKind::ExecutionFailed,
@@ -117,7 +113,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        self.core.player.lock().await.seek(duration);
+        if self.core.seek(duration).await.is_err() {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Seeking failed".to_string()),
+            ));
+        }
         Ok(OutputType::None)
     }
 
@@ -125,7 +128,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        self.core.player.lock().await.seek(duration * -1);
+        if self.core.seek(duration * -1).await.is_err() {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Seeking failed".to_string()),
+            ));
+        }
         Ok(OutputType::None)
     }
 
@@ -181,7 +191,7 @@ mod tests {
     fn instanciate_executor(
         mp3_player: Arc<TokioMutex<dyn TraitMp3Player + Send>>,
     ) -> CommandExecutor {
-        let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")));
+        let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")), None);
         CommandExecutor::new(core)
     }
 

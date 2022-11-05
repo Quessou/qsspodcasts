@@ -16,7 +16,7 @@ pub trait Mp3Player {
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
     fn pause(&mut self);
     fn play(&mut self);
-    fn seek(&mut self, duration: chrono::Duration) -> Result<(), ()>;
+    fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;

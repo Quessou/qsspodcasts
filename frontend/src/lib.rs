@@ -1,3 +1,4 @@
+mod crossterm_async_event;
 mod screen_action;
 mod screen_context;
 pub mod style;

@@ -62,7 +62,7 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
     }
 
     let url = Url::parse(&parameters[0]);
-    if let Err(_) = url {
+    if url.is_err() {
         return Err(CommandError::new(
             None,
             ErrorKind::ParameterParsingFailed,
