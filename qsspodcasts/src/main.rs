@@ -8,6 +8,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use command_management::{command_engine::CommandEngine, command_executor::CommandExecutor};
+use data_transport::{data_receiver::DataReceiver, data_sender::DataSender};
 use path_providing::default_path_provider::DefaultPathProvider;
 use podcast_player::players::gstreamer_mp3_player::GStreamerMp3Player;
 
@@ -30,8 +31,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     ))));
 
     let (command_sender, command_reader) = channel(10);
+    let (command_sender, command_reader) = (
+        DataSender::new(command_sender),
+        DataReceiver::new(command_reader),
+    );
     let (output_sender, output_reader) = channel(10);
+    let (output_sender, output_reader) = (
+        DataSender::new(output_sender),
+        DataReceiver::new(output_reader),
+    );
     let (notifications_sender, notifications_reader) = channel(10);
+    let (notifications_sender, notifications_reader) = (
+        DataSender::new(notifications_sender),
+        DataReceiver::new(notifications_reader),
+    );
 
     let core = BusinessCore::new(
         mp3_player.clone(),

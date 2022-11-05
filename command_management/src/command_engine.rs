@@ -8,21 +8,22 @@ use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
+use data_transport::{data_receiver::DataReceiver, data_sender::DataSender};
 
 pub type CommandResult = Result<OutputType, CommandError>;
 
 pub struct CommandEngine {
     command_parser: Arc<TokioMutex<CommandParser>>,
     command_executor: CommandExecutor,
-    command_receiver: Receiver<String>,
-    output_sender: Sender<CommandResult>,
+    command_receiver: DataReceiver<String>,
+    output_sender: DataSender<CommandResult>,
 }
 
 impl CommandEngine {
     pub fn new(
         command_executor: CommandExecutor,
-        command_receiver: Receiver<String>,
-        output_sender: Sender<CommandResult>,
+        command_receiver: DataReceiver<String>,
+        output_sender: DataSender<CommandResult>,
     ) -> CommandEngine {
         CommandEngine {
             command_parser: Arc::new(TokioMutex::new(CommandParser::new())),
@@ -50,7 +51,7 @@ impl CommandEngine {
 
     pub async fn run(&mut self) {
         self.command_executor.initialize().await;
-        while let Some(command) = self.command_receiver.recv().await {
+        while let Some(command) = self.command_receiver.receive().await {
             let output = self.handle_command(&command).await;
             if self.output_sender.send(output).await.is_err() {
                 error!("Could not send output in channel");

@@ -12,4 +12,5 @@ members = [
 	"frontend",
 	"abstract_frontend",
 	"str_to_lines",
+	"data_transport"
 ]

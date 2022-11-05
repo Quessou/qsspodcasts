@@ -13,7 +13,6 @@ use crossterm::{
 use log::{debug, error};
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
-use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
@@ -27,13 +26,14 @@ use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
 use command_management::command_engine::CommandResult;
+use data_transport::{data_receiver::DataReceiver, data_sender::DataSender};
 use tui::widgets::ListState;
 
 pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
-    command_sender: Sender<String>,
-    output_receiver: Receiver<CommandResult>,
-    notification_receiver: Receiver<Notification>,
+    command_sender: DataSender<String>,
+    output_receiver: DataReceiver<CommandResult>,
+    notification_receiver: DataReceiver<Notification>,
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
@@ -41,9 +41,9 @@ pub struct Frontend<D: UiDrawer> {
 
 impl<D: UiDrawer> Frontend<D> {
     pub fn new(
-        command_sender: Sender<String>,
-        output_receiver: Receiver<CommandResult>,
-        notification_receiver: Receiver<Notification>,
+        command_sender: DataSender<String>,
+        output_receiver: DataReceiver<CommandResult>,
+        notification_receiver: DataReceiver<Notification>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
@@ -87,7 +87,7 @@ impl<D: UiDrawer> Frontend<D> {
                     let command = self.context.command.clone();
                     self.context.command = String::from("");
                     if let Err(e) = self.command_sender.send(command).await {
-                        error!("Could not send command. Error : {}", e)
+                        error!("Could not send command.");
                     }
                 }
                 KeyCode::Char(c) => {
@@ -224,11 +224,15 @@ impl<D: UiDrawer> Frontend<D> {
                 error!("Error while handling incoming crossterm event")
             }
 
-            if let Ok(output) = self.output_receiver.try_recv() {
-                match output {
-                    Err(e) => error!("{}", e),
-                    Ok(o) => self.handle_output(o),
+            if let Ok(output) = self.output_receiver.try_receive() {
+                if let Ok(o) = output {
+                    self.handle_output(o)
                 }
+            }
+
+            if let Ok(n) = self.notification_receiver.try_receive() {
+                self.context.notifications_buffer.push_front(n);
+                self.context.notifications_buffer.truncate(5);
             }
 
             if self.command_sender.is_closed() {

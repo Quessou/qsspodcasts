@@ -15,14 +15,15 @@ use rss_management::{
 };
 
 use crate::notification::Notification;
-use path_providing::default_path_provider::{DefaultPathProvider, PathProvider};
+use data_transport::data_sender::DataSender;
+use path_providing::default_path_provider::PathProvider;
 use podcast_download::podcast_downloader::PodcastDownloader;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 use podcast_management::{
     builders::podcast_builder::PodcastBuilder, data_objects::podcast::Podcast,
     podcast_library::PodcastLibrary,
 };
-use podcast_player::players::{gstreamer_mp3_player::GStreamerMp3Player, mp3_player::Mp3Player};
+use podcast_player::players::mp3_player::Mp3Player;
 
 // TODO : Add concept of InitializedBusinessCore which is returned by BusinessCore::initialize, and consumes self
 pub struct BusinessCore {
@@ -33,14 +34,14 @@ pub struct BusinessCore {
     pub player: Arc<TokioMutex<dyn Mp3Player + Send>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
     path_provider: Rc<dyn PathProvider>,
-    notifications_sender: Sender<Notification>,
+    notifications_sender: DataSender<Notification>,
 }
 
 impl BusinessCore {
     pub fn new(
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         path_provider: Rc<dyn PathProvider>,
-        notifications_sender: Sender<Notification>,
+        notifications_sender: DataSender<Notification>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
         BusinessCore {

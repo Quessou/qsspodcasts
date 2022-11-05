@@ -16,6 +16,7 @@ podcast_player = {path = "../podcast_player"}
 abstract_frontend = { path = "../abstract_frontend" }
 business_core = { path = "../business_core" }
 path_providing = { path = "../path_providing" }
+data_transport = { path = "../data_transport" }
 
 [dev-dependencies]
 mockall = "0.11.2"
