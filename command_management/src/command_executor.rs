@@ -106,7 +106,7 @@ impl CommandExecutor {
                 Some("Loading of new RSS feed failed".to_string()),
             ));
         }
-        Ok(OutputType::RawString(String::from("Rss feed added")))
+        Ok(OutputType::None)
     }
 
     async fn advance_in_podcast(

@@ -24,6 +24,8 @@ impl<T: UrlStorer> RssProvider<T> {
         if !self.rss_feeds.contains(&url_string) {
             self.rss_feeds.push(url_string);
             self.url_storer.write_url(url)?;
+        } else {
+            return Err(io::Error::from(io::ErrorKind::AlreadyExists));
         }
         Ok(())
     }
