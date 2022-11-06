@@ -1,6 +1,7 @@
 use super::hashable::Hashable;
 use super::podcast_episode::PodcastEpisode;
 use hex;
+use html2text;
 use rss::Image;
 use sha1::{Digest, Sha1};
 
@@ -25,6 +26,7 @@ impl Podcast {
         image: Option<Image>,
         episodes: Vec<PodcastEpisode>,
     ) -> Podcast {
+        let description = html2text::from_read(description.as_bytes(), usize::max_value());
         Podcast {
             title: title.to_string(),
             link: link.to_string(),
