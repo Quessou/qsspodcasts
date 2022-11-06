@@ -280,11 +280,12 @@ impl MinimalisticUiDrawer<'_> {
                 _ => Style::default(),
             })
             .block(Block::default().borders(Borders::ALL).title(title))
-            .highlight_style(
-                Style::default()
+            .highlight_style(match context.current_action {
+                ScreenAction::ScrollingOutput => Style::default()
                     .bg(Color::LightMagenta)
                     .add_modifier(Modifier::ITALIC),
-            )
+                _ => Style::default(),
+            })
     }
 
     fn build_notifications_field(context: &ScreenContext) -> Paragraph {
