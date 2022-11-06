@@ -7,7 +7,7 @@ pub enum Command {
     Play,
     Pause,
     Exit,
-    Help,
+    Help(Option<String>),
     ListPodcasts,
     ListEpisodes,
     Search,

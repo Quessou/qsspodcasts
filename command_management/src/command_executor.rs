@@ -1,5 +1,9 @@
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
+use crate::commands::helps::{
+    command_help_library::{CommandHelpLibrary, CommandHelpMap},
+    command_help_library_builder::get_command_help_library,
+};
 use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
@@ -11,12 +15,16 @@ use url::Url;
 
 pub struct CommandExecutor {
     core: BusinessCore,
+    command_help_library: CommandHelpLibrary,
 }
 
 impl CommandExecutor {
     pub fn new(business_core: BusinessCore) -> CommandExecutor {
+        // TODO : Stuff command help library here ?
+        let command_help_library = get_command_help_library();
         CommandExecutor {
             core: business_core,
+            command_help_library,
         }
     }
 
@@ -139,11 +147,33 @@ impl CommandExecutor {
         Ok(OutputType::None)
     }
 
+    fn handle_help_command(&mut self, command: Option<String>) -> Result<OutputType, CommandError> {
+        let helps = match command {
+            Some(c) => match self.command_help_library.get_description(&c) {
+                Some(h) => vec![h],
+                None => vec![],
+            },
+            None => self.command_help_library.get_descriptions(),
+        };
+
+        if helps.is_empty() {
+            return Err(CommandError::new(
+                None,
+                crate::command_error::ErrorKind::ObjectNotFound,
+                Some("help".to_string()),
+                Some("Command name unknown".to_string()),
+            ));
+        }
+
+        Ok(OutputType::CommandHelps(helps))
+    }
+
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
             Command::Play => self.handle_play(command).await?,
-            Command::Exit => OutputType::RawString(String::from("Exiting")),
+            Command::Exit => OutputType::None,
+            Command::Help(command) => self.handle_help_command(command)?,
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             Command::ListEpisodes => self.handle_list_episodes(command).await?,
             Command::Select(hash) => self.select_episode(&hash).await?,

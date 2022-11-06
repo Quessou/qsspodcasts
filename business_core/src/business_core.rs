@@ -97,6 +97,9 @@ impl BusinessCore {
     }
 
     pub async fn build_podcasts(&mut self) {
+        self.send_notification("Building library...".to_string())
+            .await;
+
         let channels = self.rss_provider.get_all_feeds().await;
         let mut podcasts: Vec<Podcast> = vec![];
         for channel in &channels {

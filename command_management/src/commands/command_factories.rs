@@ -9,6 +9,24 @@ const HASH_LEN: usize = 6;
 
 pub type FactoryFn = fn(Vec<String>) -> Result<Command, CommandError>;
 
+fn build_bad_parameter_count_error(command_name: &str) -> CommandError {
+    CommandError::new(
+        None,
+        ErrorKind::BadParameterCount,
+        Some(command_name.to_string()),
+        Some("Bad parameter count".to_string()),
+    )
+}
+
+fn build_parsing_failed_error(command_name: &str, error_text: &str) -> CommandError {
+    CommandError::new(
+        None,
+        ErrorKind::ParameterParsingFailed,
+        Some(command_name.to_string()),
+        Some(error_text.to_string()),
+    )
+}
+
 pub fn build_play_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
     Ok(Command::Play)
 }
@@ -31,21 +49,14 @@ pub fn build_list_episodes_command(_parameters: Vec<String>) -> Result<Command, 
 
 pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     if parameters.len() != 1 {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::BadParameterCount,
-            Some("select".to_string()),
-            Some("Bad parameter count".to_string()),
-        ));
+        return Err(build_bad_parameter_count_error("select"));
     }
 
     let hash = &parameters[0];
     if hash.len() != HASH_LEN || !is_hash(hash) {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::ParameterParsingFailed,
-            Some("select".to_string()),
-            Some("Parameter parsing failed".to_string()),
+        return Err(build_parsing_failed_error(
+            "select",
+            "Parameter parsing failed",
         ));
     }
     Ok(Command::Select(hash.to_string()))
@@ -53,22 +64,12 @@ pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandE
 
 pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     if parameters.len() != 1 {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::BadParameterCount,
-            Some("add_rss".to_string()),
-            Some("Bad parameter count".to_string()),
-        ));
+        return Err(build_bad_parameter_count_error("add_rss"));
     }
 
     let url = Url::parse(&parameters[0]);
     if url.is_err() {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::ParameterParsingFailed,
-            Some("add_url".to_string()),
-            Some("Url parsing failed".to_string()),
-        ));
+        return Err(build_parsing_failed_error("add_url", "Url parsing failed"));
     }
 
     Ok(Command::AddRss(url.unwrap()))
@@ -76,44 +77,39 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
 
 pub fn build_advance_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     if parameters.len() != 1 {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::BadParameterCount,
-            Some("advance".to_string()),
-            Some("Bad parameter count".to_string()),
-        ));
+        return Err(build_bad_parameter_count_error("advance"));
     }
 
     match string_to_duration(&parameters[0]) {
         Ok(o) => Ok(Command::Advance(o)),
-        Err(_) => Err(CommandError::new(
-            None,
-            ErrorKind::ParameterParsingFailed,
-            Some("advance".to_string()),
-            Some("duration parsing failed".to_string()),
+        Err(_) => Err(build_parsing_failed_error(
+            "advance",
+            "duration parsing failed",
         )),
     }
 }
 
 pub fn build_go_back_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     if parameters.len() != 1 {
-        return Err(CommandError::new(
-            None,
-            ErrorKind::BadParameterCount,
-            Some("go_back".to_string()),
-            Some("Bad parameter count".to_string()),
-        ));
+        return Err(build_bad_parameter_count_error("go_back"));
     }
 
     match string_to_duration(&parameters[0]) {
         Ok(o) => Ok(Command::GoBack(o)),
-        Err(_) => Err(CommandError::new(
-            None,
-            ErrorKind::ParameterParsingFailed,
-            Some("go_back".to_string()),
-            Some("duration parsing failed".to_string()),
+        Err(_) => Err(build_parsing_failed_error(
+            "go_back",
+            "duration parsing failed",
         )),
     }
+}
+
+pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() == 0 {
+        return Ok(Command::Help(None));
+    } else if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("help"));
+    }
+    return Ok(Command::Help(Some(parameters[0].clone())));
 }
 
 pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
@@ -127,6 +123,7 @@ pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
     factory_hashmap.insert("add_rss", build_add_rss_command);
     factory_hashmap.insert("advance", build_advance_command);
     factory_hashmap.insert("go_back", build_go_back_command);
+    factory_hashmap.insert("help", build_help_command);
     factory_hashmap
 }
 
