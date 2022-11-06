@@ -23,9 +23,6 @@ impl CommandHelpLibrary {
 
     pub fn get_description(&self, command: &str) -> Option<CommandHelp> {
         let help = self.descriptions.get(command);
-        match help {
-            Some(h) => Some(h.get_detailed_help()),
-            None => None,
-        }
+        help.map(|h| h.get_detailed_help())
     }
 }

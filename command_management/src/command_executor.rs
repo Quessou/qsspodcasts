@@ -1,7 +1,7 @@
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::commands::helps::{
-    command_help_library::{CommandHelpLibrary, CommandHelpMap},
+    command_help_library::CommandHelpLibrary,
     command_help_library_builder::get_command_help_library,
 };
 use crate::output::output_type::OutputType;

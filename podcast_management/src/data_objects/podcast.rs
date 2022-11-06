@@ -30,7 +30,7 @@ impl Podcast {
         Podcast {
             title: title.to_string(),
             link: link.to_string(),
-            description: description.to_string(),
+            description,
             copyright,
             pub_date,
             image,

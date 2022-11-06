@@ -104,12 +104,12 @@ pub fn build_go_back_command(parameters: Vec<String>) -> Result<Command, Command
 }
 
 pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandError> {
-    if parameters.len() == 0 {
+    if parameters.is_empty() {
         return Ok(Command::Help(None));
     } else if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("help"));
     }
-    return Ok(Command::Help(Some(parameters[0].clone())));
+    Ok(Command::Help(Some(parameters[0].clone())))
 }
 
 pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {

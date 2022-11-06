@@ -41,7 +41,7 @@ impl PodcastEpisode {
         PodcastEpisode {
             title: title.to_string(),
             link: link.to_string(),
-            description: description.to_string(),
+            description,
             author: author.to_string(),
             categories: categories.to_vec(),
             guid: rss::Guid {
