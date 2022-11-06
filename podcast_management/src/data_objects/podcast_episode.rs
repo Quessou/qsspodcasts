@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use chrono::FixedOffset;
+use html2text;
 use rss::Guid;
 use sha1::Digest;
 use sha1::Sha1;
@@ -36,6 +37,7 @@ impl PodcastEpisode {
         url: &str,
         download_path: &Option<String>,
     ) -> PodcastEpisode {
+        let description = html2text::from_read(description.as_bytes(), usize::max_value());
         PodcastEpisode {
             title: title.to_string(),
             link: link.to_string(),
