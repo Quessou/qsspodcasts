@@ -1,3 +1,4 @@
+use command_management::commands::helps::command_help::CommandHelp;
 use command_management::output::output_type::OutputType;
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
@@ -132,6 +133,7 @@ impl MinimalisticUiDrawer<'_> {
             || context.previous_output_pane_available_width.get().unwrap() != available_width
     }
 
+    /// TODO : Clean this awful shit
     fn build_output_field_list(&mut self, context: &ScreenContext, available_width: usize) -> List {
         if MinimalisticUiDrawer::is_output_cache_invalidated(context, available_width) {
             match &context.last_command_output {
@@ -210,6 +212,56 @@ impl MinimalisticUiDrawer<'_> {
                                 .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
                             let vec_spans = vec_spans.chain(lines).collect::<Vec<Spans>>();
 
+                            ListItem::new(vec_spans)
+                        })
+                        .collect::<Vec<ListItem>>();
+                    self.cached_output = Cow::Owned(output);
+                }
+                OutputType::CommandHelps(commands) => {
+                    let output = commands
+                        .iter()
+                        .map(move |c| {
+                            let vec_spans = vec![
+                                Spans::from(Span::styled(
+                                    "NAME",
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                )),
+                                Spans::from(vec![
+                                    Span::raw("    "),
+                                    Span::styled(
+                                        c.command_name.to_owned(),
+                                        Style::default()
+                                            .fg(Color::Red)
+                                            .add_modifier(Modifier::ITALIC),
+                                    ),
+                                ]),
+                            ]
+                            .into_iter();
+
+                            let sample = vec![
+                                Spans::from(vec![Span::styled(
+                                    "SAMPLE",
+                                    Style::default().add_modifier(Modifier::BOLD),
+                                )]),
+                                Spans::from(vec![
+                                    Span::raw("    "),
+                                    Span::raw(c.sample.to_owned()),
+                                ]),
+                            ];
+                            let vec_spans = vec_spans.chain(sample);
+
+                            let lines = vec![Spans::from(Span::styled(
+                                "DESCRIPTION",
+                                Style::default().add_modifier(Modifier::BOLD),
+                            ))]
+                            .into_iter();
+                            let lines = lines.chain(
+                                str_to_lines(&c.description, available_width)
+                                    .into_iter()
+                                    .map(|s| Spans::from(vec![Span::raw("   "), Span::raw(s)])),
+                            );
+
+                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Spans>>();
                             ListItem::new(vec_spans)
                         })
                         .collect::<Vec<ListItem>>();

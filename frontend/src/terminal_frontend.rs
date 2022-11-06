@@ -123,6 +123,7 @@ impl<D: UiDrawer> Frontend<D> {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
                             OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::CommandHelps(ref v) => v.len(),
                             _ => 0,
                         };
 
@@ -139,6 +140,7 @@ impl<D: UiDrawer> Frontend<D> {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
                             OutputType::Podcasts(ref v) => v.len(),
+                            OutputType::CommandHelps(ref v) => v.len(),
                             _ => 0,
                         };
 

@@ -34,6 +34,7 @@ impl ScreenContext {
         match &self.last_command_output {
             OutputType::Episodes(l) => Some(l.len()),
             OutputType::Podcasts(l) => Some(l.len()),
+            OutputType::CommandHelps(l) => Some(l.len()),
             _ => None,
         }
     }
