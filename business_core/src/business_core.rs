@@ -73,8 +73,11 @@ impl BusinessCore {
     }
 
     pub async fn add_url(&mut self, url: &str) -> Result<(), IoError> {
-        // TODO : Prevent adding an url several times
-        self.rss_provider.add_url(url)?;
+        if let Err(e) = self.rss_provider.add_url(url) {
+            self.send_notification("Writing of URL failed (already added ?)".to_string())
+                .await;
+            return Err(e);
+        }
         info!("Url added successfully");
         self.send_notification(format!("Url {} added successfully", url))
             .await;
