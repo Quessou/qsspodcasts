@@ -66,8 +66,15 @@ impl PodcastEpisode {
         }
     }
 
-    pub fn from_item(item: &rss::Item) -> PodcastEpisode {
-        PodcastEpisode::new(
+    pub fn from_item(item: &rss::Item) -> Option<PodcastEpisode> {
+        if item.title.is_none()
+            || item.link.is_none()
+            || item.description.is_none()
+            || item.enclosure.is_none()
+        {
+            return None;
+        }
+        Some(PodcastEpisode::new(
             item.title.as_ref().unwrap(),
             item.link.as_ref().unwrap(),
             item.description.as_ref().unwrap(),
@@ -79,7 +86,7 @@ impl PodcastEpisode {
             item.content.as_ref().unwrap_or(&String::from("")),
             &item.enclosure.as_ref().unwrap().url,
             &None,
-        )
+        ))
     }
 
     pub fn set_podcast_name(&mut self, name: &str) {
