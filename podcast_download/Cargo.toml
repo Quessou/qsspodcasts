@@ -10,7 +10,7 @@ log = "0.4.17"
 futures = "0.3.21"
 bytes = "1.1.0"
 reqwest = { version = "0.11", features = ["json"] }
-tokio = { version = "1.17.0", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }
 rss_management= { path = "../rss_management" }
 podcast_management= { path = "../podcast_management" }
 fs_utils= { path = "../fs_utils" }

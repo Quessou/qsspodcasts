@@ -177,9 +177,9 @@ impl CommandExecutor {
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
             Command::ListEpisodes => self.handle_list_episodes(command).await?,
             Command::Select(hash) => self.select_episode(&hash).await?,
-            Command::AddRss(url) => self.add_rss(&url).await?,
-            Command::Advance(duration) => self.advance_in_podcast(duration).await?,
-            Command::GoBack(duration) => self.go_back_in_podcast(duration).await?,
+            Command::AddRss(url) => self.add_rss(&url.0).await?,
+            Command::Advance(duration) => self.advance_in_podcast(duration.0).await?,
+            Command::GoBack(duration) => self.go_back_in_podcast(duration.0).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

@@ -1,5 +1,5 @@
 [package]
-name = "data_transport"
+name = "autocomplete_server"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.26.0", features = ["full"] }
-log = "0.4.17"
+command_management = { path = "../command_management" }
+data_transport = { path = "../data_transport" }

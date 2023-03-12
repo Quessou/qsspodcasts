@@ -17,6 +17,7 @@ use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
+use autocomplete_server::AutocompletionResponse;
 use business_core::notification::Notification;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
@@ -33,6 +34,8 @@ pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_sender: DataSender<String>,
     output_receiver: DataReceiver<CommandResult>,
+    autocompletion_request_sender: DataSender<String>,
+    autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
     notification_receiver: DataReceiver<Notification>,
     context: ScreenContext,
     ui_drawer: Box<D>,
@@ -44,6 +47,8 @@ impl<D: UiDrawer> Frontend<D> {
         command_sender: DataSender<String>,
         output_receiver: DataReceiver<CommandResult>,
         notification_receiver: DataReceiver<Notification>,
+        autocompletion_request_sender: DataSender<String>,
+        autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
@@ -58,6 +63,8 @@ impl<D: UiDrawer> Frontend<D> {
             command_sender,
             output_receiver,
             notification_receiver,
+            autocompletion_request_sender,
+            autocompletion_response_reader,
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
@@ -236,6 +243,7 @@ impl<D: UiDrawer> Frontend<D> {
             }
 
             if self.command_sender.is_closed() {
+                self.autocompletion_response_reader.close();
                 break;
             }
 

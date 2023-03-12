@@ -10,13 +10,14 @@ edition = "2018"
 futures = "0.3.21"
 frontend = { path = "../frontend" }
 clap = { version = "3.0", features = ["derive"] }
-tokio = { version = "1.17.0", features = ["full"] }
+tokio = { version = "1.26.0", features = ["full"] }
 abstract_frontend = { path = "../abstract_frontend" }
 business_core = { path = "../business_core" }
 command_management = { path = "../command_management" }
 podcast_player = { path = "../podcast_player"}
 path_providing = { path = "../path_providing"}
 data_transport = { path = "../data_transport" }
+autocomplete_server = { path = "../autocomplete_server" }
 simple_logger = "2.1.0"
 
 [profile.dev]
