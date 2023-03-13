@@ -2,18 +2,18 @@ use super::command_parameter_type::CommandParameterType;
 use crate::commands::command_enum::Command;
 
 pub struct AutocompletionCommandData {
-    command: Command,
-    parameters_types: Vec<CommandParameterType>,
+    pub command: Command,
+    pub parameter_type: Option<CommandParameterType>,
 }
 
 impl AutocompletionCommandData {
     pub fn new(
         command: Command,
-        parameters_types: Vec<CommandParameterType>,
+        parameter_type: Option<CommandParameterType>,
     ) -> AutocompletionCommandData {
         AutocompletionCommandData {
             command,
-            parameters_types,
+            parameter_type,
         }
     }
 }

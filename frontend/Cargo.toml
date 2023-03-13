@@ -20,4 +20,4 @@ data_transport = { path = "../data_transport" }
 autocomplete_server = {path = "../autocomplete_server"}
 
 [dev-dependencies]
-test-case = "1.1.0"
+test-case = "3.0.0"

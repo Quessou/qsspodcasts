@@ -6,22 +6,22 @@ use strum::IntoEnumIterator;
 use super::command_parameter_type::CommandParameterType;
 //use strum_macros::EnumIter;
 
-pub fn command_to_parameters(c: &Command) -> Vec<CommandParameterType> {
+pub fn command_to_parameter(c: &Command) -> Option<CommandParameterType> {
     match c {
-        Command::Help(_) => vec![CommandParameterType::CommandName],
-        Command::AddRss(_) => vec![CommandParameterType::Url],
-        Command::Select(_) => vec![CommandParameterType::Hash],
-        Command::Advance(_) => vec![CommandParameterType::Duration],
-        Command::GoBack(_) => vec![CommandParameterType::Duration],
-        _ => vec![],
+        Command::Help(_) => Some(CommandParameterType::CommandName),
+        Command::AddRss(_) => Some(CommandParameterType::Url),
+        Command::Select(_) => Some(CommandParameterType::Hash),
+        Command::Advance(_) => Some(CommandParameterType::Duration),
+        Command::GoBack(_) => Some(CommandParameterType::Duration),
+        _ => None,
     }
 }
 
 pub fn build_command_autocompletion_data_list() -> Vec<AutocompletionCommandData> {
     Command::iter()
         .map(|c| {
-            let parameters = command_to_parameters(&c);
-            AutocompletionCommandData::new(c, parameters)
+            let parameter = command_to_parameter(&c);
+            AutocompletionCommandData::new(c, parameter)
         })
         .collect()
 }
