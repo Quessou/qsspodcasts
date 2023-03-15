@@ -25,7 +25,7 @@ impl AutocompleterMessageProxy {
     pub async fn run(&mut self) {
         // TODO : Handle close
         while let Some(ref request) = self.request_receiver.receive().await {
-            let response = self.autocompleter.autocomplete_command(request);
+            let response = self.autocompleter.autocomplete(request);
             self.response_sender
                 .send(response)
                 .await
