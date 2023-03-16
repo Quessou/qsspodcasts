@@ -7,7 +7,7 @@ use crate::command_executor::CommandExecutor;
 use crate::command_parser::CommandParser;
 use crate::commands::command_enum::Command;
 use crate::output::output_type::OutputType;
-use data_transport::{data_receiver::DataReceiver, data_sender::DataSender};
+use data_transport::{DataReceiver, DataSender};
 
 pub type CommandResult = Result<OutputType, CommandError>;
 
@@ -91,7 +91,7 @@ mod tests {
 
     fn instanciate_engine(player: Arc<TokioMutex<dyn Mp3Player + Send>>) -> CommandEngine {
         let core = BusinessCore::new(player, Rc::new(DummyPathProvider::new("")), None);
-        let executor = CommandExecutor::new(core);
+        let executor = CommandExecutor::new(core, None);
         CommandEngine::new(executor, None, None)
     }
 

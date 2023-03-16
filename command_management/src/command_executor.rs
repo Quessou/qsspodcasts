@@ -1,3 +1,8 @@
+use log::debug;
+use podcast_management::data_objects::hashable::Hashable;
+use podcast_management::data_objects::podcast::Podcast;
+use url::Url;
+
 use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::commands::helps::{
@@ -7,24 +12,27 @@ use crate::commands::helps::{
 use crate::output::output_type::OutputType;
 
 use business_core::business_core::BusinessCore;
-
+use data_transport::{AutocompleterMessageType, DataSender};
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
-use url::Url;
 
 pub struct CommandExecutor {
     core: BusinessCore,
     command_help_library: CommandHelpLibrary,
+    autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
 }
 
 impl CommandExecutor {
-    pub fn new(business_core: BusinessCore) -> CommandExecutor {
-        // TODO : Stuff command help library here ?
+    pub fn new(
+        business_core: BusinessCore,
+        autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
+    ) -> CommandExecutor {
         let command_help_library = get_command_help_library();
         CommandExecutor {
             core: business_core,
             command_help_library,
+            autocompleter_command_sender,
         }
     }
 
@@ -43,22 +51,48 @@ impl CommandExecutor {
         Ok(OutputType::None)
     }
 
-    async fn handle_list_podcasts(&self, _: Command) -> Result<OutputType, CommandError> {
+    async fn update_autocompleter_hashes(&mut self, hashes: Vec<String>) -> Result<(), ()> {
+        if let Some(sender) = self.autocompleter_command_sender.as_mut() {
+            let res = sender
+                .send(AutocompleterMessageType::HashUpdate(hashes))
+                .await;
+            return res;
+        }
+        debug!("No autocompleter message sender set");
+        return Ok(());
+    }
+
+    async fn handle_list_podcasts(&mut self, _: Command) -> Result<OutputType, CommandError> {
         let podcast_library = self.core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
-        let podcasts = podcasts.iter().map(|p| p.shallow_copy()).collect();
+        let podcasts = podcasts
+            .iter()
+            .map(|p| p.shallow_copy())
+            .collect::<Vec<Podcast>>();
+        drop(podcast_library);
+
+        let hashes = podcasts.iter().map(|p| p.hash()).collect();
+        self.update_autocompleter_hashes(hashes)
+            .await
+            .expect("Sending of new hashes to autocompleter failed");
 
         Ok(OutputType::Podcasts(podcasts))
     }
 
-    async fn handle_list_episodes(&self, _: Command) -> Result<OutputType, CommandError> {
+    async fn handle_list_episodes(&mut self, _: Command) -> Result<OutputType, CommandError> {
         let podcast_library = self.core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let mut episodes: Vec<PodcastEpisode> =
             podcasts.iter().flat_map(|p| p.episodes.clone()).collect();
         episodes.sort_by(|p1, p2| p1.pub_date.cmp(&p2.pub_date).reverse());
+        drop(podcast_library);
+
+        let hashes = episodes.iter().map(|p| p.hash()).collect();
+        self.update_autocompleter_hashes(hashes)
+            .await
+            .expect("Sending of new hashes to autocompleter failed");
 
         Ok(OutputType::Episodes(episodes))
     }
@@ -222,7 +256,7 @@ mod tests {
         mp3_player: Arc<TokioMutex<dyn TraitMp3Player + Send>>,
     ) -> CommandExecutor {
         let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")), None);
-        CommandExecutor::new(core)
+        CommandExecutor::new(core, None)
     }
 
     #[test]

@@ -19,9 +19,3 @@ path_providing = { path = "../path_providing"}
 data_transport = { path = "../data_transport" }
 autocomplete_server = { path = "../autocomplete_server" }
 simple_logger = "2.1.0"
-
-[profile.dev]
-opt-level = 1
-
-[profile.dev.package."*"]
-opt-level = 3

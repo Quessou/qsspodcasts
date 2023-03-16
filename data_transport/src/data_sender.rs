@@ -7,6 +7,14 @@ pub struct DataSender<T> {
     sender: Sender<T>,
 }
 
+impl<T> Clone for DataSender<T> {
+    fn clone(&self) -> Self {
+        DataSender {
+            sender: self.sender.clone(),
+        }
+    }
+}
+
 impl<T> DataSender<T> {
     pub fn new(sender: Sender<T>) -> DataSender<T> {
         DataSender { sender }

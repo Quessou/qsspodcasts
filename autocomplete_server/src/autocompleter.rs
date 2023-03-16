@@ -5,9 +5,8 @@ use command_management::autocompletion::command_parameter_type::CommandParameter
 mod inner {
     pub fn extract_completed_command_part(command: &str) -> String {
         let mut completed_command = command.split(' ').filter(|s| !s.is_empty());
-        if completed_command.clone().count() > 1 {
-            let _ = completed_command.next_back();
-        }
+
+        let _ = completed_command.next_back();
         completed_command
             .fold(String::default(), |mut i, s| {
                 i.push_str(" ");
@@ -95,7 +94,7 @@ impl Autocompleter {
                     let mut result = completed_command_part.clone();
                     result.push_str(" ");
                     result.push_str(o);
-                    result
+                    result.trim().to_owned()
                 })
                 .collect(),
         }
@@ -112,7 +111,7 @@ mod tests {
     #[test_case("help li" => "help".to_owned(); "Rather regular case" )]
     #[test_case("help  li" => "help".to_owned(); "Edge case with several spaces in the string" )]
     #[test_case("help toto ha" => "help toto".to_owned(); "Case with several words" )]
-    #[test_case("help  " => "help".to_owned(); "Edge case with only spaces at the end of the string" )]
+    #[test_case("help  " => "".to_owned(); "Edge case with only spaces at the end of the string" )]
     fn test_extract_completed_command_part(to_be_completed: &str) -> String {
         inner::extract_completed_command_part(to_be_completed)
     }

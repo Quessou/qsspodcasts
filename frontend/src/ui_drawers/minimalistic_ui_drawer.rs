@@ -72,7 +72,7 @@ impl MinimalisticUiDrawer<'_> {
     }
 
     fn build_input_field(context: &ScreenContext) -> Paragraph {
-        Paragraph::new(context.command.as_ref())
+        Paragraph::new(context.autocompletion_context.get_displayed_input())
             .style(match context.current_action {
                 ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
                 _ => Style::default(),

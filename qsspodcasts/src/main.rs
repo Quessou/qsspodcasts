@@ -54,7 +54,7 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
         Some(notifications_sender),
     );
 
-    let executor = CommandExecutor::new(core);
+    let executor = CommandExecutor::new(core, Some(autocompletion_request_sender.clone()));
     let command_engine = CommandEngine::new(executor, Some(command_reader), Some(output_sender));
 
     let frontend = Frontend::new(
@@ -79,14 +79,19 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let (mut command_engine, mut frontend, autocompleter) = build_app_components::<
+    let (mut command_engine, mut frontend, mut autocompleter) = build_app_components::<
         frontend::ui_drawers::minimalistic_ui_drawer::MinimalisticUiDrawer,
     >();
     let command_frontend_future = frontend.run();
     let command_engine_future = command_engine.run();
-    if futures::join!(command_frontend_future, command_engine_future)
-        .0
-        .is_err()
+    let autocompleter_future = autocompleter.run();
+    if futures::join!(
+        command_frontend_future,
+        command_engine_future,
+        autocompleter_future
+    )
+    .0
+    .is_err()
     {
         println!("Not working !");
     }
