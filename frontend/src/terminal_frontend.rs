@@ -96,6 +96,7 @@ impl<D: UiDrawer> Frontend<D> {
                     if self.command_sender.send(command).await.is_err() {
                         error!("Could not send command.");
                     }
+                    self.context.autocompletion_context.reset();
                 }
                 KeyCode::Tab => {
                     let autocompletion_ctxt = &mut self.context.autocompletion_context;

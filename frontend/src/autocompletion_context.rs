@@ -70,7 +70,11 @@ impl AutocompletionContext {
     pub fn pop_state(&mut self) {
         let (choices, choice_index) = self.autocompletion_states.pop().unwrap_or((vec![], 0));
         self.autocompletion_choices = choices;
-        self.current_choice = Some(choice_index);
+        self.current_choice = if self.autocompletion_choices.len() != 0 {
+            Some(choice_index)
+        } else {
+            None
+        };
     }
 
     pub fn narrow_choices(&mut self) {
