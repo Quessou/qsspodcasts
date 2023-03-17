@@ -87,16 +87,30 @@ impl<D: UiDrawer> Frontend<D> {
         match self.context.current_action {
             ScreenAction::TypingCommand => match key_event.code {
                 KeyCode::Enter => {
-                    if self.context.autocompletion_context.current_input.is_empty() {
+                    let autoctxt = &mut self.context.autocompletion_context;
+                    if autoctxt.current_input.is_empty() {
                         return Ok(());
                     }
 
-                    let command = self.context.autocompletion_context.current_input.clone();
-                    self.context.autocompletion_context.current_input = String::from("");
-                    if self.command_sender.send(command).await.is_err() {
-                        error!("Could not send command.");
+                    // This condition sucks AF
+                    if autoctxt.is_autocompletion_buffer_empty()
+                        || autoctxt.is_autocompletion_request_required()
+                    {
+                        let command = autoctxt.current_input.clone();
+                        autoctxt.current_input = String::from("");
+                        if self.command_sender.send(command).await.is_err() {
+                            error!("Could not send command.");
+                        }
+                        autoctxt.reset();
+                    } else if !autoctxt.is_autocompletion_buffer_empty() {
+                        autoctxt.confirm();
                     }
-                    self.context.autocompletion_context.reset();
+                }
+                KeyCode::Right => {
+                    let autoctxt = &mut self.context.autocompletion_context;
+                    if !autoctxt.is_autocompletion_buffer_empty() {
+                        autoctxt.confirm();
+                    }
                 }
                 KeyCode::Tab => {
                     let autocompletion_ctxt = &mut self.context.autocompletion_context;

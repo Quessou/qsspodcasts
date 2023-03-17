@@ -16,6 +16,12 @@ impl AutocompletionContext {
         self.autocompletion_states.clear();
     }
 
+    pub fn is_autocompletion_buffer_empty(&self) -> bool {
+        return self.autocompletion_choices.len() == 0
+            || self.current_input.len()
+                == self.autocompletion_choices[self.current_choice.unwrap()].len();
+    }
+
     pub fn is_ctxt_initialized(&self) -> bool {
         self.current_choice.is_some() && self.autocompletion_choices.len() > 0
     }
@@ -82,6 +88,17 @@ impl AutocompletionContext {
             .retain(|c: &String| c.starts_with(&self.current_input));
         if self.autocompletion_choices.len() > 0 {
             self.current_choice = Some(0);
+        }
+    }
+
+    pub fn confirm(&mut self) {
+        if self.autocompletion_choices.len() > 0
+            && self.current_choice.is_some()
+            && self.current_input.len()
+                < self.autocompletion_choices[self.current_choice.unwrap()].len()
+        {
+            self.current_input = self.autocompletion_choices[self.current_choice.unwrap()].clone();
+            self.reset();
         }
     }
 }
