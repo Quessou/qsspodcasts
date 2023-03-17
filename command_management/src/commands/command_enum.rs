@@ -31,7 +31,7 @@ impl Default for CommandDuration {
 #[derive(PartialEq, Eq, Hash, Debug, Display, EnumIter)]
 #[strum(serialize_all = "snake_case")]
 pub enum Command {
-    Play,
+    Play(Option<String>),
     Pause,
     Exit,
     Help(Option<String>),

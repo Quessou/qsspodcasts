@@ -205,7 +205,11 @@ impl CommandExecutor {
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
-            Command::Play => self.handle_play(command).await?,
+            Command::Play(Some(ref hash)) => {
+                self.select_episode(hash).await?;
+                self.handle_play(command).await?
+            }
+            Command::Play(None) => self.handle_play(command).await?,
             Command::Exit => OutputType::None,
             Command::Help(command) => self.handle_help_command(command)?,
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
@@ -311,7 +315,7 @@ mod tests {
 
         let mut executor = instanciate_executor(mp3_player);
 
-        aw!(executor.execute_command(Command::Play));
+        aw!(executor.execute_command(Command::Play(None)));
 
         Ok(())
     }
