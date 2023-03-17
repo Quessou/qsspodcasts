@@ -27,8 +27,14 @@ fn build_parsing_failed_error(command_name: &str, error_text: &str) -> CommandEr
     )
 }
 
-pub fn build_play_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
-    Ok(Command::Play)
+pub fn build_play_command(mut parameters: Vec<String>) -> Result<Command, CommandError> {
+    let command = if parameters.len() > 0 && is_hash(&parameters[0]) {
+        let hash = parameters.pop().unwrap();
+        Command::Play(Some(hash))
+    } else {
+        Command::Play(None)
+    };
+    Ok(command)
 }
 
 pub fn build_pause_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
@@ -114,7 +120,7 @@ pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandErr
 
 pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
-    factory_hashmap.insert(Command::Play.to_string(), build_play_command);
+    factory_hashmap.insert(Command::Play(None).to_string(), build_play_command);
     factory_hashmap.insert(Command::Pause.to_string(), build_pause_command);
     factory_hashmap.insert(Command::Exit.to_string(), build_exit_command);
     factory_hashmap.insert(

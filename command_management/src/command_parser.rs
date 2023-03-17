@@ -64,7 +64,7 @@ mod tests {
     fn test_play() -> Result<(), String> {
         let command_parser = CommandParser::new();
         let command = command_parser.parse_command("play");
-        assert_eq!(command.unwrap(), Command::Play);
+        assert_eq!(command.unwrap(), Command::Play(None));
         Ok(())
     }
 
