@@ -17,18 +17,18 @@ impl AutocompletionContext {
     }
 
     pub fn is_autocompletion_buffer_empty(&self) -> bool {
-        return self.autocompletion_choices.len() == 0
+        self.autocompletion_choices.is_empty()
             || self.current_input.len()
-                == self.autocompletion_choices[self.current_choice.unwrap()].len();
+                == self.autocompletion_choices[self.current_choice.unwrap()].len()
     }
 
     pub fn is_ctxt_initialized(&self) -> bool {
-        self.current_choice.is_some() && self.autocompletion_choices.len() > 0
+        self.current_choice.is_some() && !self.autocompletion_choices.is_empty()
     }
 
     pub fn set_autocompletion_choices(&mut self, choices: Vec<String>) {
         self.autocompletion_choices = choices;
-        if self.autocompletion_choices.len() > 0 {
+        if !self.autocompletion_choices.is_empty() {
             self.current_choice = Some(0);
         }
     }
@@ -53,7 +53,7 @@ impl AutocompletionContext {
     }
 
     pub fn go_to_next_choice(&mut self) {
-        assert!(self.autocompletion_choices.len() > 0);
+        assert!(!self.autocompletion_choices.is_empty());
         self.current_choice =
             Some((self.current_choice.unwrap() + 1) % self.autocompletion_choices.len())
     }
@@ -63,7 +63,7 @@ impl AutocompletionContext {
     }
 
     pub fn is_autocompletion_request_possible(&self) -> bool {
-        self.current_input.len() > 0
+        !self.current_input.is_empty()
     }
 
     pub fn push_current_state(&mut self) {
@@ -76,7 +76,7 @@ impl AutocompletionContext {
     pub fn pop_state(&mut self) {
         let (choices, choice_index) = self.autocompletion_states.pop().unwrap_or((vec![], 0));
         self.autocompletion_choices = choices;
-        self.current_choice = if self.autocompletion_choices.len() != 0 {
+        self.current_choice = if !self.autocompletion_choices.is_empty() {
             Some(choice_index)
         } else {
             None
@@ -86,13 +86,13 @@ impl AutocompletionContext {
     pub fn narrow_choices(&mut self) {
         self.autocompletion_choices
             .retain(|c: &String| c.starts_with(&self.current_input));
-        if self.autocompletion_choices.len() > 0 {
+        if !self.autocompletion_choices.is_empty() {
             self.current_choice = Some(0);
         }
     }
 
     pub fn confirm(&mut self) {
-        if self.autocompletion_choices.len() > 0
+        if !self.autocompletion_choices.is_empty()
             && self.current_choice.is_some()
             && self.current_input.len()
                 < self.autocompletion_choices[self.current_choice.unwrap()].len()

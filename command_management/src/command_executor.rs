@@ -59,7 +59,7 @@ impl CommandExecutor {
             return res;
         }
         debug!("No autocompleter message sender set");
-        return Ok(());
+        Ok(())
     }
 
     async fn handle_list_podcasts(&mut self, _: Command) -> Result<OutputType, CommandError> {
