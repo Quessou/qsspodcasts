@@ -17,7 +17,8 @@ impl PodcastBuilder {
         let episodes = channel
             .items()
             .iter()
-            .map(|i| self.episode_builder.build(i, &channel.title).unwrap())
+            .map(|i| self.episode_builder.build(i, &channel.title))
+            .filter_map(|p| p.ok())
             .collect::<Vec<PodcastEpisode>>();
         Podcast::new(
             &channel.title,

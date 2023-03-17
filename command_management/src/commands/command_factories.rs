@@ -1,4 +1,4 @@
-use super::command_enum::Command;
+use super::command_enum::{Command, CommandDuration, CommandUrl};
 use super::duration_utils::string_to_duration;
 use super::hash_utils::is_hash;
 use crate::command_error::{CommandError, ErrorKind};
@@ -72,7 +72,7 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
         return Err(build_parsing_failed_error("add_url", "Url parsing failed"));
     }
 
-    Ok(Command::AddRss(url.unwrap()))
+    Ok(Command::AddRss(CommandUrl(url.unwrap())))
 }
 
 pub fn build_advance_command(parameters: Vec<String>) -> Result<Command, CommandError> {
@@ -81,7 +81,7 @@ pub fn build_advance_command(parameters: Vec<String>) -> Result<Command, Command
     }
 
     match string_to_duration(&parameters[0]) {
-        Ok(o) => Ok(Command::Advance(o)),
+        Ok(o) => Ok(Command::Advance(CommandDuration(o))),
         Err(_) => Err(build_parsing_failed_error(
             "advance",
             "duration parsing failed",
@@ -95,7 +95,7 @@ pub fn build_go_back_command(parameters: Vec<String>) -> Result<Command, Command
     }
 
     match string_to_duration(&parameters[0]) {
-        Ok(o) => Ok(Command::GoBack(o)),
+        Ok(o) => Ok(Command::GoBack(CommandDuration(o))),
         Err(_) => Err(build_parsing_failed_error(
             "go_back",
             "duration parsing failed",
@@ -104,26 +104,44 @@ pub fn build_go_back_command(parameters: Vec<String>) -> Result<Command, Command
 }
 
 pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandError> {
-    if parameters.len() == 0 {
+    if parameters.is_empty() {
         return Ok(Command::Help(None));
     } else if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("help"));
     }
-    return Ok(Command::Help(Some(parameters[0].clone())));
+    Ok(Command::Help(Some(parameters[0].clone())))
 }
 
-pub fn get_factory_hashmap() -> HashMap<&'static str, FactoryFn> {
-    let mut factory_hashmap: HashMap<&'static str, FactoryFn> = HashMap::new();
-    factory_hashmap.insert("play", build_play_command);
-    factory_hashmap.insert("pause", build_pause_command);
-    factory_hashmap.insert("exit", build_exit_command);
-    factory_hashmap.insert("list_podcasts", build_list_podcasts_command);
-    factory_hashmap.insert("list_episodes", build_list_episodes_command);
-    factory_hashmap.insert("select", build_select_command);
-    factory_hashmap.insert("add_rss", build_add_rss_command);
-    factory_hashmap.insert("advance", build_advance_command);
-    factory_hashmap.insert("go_back", build_go_back_command);
-    factory_hashmap.insert("help", build_help_command);
+pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
+    let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
+    factory_hashmap.insert(Command::Play.to_string(), build_play_command);
+    factory_hashmap.insert(Command::Pause.to_string(), build_pause_command);
+    factory_hashmap.insert(Command::Exit.to_string(), build_exit_command);
+    factory_hashmap.insert(
+        Command::ListPodcasts.to_string(),
+        build_list_podcasts_command,
+    );
+    factory_hashmap.insert(
+        Command::ListEpisodes.to_string(),
+        build_list_episodes_command,
+    );
+    factory_hashmap.insert(
+        Command::Select("".to_string()).to_string(),
+        build_select_command,
+    );
+    factory_hashmap.insert(
+        Command::AddRss(CommandUrl(Url::parse("https://www.google.com").unwrap())).to_string(),
+        build_add_rss_command,
+    );
+    factory_hashmap.insert(
+        Command::Advance(CommandDuration(chrono::Duration::seconds(0))).to_string(),
+        build_advance_command,
+    );
+    factory_hashmap.insert(
+        Command::GoBack(CommandDuration(chrono::Duration::seconds(0))).to_string(),
+        build_go_back_command,
+    );
+    factory_hashmap.insert(Command::Help(None).to_string(), build_help_command);
     factory_hashmap
 }
 

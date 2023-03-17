@@ -1,8 +1,35 @@
+use std::str::FromStr;
+
 use chrono;
-use url::Url;
+use url as extern_url;
+
+use strum_macros::{Display, EnumIter};
+
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub struct CommandUrl(pub extern_url::Url);
+
+impl Default for CommandUrl {
+    fn default() -> Self {
+        //Self { serialization: Default::default(), scheme_end: Default::default(),
+        // username_end: Default::default(), host_start: Default::default(), host_end: Default::default(),
+        // host: Default::default(), port: Default::default(), path_start: Default::default(), query_start: Default::default(),
+        //  fragment_start: Default::default() }
+        CommandUrl(extern_url::Url::from_str("https://www.example.com").unwrap())
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug)]
+pub struct CommandDuration(pub chrono::Duration);
+
+impl Default for CommandDuration {
+    fn default() -> Self {
+        Self(chrono::Duration::nanoseconds(0))
+    }
+}
 
 #[allow(dead_code)]
-#[derive(PartialEq, Eq, Hash, Debug)]
+#[derive(PartialEq, Eq, Hash, Debug, Display, EnumIter)]
+#[strum(serialize_all = "snake_case")]
 pub enum Command {
     Play,
     Pause,
@@ -14,9 +41,9 @@ pub enum Command {
     See,
     VolumeUp,
     VolumeDown,
-    AddRss(Url),
+    AddRss(CommandUrl),
     DeleteRss,
     Select(String),
-    Advance(chrono::Duration),
-    GoBack(chrono::Duration),
+    Advance(CommandDuration),
+    GoBack(CommandDuration),
 }

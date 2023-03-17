@@ -9,7 +9,7 @@ use crate::commands::command_factories::{get_factory_hashmap, FactoryFn};
 
 #[derive(Default)]
 pub struct CommandParser {
-    factory_hashmap: HashMap<&'static str, FactoryFn>,
+    factory_hashmap: HashMap<String, FactoryFn>,
 }
 
 impl CommandParser {

@@ -5,7 +5,7 @@ use std::io::{Error as IoError, ErrorKind, Write};
 use std::path;
 
 pub fn write_at_end_of_file(file_path: &path::Path, line: &str) -> Result<(), IoError> {
-    let mut file = OpenOptions::new().append(true).open(&file_path)?;
+    let mut file = OpenOptions::new().append(true).open(file_path)?;
     writeln!(file, "{}", line)?;
     Ok(())
 }

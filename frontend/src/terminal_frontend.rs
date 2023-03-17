@@ -17,6 +17,7 @@ use tokio::sync::Mutex as TokioMutex;
 use tokio::time::Instant;
 use tui::{backend::CrosstermBackend, Terminal};
 
+use autocomplete_server::AutocompletionResponse;
 use business_core::notification::Notification;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
@@ -26,13 +27,15 @@ use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
 use crate::ui_drawers::ui_drawer::UiDrawer;
 use command_management::command_engine::CommandResult;
-use data_transport::{data_receiver::DataReceiver, data_sender::DataSender};
+use data_transport::{AutocompleterMessageType, DataReceiver, DataSender};
 use tui::widgets::ListState;
 
 pub struct Frontend<D: UiDrawer> {
     terminal: Terminal<CrosstermBackend<std::io::Stdout>>,
     command_sender: DataSender<String>,
     output_receiver: DataReceiver<CommandResult>,
+    autocompletion_request_sender: DataSender<AutocompleterMessageType>,
+    autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
     notification_receiver: DataReceiver<Notification>,
     context: ScreenContext,
     ui_drawer: Box<D>,
@@ -44,6 +47,8 @@ impl<D: UiDrawer> Frontend<D> {
         command_sender: DataSender<String>,
         output_receiver: DataReceiver<CommandResult>,
         notification_receiver: DataReceiver<Notification>,
+        autocompletion_request_sender: DataSender<AutocompleterMessageType>,
+        autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
     ) -> Frontend<D> {
@@ -58,6 +63,8 @@ impl<D: UiDrawer> Frontend<D> {
             command_sender,
             output_receiver,
             notification_receiver,
+            autocompletion_request_sender,
+            autocompletion_response_reader,
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
@@ -80,15 +87,51 @@ impl<D: UiDrawer> Frontend<D> {
         match self.context.current_action {
             ScreenAction::TypingCommand => match key_event.code {
                 KeyCode::Enter => {
-                    if self.context.command.is_empty() {
+                    let autoctxt = &mut self.context.autocompletion_context;
+                    if autoctxt.current_input.is_empty() {
                         return Ok(());
                     }
 
-                    let command = self.context.command.clone();
-                    self.context.command = String::from("");
-                    if self.command_sender.send(command).await.is_err() {
-                        error!("Could not send command.");
+                    // This condition sucks AF
+                    if autoctxt.is_autocompletion_buffer_empty()
+                        || autoctxt.is_autocompletion_request_required()
+                    {
+                        let command = autoctxt.current_input.clone();
+                        autoctxt.current_input = String::from("");
+                        if self.command_sender.send(command).await.is_err() {
+                            error!("Could not send command.");
+                        }
+                        autoctxt.reset();
+                    } else if !autoctxt.is_autocompletion_buffer_empty() {
+                        autoctxt.confirm();
                     }
+                }
+                KeyCode::Right => {
+                    let autoctxt = &mut self.context.autocompletion_context;
+                    if !autoctxt.is_autocompletion_buffer_empty() {
+                        autoctxt.confirm();
+                    }
+                }
+                KeyCode::Tab => {
+                    let autocompletion_ctxt = &mut self.context.autocompletion_context;
+                    if autocompletion_ctxt.is_autocompletion_request_possible()
+                        && autocompletion_ctxt.is_autocompletion_request_required()
+                    {
+                        self.autocompletion_request_sender
+                            .send(AutocompleterMessageType::AutocompletionRequest(
+                                autocompletion_ctxt.current_input.clone(),
+                            ))
+                            .await
+                            .expect("Sending of autocompletion request failed");
+                        let autocompletion_response =
+                            self.autocompletion_response_reader.receive().await.unwrap();
+                        autocompletion_ctxt.set_autocompletion_choices(
+                            autocompletion_response.autocompletion_options,
+                        );
+                    } else if autocompletion_ctxt.current_choice.is_some() {
+                        autocompletion_ctxt.go_to_next_choice();
+                    }
+                    // When to reset ?
                 }
                 KeyCode::Char(c) => {
                     if c == '²' {
@@ -97,13 +140,19 @@ impl<D: UiDrawer> Frontend<D> {
                             self.context.current_action = ScreenAction::ScrollingOutput;
                         }
                     } else {
-                        self.context.command.push(c)
+                        self.context.autocompletion_context.current_input.push(c);
+                        if self.context.autocompletion_context.is_ctxt_initialized() {
+                            self.context.autocompletion_context.push_current_state();
+                            self.context.autocompletion_context.narrow_choices();
+                        }
                     }
                 }
                 KeyCode::Backspace => {
-                    self.context.command.pop();
-                }
-                KeyCode::Tab => (), // TODO : Handle auto-completion
+                    self.context.autocompletion_context.current_input.pop();
+                    if self.context.autocompletion_context.is_ctxt_initialized() {
+                        self.context.autocompletion_context.pop_state();
+                    }
+                } // TODO : Handle auto-completion
                 KeyCode::Delete => self.context.current_action = ScreenAction::ScrollingLogs,
                 _ => (),
             },
@@ -236,6 +285,11 @@ impl<D: UiDrawer> Frontend<D> {
             }
 
             if self.command_sender.is_closed() {
+                self.autocompletion_request_sender
+                    .send(AutocompleterMessageType::Exit)
+                    .await
+                    .expect("Sending of exit command to autocompleter failed");
+                self.autocompletion_response_reader.close();
                 break;
             }
 

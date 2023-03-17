@@ -1,4 +1,3 @@
-use command_management::commands::helps::command_help::CommandHelp;
 use command_management::output::output_type::OutputType;
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
@@ -73,7 +72,7 @@ impl MinimalisticUiDrawer<'_> {
     }
 
     fn build_input_field(context: &ScreenContext) -> Paragraph {
-        Paragraph::new(context.command.as_ref())
+        Paragraph::new(context.autocompletion_context.get_displayed_input())
             .style(match context.current_action {
                 ScreenAction::TypingCommand => Style::default().fg(Color::Yellow),
                 _ => Style::default(),
@@ -256,7 +255,7 @@ impl MinimalisticUiDrawer<'_> {
                             ))]
                             .into_iter();
                             let lines = lines.chain(
-                                str_to_lines(&c.description, available_width)
+                                str_to_lines(c.description, available_width)
                                     .into_iter()
                                     .map(|s| Spans::from(vec![Span::raw("   "), Span::raw(s)])),
                             );

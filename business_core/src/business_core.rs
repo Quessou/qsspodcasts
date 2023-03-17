@@ -14,7 +14,7 @@ use rss_management::{
 };
 
 use crate::notification::Notification;
-use data_transport::data_sender::DataSender;
+use data_transport::DataSender;
 use path_providing::default_path_provider::PathProvider;
 use podcast_download::podcast_downloader::PodcastDownloader;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;

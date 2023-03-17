@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 
 [dev-dependencies]
-test-case = "1.1.0"
+test-case = "3.0.0"
