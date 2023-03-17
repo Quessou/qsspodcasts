@@ -64,10 +64,10 @@ impl Autocompleter {
         let completed_command_part = inner::extract_completed_command_part(to_be_autocompleted);
         let to_be_autocompleted = to_be_autocompleted.split(' ').last().unwrap();
 
-        let autocompletion_options = if !to_be_autocompleted.contains(" ") {
+        let autocompletion_options = if !line_to_be_autocompleted.contains(" ") {
             self.autocomplete_command(to_be_autocompleted)
         } else {
-            let typed_command = to_be_autocompleted.split(' ').next().unwrap();
+            let typed_command = line_to_be_autocompleted.split(' ').next().unwrap();
             let command = self
                 .commands
                 .iter()
@@ -75,6 +75,10 @@ impl Autocompleter {
             if command.is_none() {
                 vec![]
             } else {
+                let parameter_type = &command.unwrap().parameter_type;
+                if parameter_type.is_none() {
+                    return AutocompletionResponse::default();
+                }
                 match command.unwrap().parameter_type.as_ref().unwrap() {
                     CommandParameterType::Hash => {
                         self.autocomplete_hash(to_be_autocompleted.split(' ').last().unwrap())
