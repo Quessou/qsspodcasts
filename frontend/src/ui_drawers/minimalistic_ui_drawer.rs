@@ -13,7 +13,7 @@ use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, Clear, Gauge, List, ListItem, Paragraph, Wrap},
 };
 
 use crate::screen_action::ScreenAction;
@@ -308,6 +308,32 @@ impl MinimalisticUiDrawer<'_> {
             .wrap(Wrap { trim: true })
     }
 
+    fn build_modal_window(&self, screen_size: Rect) -> Rect {
+        let popup_layout = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(
+                [
+                    Constraint::Percentage((100 - 60) / 2),
+                    Constraint::Percentage(60),
+                    Constraint::Percentage((100 - 60) / 2),
+                ]
+                .as_ref(),
+            )
+            .split(screen_size);
+
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(
+                [
+                    Constraint::Percentage((100 - 20) / 2),
+                    Constraint::Percentage(20),
+                    Constraint::Percentage((100 - 20) / 2),
+                ]
+                .as_ref(),
+            )
+            .split(popup_layout[1])[1]
+    }
+
     fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
         const MINIMAL_WIDTH: u16 = 15;
@@ -372,6 +398,13 @@ impl MinimalisticUiDrawer<'_> {
 
         let notifications_layout = MinimalisticUiDrawer::build_notifications_field(context);
         f.render_widget(notifications_layout, chunks[3]);
+
+        if context.current_action == ScreenAction::ScrollingModalWindow {
+            let block = Block::default().borders(Borders::ALL);
+            let modal_window = self.build_modal_window(size);
+            f.render_widget(Clear, modal_window); //this clears out the background
+            f.render_widget(block, modal_window);
+        }
     }
 }
 

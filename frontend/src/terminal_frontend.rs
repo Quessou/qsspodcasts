@@ -207,7 +207,15 @@ impl<D: UiDrawer> Frontend<D> {
                         state.select(Some(selected_index));
                     }
                 }
+                KeyCode::Enter => {
+                    // TODO : initialize
+                    self.context.current_action = ScreenAction::ScrollingModalWindow;
+                }
                 _ => (),
+            },
+            ScreenAction::ScrollingModalWindow => match key_event.code {
+                KeyCode::Esc => self.context.current_action = ScreenAction::ScrollingOutput,
+                _ => {}
             },
         }
 

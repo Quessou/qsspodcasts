@@ -17,17 +17,17 @@ use tui::widgets::ListState;
 /// Screen height ?
 /// How to prevent this struct from becoming a god class ?
 pub struct ScreenContext {
-    pub last_command_output: OutputType,
-    pub list_output_state: Option<RefCell<ListState>>,
-    pub previous_output_pane_available_width: Cell<Option<usize>>,
-    pub must_invalidate_cache: Cell<bool>,
+    pub(crate) last_command_output: OutputType,
+    pub(crate) list_output_state: Option<RefCell<ListState>>,
+    pub(crate) previous_output_pane_available_width: Cell<Option<usize>>,
+    pub(crate) must_invalidate_cache: Cell<bool>,
 
-    pub logs: Arc<Mutex<Vec<String>>>,
-    pub current_action: ScreenAction,
-    pub ui_refresh_tickrate: Duration,
-    pub player_status: PlayerStatus,
-    pub notifications_buffer: VecDeque<Notification>,
-    pub autocompletion_context: AutocompletionContext,
+    pub(crate) logs: Arc<Mutex<Vec<String>>>,
+    pub(crate) current_action: ScreenAction,
+    pub(crate) ui_refresh_tickrate: Duration,
+    pub(crate) player_status: PlayerStatus,
+    pub(crate) notifications_buffer: VecDeque<Notification>,
+    pub(crate) autocompletion_context: AutocompletionContext,
 }
 
 impl ScreenContext {
