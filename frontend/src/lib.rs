@@ -1,5 +1,6 @@
 mod autocompletion_context;
 mod crossterm_async_event;
+mod modal_window;
 mod screen_action;
 mod screen_context;
 pub mod style;
