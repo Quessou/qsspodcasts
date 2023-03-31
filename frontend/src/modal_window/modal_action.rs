@@ -1,40 +1,37 @@
 use data_transport::DataSender;
 
-use super::modal_action_callbacks::ModalActionCallback;
+use super::modal_action_callbacks::CallbackReturnType;
 use super::modal_action_data::ModalActionData;
 use super::modal_actionable::ModalActionable;
 
-use super::modal_action_callbacks::CallbackReturnType;
-
-pub(crate) struct ModalAction<'a, T>
-where
-    T: ModalActionable + 'a,
-{
+pub(crate) struct ModalAction {
     pub action: String,
-    pub actionable: &'a T,
+    pub command: String,
     pub command_sender: DataSender<String>,
-    pub callback: Box<ModalActionCallback<'a, T>>,
+    //pub send_command_callback: Box<SendCommandCallback>,
 }
 
-impl<'a, T> ModalAction<'a, T>
-where
-    T: ModalActionable + 'a,
-{
-    pub async fn call<'c: 'a>(&'c mut self) -> CallbackReturnType {
-        (self.callback)(self.actionable, &mut self.command_sender).await // Check this : https://practice.rs/lifetime/advance.html
+impl ModalAction {
+    pub async fn call(&mut self) -> CallbackReturnType {
+        self.send().await
+    }
+
+    pub async fn send(&mut self) -> CallbackReturnType {
+        let f = self.command_sender.send(self.command.clone());
+        f.await
     }
 }
 
-impl<'a, T> From<(ModalActionData<'a, T>, DataSender<String>)> for ModalAction<'a, T>
+impl<'a, T> From<(ModalActionData<'a, T>, DataSender<String>)> for ModalAction
 where
     T: ModalActionable,
 {
     fn from(value: (ModalActionData<'a, T>, DataSender<String>)) -> Self {
         ModalAction {
             action: value.0.action,
-            actionable: value.0.actionable,
+            command: (value.0.build_command_callback)(value.0.actionable),
             command_sender: value.1,
-            callback: value.0.callback,
+            //send_command_callback: value.0.send_command_callback,
         }
     }
 }

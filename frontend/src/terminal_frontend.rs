@@ -22,6 +22,9 @@ use business_core::notification::Notification;
 use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
+use crate::modal_window::action_list_builder::ActionListBuilder;
+use crate::modal_window::modal_action::ModalAction;
+use crate::modal_window::modal_actionable::ModalActionable;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
@@ -40,6 +43,7 @@ pub struct Frontend<D: UiDrawer> {
     context: ScreenContext,
     ui_drawer: Box<D>,
     mp3_player_exposer: Mp3PlayerExposer,
+    action_list_builder: ActionListBuilder,
 }
 
 impl<D: UiDrawer> Frontend<D> {
@@ -60,7 +64,7 @@ impl<D: UiDrawer> Frontend<D> {
             .expect("Logger initialization failed");
         Frontend {
             terminal,
-            command_sender,
+            command_sender: command_sender.clone(),
             output_receiver,
             notification_receiver,
             autocompletion_request_sender,
@@ -68,6 +72,7 @@ impl<D: UiDrawer> Frontend<D> {
             context,
             ui_drawer,
             mp3_player_exposer: Mp3PlayerExposer::new(mp3_player),
+            action_list_builder: ActionListBuilder::new(command_sender),
         }
     }
 
@@ -208,8 +213,44 @@ impl<D: UiDrawer> Frontend<D> {
                     }
                 }
                 KeyCode::Enter => {
-                    // TODO : initialize
                     self.context.current_action = ScreenAction::ScrollingModalWindow;
+                    let selected_index = self
+                        .context
+                        .list_output_state
+                        .as_ref()
+                        .unwrap()
+                        .borrow()
+                        .selected()
+                        .unwrap();
+                    // TODO : remove duplication
+                    match self.context.last_command_output {
+                        OutputType::Podcasts(ref v) => {
+                            let item = &v[selected_index];
+                            let _actions: Vec<ModalAction> = item
+                                .get_action_list()
+                                .into_iter()
+                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
+                                .collect();
+                        }
+                        OutputType::Episodes(ref v) => {
+                            let item = &v[selected_index];
+                            let _actions: Vec<ModalAction> = item
+                                .get_action_list()
+                                .into_iter()
+                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
+                                .collect();
+                        }
+                        OutputType::CommandHelps(ref v) => {
+                            let item = &v[selected_index];
+                            let _actions: Vec<ModalAction> = item
+                                .get_action_list()
+                                .into_iter()
+                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
+                                .collect();
+                        }
+                        _ => unreachable!(),
+                    }
+                    //let actions = actionable.get_action_list();
                 }
                 _ => (),
             },

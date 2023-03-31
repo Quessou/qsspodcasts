@@ -8,6 +8,7 @@ use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
 use crate::autocompletion_context::AutocompletionContext;
+use crate::modal_window::modal_action::ModalAction;
 use crate::screen_action::ScreenAction;
 
 use tui::widgets::ListState;
@@ -24,10 +25,11 @@ pub struct ScreenContext {
 
     pub(crate) logs: Arc<Mutex<Vec<String>>>,
     pub(crate) current_action: ScreenAction,
-    pub(crate) ui_refresh_tickrate: Duration,
+    pub(crate) _ui_refresh_tickrate: Duration, // TODO : Check why this isn't used anymore ??
     pub(crate) player_status: PlayerStatus,
     pub(crate) notifications_buffer: VecDeque<Notification>,
     pub(crate) autocompletion_context: AutocompletionContext,
+    pub(crate) modal_context: Option<ModalAction>,
 }
 
 impl ScreenContext {
@@ -44,7 +46,6 @@ impl ScreenContext {
 impl Default for ScreenContext {
     fn default() -> Self {
         ScreenContext {
-            //command: String::from(""),
             // TODO: Move all this output-related stuff in a struct called OutputContext
             last_command_output: OutputType::RawString(String::from("")),
             list_output_state: None,
@@ -52,10 +53,11 @@ impl Default for ScreenContext {
             must_invalidate_cache: Cell::new(false),
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,
-            ui_refresh_tickrate: Duration::from_millis(20),
+            _ui_refresh_tickrate: Duration::from_millis(20),
             player_status: PlayerStatus::Stopped,
             notifications_buffer: VecDeque::with_capacity(4),
             autocompletion_context: AutocompletionContext::default(),
+            modal_context: None,
         }
     }
 }

@@ -1,30 +1,24 @@
 use super::modal_action::ModalAction;
 use super::modal_actionable::ModalActionable;
 use data_transport::DataSender;
-use std::marker::PhantomData;
 
-pub(crate) struct ActionListBuilder<T>
-where
-    T: ModalActionable,
-{
+pub(crate) struct ActionListBuilder {
     command_sender: DataSender<String>,
-    _marker: PhantomData<T>,
 }
 
-impl<T> ActionListBuilder<T>
-where
-    T: ModalActionable,
-{
-    pub fn new(command_sender: DataSender<String>) -> ActionListBuilder<T> {
-        ActionListBuilder {
-            command_sender,
-            _marker: PhantomData,
-        }
+impl ActionListBuilder {
+    pub fn new(command_sender: DataSender<String>) -> ActionListBuilder {
+        ActionListBuilder { command_sender }
     }
 
-    pub fn build_action_list(&self, actionable: &T) -> Vec<ModalAction<T>> {
+    pub fn build_action_list<'a>(
+        &'a self,
+        actionable: &'a impl ModalActionable,
+    ) -> Vec<ModalAction> {
         let action_list = actionable.get_action_list();
-        // TODO
-        todo!()
+        action_list
+            .into_iter()
+            .map(|a| ModalAction::from((a, self.command_sender.clone())))
+            .collect()
     }
 }
