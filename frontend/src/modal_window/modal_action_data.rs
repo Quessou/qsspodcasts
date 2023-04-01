@@ -1,7 +1,7 @@
 use super::modal_action_callbacks::BuildCommandCallback;
 use super::modal_actionable::ModalActionable;
 
-pub(crate) struct ModalActionData<'a, T>
+pub struct ModalActionData<'a, T>
 where
     T: ModalActionable + 'a,
 {

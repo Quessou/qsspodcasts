@@ -4,11 +4,10 @@ use super::modal_action_callbacks::CallbackReturnType;
 use super::modal_action_data::ModalActionData;
 use super::modal_actionable::ModalActionable;
 
-pub(crate) struct ModalAction {
+pub struct ModalAction {
     pub action: String,
     pub command: String,
     pub command_sender: DataSender<String>,
-    //pub send_command_callback: Box<SendCommandCallback>,
 }
 
 impl ModalAction {
@@ -31,7 +30,6 @@ where
             action: value.0.action,
             command: (value.0.build_command_callback)(value.0.actionable),
             command_sender: value.1,
-            //send_command_callback: value.0.send_command_callback,
         }
     }
 }

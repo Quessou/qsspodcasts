@@ -3,7 +3,7 @@ use super::modal_action_data::ModalActionData;
 use command_management::commands::helps::command_help::CommandHelp;
 use podcast_management::data_objects::{podcast::Podcast, podcast_episode::PodcastEpisode};
 
-pub(crate) trait ModalActionable {
+pub trait ModalActionable {
     fn get_action_list(&self) -> Vec<ModalActionData<Self>>
     where
         Self: Sized;
@@ -24,7 +24,7 @@ impl ModalActionable for PodcastEpisode {
         Self: Sized,
     {
         vec![ModalActionData::new(
-            "play".to_owned(),
+            "Play".to_owned(),
             self,
             Box::new(build_play_command),
         )]

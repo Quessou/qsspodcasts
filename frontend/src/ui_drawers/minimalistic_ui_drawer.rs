@@ -334,6 +334,22 @@ impl MinimalisticUiDrawer<'_> {
             .split(popup_layout[1])[1]
     }
 
+    fn build_modal_list(&self, ctxt: &ScreenContext) -> List {
+        let modal_actions = ctxt.modal_context.modal_actions.as_ref().unwrap();
+        List::new(
+            modal_actions
+                .iter()
+                .map(|a| ListItem::new(a.action.clone())) // Fuck this copy :(
+                .collect::<Vec<ListItem>>(),
+        )
+        .block(Block::default().borders(Borders::ALL))
+        .highlight_style(
+            Style::default()
+                .bg(Color::LightMagenta)
+                .add_modifier(Modifier::ITALIC),
+        )
+    }
+
     fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
         let size = f.size();
         const MINIMAL_WIDTH: u16 = 15;
@@ -402,8 +418,20 @@ impl MinimalisticUiDrawer<'_> {
         if context.current_action == ScreenAction::ScrollingModalWindow {
             let block = Block::default().borders(Borders::ALL);
             let modal_window = self.build_modal_window(size);
+            let modal_list = self.build_modal_list(context);
             f.render_widget(Clear, modal_window); //this clears out the background
             f.render_widget(block, modal_window);
+            f.render_stateful_widget(
+                modal_list,
+                modal_window,
+                &mut context
+                    .modal_context
+                    .modal_actions_list_state
+                    .as_ref()
+                    .unwrap()
+                    .try_borrow_mut()
+                    .unwrap(),
+            )
         }
     }
 }

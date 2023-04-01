@@ -23,8 +23,6 @@ use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
 use crate::modal_window::action_list_builder::ActionListBuilder;
-use crate::modal_window::modal_action::ModalAction;
-use crate::modal_window::modal_actionable::ModalActionable;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
@@ -197,7 +195,7 @@ impl<D: UiDrawer> Frontend<D> {
                             OutputType::CommandHelps(ref v) => v.len(),
                             _ => 0,
                         };
-
+                        // TODO : Mutualize this properly
                         let mut state = state.borrow_mut();
                         let selected_index = match state.selected() {
                             Some(i) => {
@@ -222,41 +220,67 @@ impl<D: UiDrawer> Frontend<D> {
                         .borrow()
                         .selected()
                         .unwrap();
-                    // TODO : remove duplication
-                    match self.context.last_command_output {
-                        OutputType::Podcasts(ref v) => {
-                            let item = &v[selected_index];
-                            let _actions: Vec<ModalAction> = item
-                                .get_action_list()
-                                .into_iter()
-                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
-                                .collect();
-                        }
-                        OutputType::Episodes(ref v) => {
-                            let item = &v[selected_index];
-                            let _actions: Vec<ModalAction> = item
-                                .get_action_list()
-                                .into_iter()
-                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
-                                .collect();
-                        }
-                        OutputType::CommandHelps(ref v) => {
-                            let item = &v[selected_index];
-                            let _actions: Vec<ModalAction> = item
-                                .get_action_list()
-                                .into_iter()
-                                .map(|o| ModalAction::from((o, self.command_sender.clone())))
-                                .collect();
-                        }
-                        _ => unreachable!(),
-                    }
-                    //let actions = actionable.get_action_list();
+                    let actions = self
+                        .context
+                        .get_element_modal_actions_data(selected_index, &self.action_list_builder);
+                    self.context.modal_context.reset(Some(actions));
                 }
                 _ => (),
             },
             ScreenAction::ScrollingModalWindow => match key_event.code {
                 KeyCode::Esc => self.context.current_action = ScreenAction::ScrollingOutput,
-                _ => {}
+                KeyCode::Up => {
+                    // TODO : Mutualize
+                    let mut state = self
+                        .context
+                        .modal_context
+                        .modal_actions_list_state
+                        .as_ref()
+                        .unwrap()
+                        .borrow_mut();
+                    let actions_list_length = self
+                        .context
+                        .modal_context
+                        .modal_actions
+                        .as_ref()
+                        .unwrap()
+                        .len();
+                    let selected_index = match state.selected() {
+                        Some(i) => {
+                            if i == 0 {
+                                actions_list_length - 1
+                            } else {
+                                i - 1
+                            }
+                        }
+                        None => 0,
+                    };
+                    state.select(Some(selected_index));
+                }
+                KeyCode::Down => {
+                    let mut state = self
+                        .context
+                        .modal_context
+                        .modal_actions_list_state
+                        .as_ref()
+                        .unwrap()
+                        .borrow_mut();
+                    let actions_list_length = self
+                        .context
+                        .modal_context
+                        .modal_actions
+                        .as_ref()
+                        .unwrap()
+                        .len();
+
+                    let selected_index = match state.selected() {
+                        Some(i) => (i + 1) % actions_list_length,
+                        None => 0,
+                    };
+                    state.select(Some(selected_index));
+                }
+                KeyCode::Enter => {}
+                _ => {} // TODO : Handle Up, Down, and Enter
             },
         }
 

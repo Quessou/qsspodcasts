@@ -8,7 +8,9 @@ use command_management::output::output_type::OutputType;
 use podcast_player::player_status::PlayerStatus;
 
 use crate::autocompletion_context::AutocompletionContext;
+use crate::modal_window::action_list_builder::ActionListBuilder;
 use crate::modal_window::modal_action::ModalAction;
+use crate::modal_window::modal_window_context::ModalWindowContext;
 use crate::screen_action::ScreenAction;
 
 use tui::widgets::ListState;
@@ -29,7 +31,7 @@ pub struct ScreenContext {
     pub(crate) player_status: PlayerStatus,
     pub(crate) notifications_buffer: VecDeque<Notification>,
     pub(crate) autocompletion_context: AutocompletionContext,
-    pub(crate) modal_context: Option<ModalAction>,
+    pub(crate) modal_context: ModalWindowContext,
 }
 
 impl ScreenContext {
@@ -39,6 +41,19 @@ impl ScreenContext {
             OutputType::Podcasts(l) => Some(l.len()),
             OutputType::CommandHelps(l) => Some(l.len()),
             _ => None,
+        }
+    }
+
+    pub fn get_element_modal_actions_data(
+        &self,
+        index: usize,
+        builder: &ActionListBuilder, // TODO : Kinda bad to have to pass a builder as a parameter
+    ) -> Vec<ModalAction> {
+        match self.last_command_output {
+            OutputType::Episodes(ref v) => builder.build_action_list(&v[index]),
+            OutputType::Podcasts(ref v) => builder.build_action_list(&v[index]),
+            OutputType::CommandHelps(ref v) => builder.build_action_list(&v[index]),
+            _ => unreachable!(),
         }
     }
 }
@@ -57,7 +72,7 @@ impl Default for ScreenContext {
             player_status: PlayerStatus::Stopped,
             notifications_buffer: VecDeque::with_capacity(4),
             autocompletion_context: AutocompletionContext::default(),
-            modal_context: None,
+            modal_context: ModalWindowContext::default(),
         }
     }
 }

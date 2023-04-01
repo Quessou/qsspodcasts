@@ -2,7 +2,7 @@ use super::modal_action::ModalAction;
 use super::modal_actionable::ModalActionable;
 use data_transport::DataSender;
 
-pub(crate) struct ActionListBuilder {
+pub struct ActionListBuilder {
     command_sender: DataSender<String>,
 }
 
