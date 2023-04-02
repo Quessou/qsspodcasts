@@ -28,9 +28,12 @@ fn build_parsing_failed_error(command_name: &str, error_text: &str) -> CommandEr
 }
 
 pub fn build_play_command(mut parameters: Vec<String>) -> Result<Command, CommandError> {
-    let command = if parameters.len() > 0 && is_hash(&parameters[0]) {
+    let command = if !parameters.is_empty() && is_hash(&parameters[0]) {
         let hash = parameters.pop().unwrap();
         Command::Play(Some(hash))
+    } else if !parameters.is_empty() && !is_hash(&parameters[0]) {
+        let error = build_parsing_failed_error("Play", "Parsing of hash failed");
+        return Err(error);
     } else {
         Command::Play(None)
     };
