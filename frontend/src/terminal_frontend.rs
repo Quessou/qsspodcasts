@@ -258,6 +258,7 @@ impl<D: UiDrawer> Frontend<D> {
                     state.select(Some(selected_index));
                 }
                 KeyCode::Down => {
+                    // TODO : Mutualize
                     let mut state = self
                         .context
                         .modal_context
@@ -279,8 +280,24 @@ impl<D: UiDrawer> Frontend<D> {
                     };
                     state.select(Some(selected_index));
                 }
-                KeyCode::Enter => {}
-                _ => {} // TODO : Handle Up, Down, and Enter
+                KeyCode::Enter => {
+                    let actions = self.context.modal_context.modal_actions.as_mut().unwrap();
+                    let selected_index = self
+                        .context
+                        .modal_context
+                        .modal_actions_list_state
+                        .as_ref()
+                        .unwrap()
+                        .borrow_mut()
+                        .selected()
+                        .unwrap();
+                    if let Err(_) = actions[selected_index].call().await {
+                        panic!("Execution of modal action failed")
+                    }
+                    self.context.current_action = ScreenAction::TypingCommand;
+                    self.context.autocompletion_context.clear();
+                }
+                _ => {}
             },
         }
 

@@ -16,6 +16,11 @@ impl AutocompletionContext {
         self.autocompletion_states.clear();
     }
 
+    pub fn clear(&mut self) {
+        self.reset();
+        self.current_input = "".to_owned();
+    }
+
     pub fn is_autocompletion_buffer_empty(&self) -> bool {
         self.autocompletion_choices.is_empty()
             || self.current_input.len()
