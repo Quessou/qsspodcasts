@@ -2,8 +2,11 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use gstreamer::ClockTime;
-use gstreamer_player::{self, Player as GStreamerInnerPlayer};
+use gstreamer_player::{
+    self,
+    gst::{init, ClockTime},
+    Player as GStreamerInnerPlayer, PlayerVideoRenderer,
+};
 
 use log::{error, warn};
 use path_providing::path_provider::PathProvider;
@@ -23,13 +26,16 @@ pub struct GStreamerMp3Player {
 
 impl GStreamerMp3Player {
     pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
+        init().unwrap();
         GStreamerMp3Player {
             selected_episode: None,
             path_provider: Arc::new(Mutex::new(path_provider)),
             is_paused: true,
             player: GStreamerInnerPlayer::new(
-                None,
-                Some(gstreamer_player::PlayerGMainContextSignalDispatcher::new(None).as_ref()),
+                None::<PlayerVideoRenderer>,
+                Some(gstreamer_player::PlayerGMainContextSignalDispatcher::new(
+                    None,
+                )),
             ),
         }
     }
