@@ -9,7 +9,7 @@ mock! {
     pub Mp3Player {}     // Name of the mock struct, less the "Mock" prefix
     impl TraitMp3Player for Mp3Player {   // specification of the trait to mock
         fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
-        fn get_selected_episode(&self) -> &Option<PodcastEpisode>;
+        fn get_selected_episode(&self) -> Option<&'static PodcastEpisode>;
         fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
         fn pause(&mut self);
         fn play(&mut self);
