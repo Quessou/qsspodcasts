@@ -52,8 +52,17 @@ pub fn build_list_podcasts_command(_parameters: Vec<String>) -> Result<Command, 
     Ok(Command::ListPodcasts)
 }
 
-pub fn build_list_episodes_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
-    Ok(Command::ListEpisodes)
+pub fn build_list_episodes_command(mut parameters: Vec<String>) -> Result<Command, CommandError> {
+    let command = if !parameters.is_empty() && is_hash(&parameters[0]) {
+        let hash = parameters.pop().unwrap();
+        Command::ListEpisodes(Some(hash))
+    } else if !parameters.is_empty() && !is_hash(&parameters[0]) {
+        let error = build_parsing_failed_error("Play", "Parsing of hash failed");
+        return Err(error);
+    } else {
+        Command::ListEpisodes(None)
+    };
+    Ok(command)
 }
 
 pub fn build_select_command(parameters: Vec<String>) -> Result<Command, CommandError> {
@@ -131,7 +140,7 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
         build_list_podcasts_command,
     );
     factory_hashmap.insert(
-        Command::ListEpisodes.to_string(),
+        Command::ListEpisodes(None).to_string(),
         build_list_episodes_command,
     );
     factory_hashmap.insert(

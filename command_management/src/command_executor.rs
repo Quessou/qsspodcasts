@@ -80,12 +80,35 @@ impl CommandExecutor {
         Ok(OutputType::Podcasts(podcasts))
     }
 
-    async fn handle_list_episodes(&mut self, _: Command) -> Result<OutputType, CommandError> {
+    async fn handle_list_episodes(
+        &mut self,
+        _: Command,
+        hash: Option<String>,
+    ) -> Result<OutputType, CommandError> {
         let podcast_library = self.core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
-        let mut episodes: Vec<PodcastEpisode> =
-            podcasts.iter().flat_map(|p| p.episodes.clone()).collect();
+        let episodes_iter = podcasts
+            .iter()
+            .flat_map(|p| p.episodes.clone())
+            .filter(|e| {
+                if hash.is_none() {
+                    return true;
+                }
+
+                let p = podcasts
+                    .iter()
+                    .find(|p| &p.hash() == hash.as_ref().unwrap());
+                let title = if p.is_none() {
+                    ""
+                } else {
+                    &p.as_ref().unwrap().title
+                };
+
+                e.podcast_name == title
+            });
+
+        let mut episodes: Vec<PodcastEpisode> = episodes_iter.collect();
         episodes.sort_by(|p1, p2| p1.pub_date.cmp(&p2.pub_date).reverse());
         drop(podcast_library);
 
@@ -213,7 +236,10 @@ impl CommandExecutor {
             Command::Exit => OutputType::None,
             Command::Help(command) => self.handle_help_command(command)?,
             Command::ListPodcasts => self.handle_list_podcasts(command).await?,
-            Command::ListEpisodes => self.handle_list_episodes(command).await?,
+            Command::ListEpisodes(ref hash) => {
+                let hash = hash.clone();
+                self.handle_list_episodes(command, hash).await?
+            }
             Command::Select(hash) => self.select_episode(&hash).await?,
             Command::AddRss(url) => self.add_rss(&url.0).await?,
             Command::Advance(duration) => self.advance_in_podcast(duration.0).await?,
