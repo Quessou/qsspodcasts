@@ -2,11 +2,13 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use gstreamer_player::{
+use gstreamer_play::{
     self,
     gst::{init, ClockTime},
-    Player as GStreamerInnerPlayer, PlayerVideoRenderer,
+    Play as GStreamerInnerPlayer, PlayVideoRenderer,
 };
+
+use gstreamer_pbutils::{Discoverer, DiscovererInfo};
 
 use log::{error, warn};
 use path_providing::path_provider::PathProvider;
@@ -17,8 +19,13 @@ use crate::player_error::PlayerError;
 
 use super::mp3_player::Mp3Player;
 
+struct GStreamerPlayerState {
+    pub selected_episode: PodcastEpisode,
+    pub info: DiscovererInfo,
+}
+
 pub struct GStreamerMp3Player {
-    selected_episode: Option<PodcastEpisode>,
+    player_state: Option<GStreamerPlayerState>,
     path_provider: Arc<Mutex<Box<dyn PathProvider>>>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
@@ -27,17 +34,17 @@ pub struct GStreamerMp3Player {
 impl GStreamerMp3Player {
     pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
         init().unwrap();
+        let player = GStreamerInnerPlayer::new(None::<PlayVideoRenderer>);
         GStreamerMp3Player {
-            selected_episode: None,
+            player_state: None,
             path_provider: Arc::new(Mutex::new(path_provider)),
             is_paused: true,
-            player: GStreamerInnerPlayer::new(
-                None::<PlayerVideoRenderer>,
-                Some(gstreamer_player::PlayerGMainContextSignalDispatcher::new(
-                    None,
-                )),
-            ),
+            player,
         }
+    }
+
+    fn reset_progression(&mut self) {
+        self.player.seek(ClockTime::default());
     }
 }
 
@@ -48,23 +55,41 @@ impl Mp3Player for GStreamerMp3Player {
             .unwrap()
             .compute_episode_path(episode)
     }
-    fn get_selected_episode(&self) -> &Option<PodcastEpisode> {
-        &self.selected_episode
-    }
-    fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
-        self.selected_episode = episode;
-        let tmp_path = self.compute_episode_path(self.selected_episode.as_ref().unwrap());
-        let tmp_path = tmp_path.into_os_string().into_string();
-        let tmp_path = tmp_path.unwrap();
-        let tmp_path = &format!("file://{}", &tmp_path);
-        let path: Option<&str> = if self.selected_episode.is_none() {
+    fn get_selected_episode(&self) -> Option<&PodcastEpisode> {
+        if self.player_state.is_none() {
             None
         } else {
-            Some(tmp_path)
-        };
-        self.player.set_uri(path);
-        self.player.play();
-        self.player.pause();
+            Some(&self.player_state.as_ref().unwrap().selected_episode)
+        }
+    }
+    fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
+        if (episode.is_none() && self.player_state.is_none())
+            || (self.player_state.is_some()
+                && episode.as_ref() == Some(&self.player_state.as_ref().unwrap().selected_episode))
+        {
+            return;
+        }
+        self.reset_progression();
+
+        if episode.is_none() {
+            self.player_state = None;
+            self.player.set_uri(None);
+        } else {
+            let tmp_path = self.compute_episode_path(episode.as_ref().unwrap());
+            let tmp_path = tmp_path.into_os_string().into_string();
+            let tmp_path = tmp_path.unwrap();
+            let tmp_path = &format!("file://{}", &tmp_path);
+            let path = Some(tmp_path);
+
+            let discoverer = Discoverer::new(ClockTime::from_mseconds(1000)).unwrap();
+            let info = discoverer.discover_uri(tmp_path).unwrap();
+            self.player_state = Some(GStreamerPlayerState {
+                selected_episode: episode.unwrap(),
+                info,
+            });
+
+            self.player.set_uri(path.map(|x| &**x));
+        }
     }
 
     fn is_paused(&self) -> bool {
@@ -114,8 +139,7 @@ impl Mp3Player for GStreamerMp3Player {
             return None;
         }
 
-        let duration: ClockTime = self.player.duration().unwrap_or_default();
-
+        let duration = self.player_state.as_ref().unwrap().info.duration().unwrap();
         let duration = Duration::new(duration.seconds(), 0);
         Some(DurationWrapper::new(duration))
     }
