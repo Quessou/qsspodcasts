@@ -12,6 +12,7 @@ pub fn command_to_parameter(c: &Command) -> Option<CommandParameterType> {
         Command::AddRss(_) => Some(CommandParameterType::Url),
         Command::Select(_) => Some(CommandParameterType::Hash),
         Command::Play(_) => Some(CommandParameterType::Hash),
+        Command::ListEpisodes(_) => Some(CommandParameterType::Hash),
         Command::Advance(_) => Some(CommandParameterType::Duration),
         Command::GoBack(_) => Some(CommandParameterType::Duration),
         _ => None,
