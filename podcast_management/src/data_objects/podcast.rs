@@ -5,7 +5,7 @@ use html2text;
 use rss::Image;
 use sha1::{Digest, Sha1};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Podcast {
     pub title: String,
     pub link: String,

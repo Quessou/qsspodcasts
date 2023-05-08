@@ -36,7 +36,7 @@ pub enum Command {
     Exit,
     Help(Option<String>),
     ListPodcasts,
-    ListEpisodes,
+    ListEpisodes(Option<String>),
     Search,
     See,
     VolumeUp,

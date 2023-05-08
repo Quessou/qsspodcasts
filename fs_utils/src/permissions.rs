@@ -40,7 +40,7 @@ mod tests {
             f.sync_all().expect("Sync failed");
 
             FilePermissionsTestData {
-                file_path: file_path,
+                file_path,
             }
         }
     }

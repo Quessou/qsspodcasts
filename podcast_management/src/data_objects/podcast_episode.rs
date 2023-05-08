@@ -7,7 +7,7 @@ use sha1::Sha1;
 
 use super::hashable::Hashable;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct PodcastEpisode {
     pub title: String,
     pub link: String,

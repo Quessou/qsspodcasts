@@ -14,7 +14,11 @@ impl ModalActionable for Podcast {
     where
         Self: Sized,
     {
-        vec![]
+        vec![ModalActionData::new(
+            "List episodes".to_owned(),
+            self,
+            Box::new(build_list_episodes_command),
+        )]
     }
 }
 

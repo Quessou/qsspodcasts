@@ -126,7 +126,7 @@ mod tests {
         let autocompleter = Autocompleter::new(vec![
             AutocompletionCommandData::new(Command::Exit, None),
             AutocompletionCommandData::new(Command::ListPodcasts, None),
-            AutocompletionCommandData::new(Command::ListEpisodes, None),
+            AutocompletionCommandData::new(Command::ListEpisodes(None), None),
         ]);
         let mut command_to_be_completed = String::from("ex");
         let autocomplete_choices = autocompleter.autocomplete_command(&command_to_be_completed);
