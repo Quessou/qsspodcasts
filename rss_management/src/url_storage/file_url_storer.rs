@@ -25,4 +25,8 @@ impl UrlStorer for FileUrlStorer {
         }
         lines
     }
+
+    fn delete_url(&mut self, url: &str) -> Result<(), io::Error> {
+        write_utils::delete_line_in_file(&self.file_path, url)
+    }
 }

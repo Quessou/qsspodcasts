@@ -3,7 +3,7 @@ use podcast_management::data_objects::hashable::Hashable;
 use podcast_management::data_objects::podcast::Podcast;
 use url::Url;
 
-use crate::command_error::{CommandError, ErrorKind as CommandErrorKind};
+use crate::command_error::{self, CommandError, ErrorKind as CommandErrorKind};
 use crate::commands::command_enum::Command;
 use crate::commands::helps::{
     command_help_library::CommandHelpLibrary,
@@ -158,7 +158,7 @@ impl CommandExecutor {
         if let Err(e) = self.core.add_url(&url).await {
             return Err(CommandError::new(
                 Some(Box::new(e)),
-                crate::command_error::ErrorKind::ExecutionFailed,
+                command_error::ErrorKind::ExecutionFailed,
                 None,
                 Some("URL writing failed".to_string()),
             ));
@@ -166,9 +166,21 @@ impl CommandExecutor {
         if self.core.load_feed(&url).await.is_err() {
             return Err(CommandError::new(
                 None,
-                crate::command_error::ErrorKind::ExecutionFailed,
+                command_error::ErrorKind::ExecutionFailed,
                 None,
                 Some("Loading of new RSS feed failed".to_string()),
+            ));
+        }
+        Ok(OutputType::None)
+    }
+
+    async fn delete_rss(&mut self, hash: &str) -> Result<OutputType, CommandError> {
+        if let Err(e) = self.core.delete_rss(hash).await {
+            return Err(CommandError::new(
+                Some(Box::new(e)),
+                command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("URL deletion failed".to_string()),
             ));
         }
         Ok(OutputType::None)
@@ -181,7 +193,7 @@ impl CommandExecutor {
         if self.core.seek(duration).await.is_err() {
             return Err(CommandError::new(
                 None,
-                crate::command_error::ErrorKind::ExecutionFailed,
+                command_error::ErrorKind::ExecutionFailed,
                 None,
                 Some("Seeking failed".to_string()),
             ));
@@ -196,7 +208,7 @@ impl CommandExecutor {
         if self.core.seek(duration * -1).await.is_err() {
             return Err(CommandError::new(
                 None,
-                crate::command_error::ErrorKind::ExecutionFailed,
+                command_error::ErrorKind::ExecutionFailed,
                 None,
                 Some("Seeking failed".to_string()),
             ));
@@ -216,7 +228,7 @@ impl CommandExecutor {
         if helps.is_empty() {
             return Err(CommandError::new(
                 None,
-                crate::command_error::ErrorKind::ObjectNotFound,
+                command_error::ErrorKind::ObjectNotFound,
                 Some("help".to_string()),
                 Some("Command name unknown".to_string()),
             ));
@@ -242,6 +254,7 @@ impl CommandExecutor {
             }
             Command::Select(hash) => self.select_episode(&hash).await?,
             Command::AddRss(url) => self.add_rss(&url.0).await?,
+            Command::DeleteRss(hash) => self.delete_rss(&hash).await?,
             Command::Advance(duration) => self.advance_in_podcast(duration.0).await?,
             Command::GoBack(duration) => self.go_back_in_podcast(duration.0).await?,
             _ => {

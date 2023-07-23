@@ -29,6 +29,11 @@ impl<T: UrlStorer> RssProvider<T> {
         }
         Ok(())
     }
+    pub fn delete_url(&mut self, url: &str) -> Result<(), io::Error> {
+        self.rss_feeds.retain(|u| u != url);
+        self.url_storer.delete_url(url)?;
+        Ok(())
+    }
 
     pub async fn get_feed<'a>(&'a self, url: &'a str) -> ChannelTuple<'a> {
         self.feed_downloader.download_feed(url).await.unwrap()
@@ -53,6 +58,9 @@ mod tests {
     struct DummyUrlStorer;
     impl UrlStorer for DummyUrlStorer {
         fn write_url(&mut self, _url: &str) -> Result<(), io::Error> {
+            Ok(())
+        }
+        fn delete_url(&mut self, _url: &str) -> Result<(), io::Error> {
             Ok(())
         }
 

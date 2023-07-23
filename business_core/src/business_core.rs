@@ -1,4 +1,4 @@
-use std::io::Error as IoError;
+use std::io::{self, Error as IoError};
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -80,6 +80,31 @@ impl BusinessCore {
         }
         info!("Url added successfully");
         self.send_notification(format!("Url {} added successfully", url))
+            .await;
+        Ok(())
+    }
+
+    pub async fn delete_rss(&mut self, hash: &str) -> Result<(), IoError> {
+        let mut library = self.podcast_library.lock().await;
+        let podcast = library.search_podcast(hash);
+        library.delete_podcast(hash)?;
+        drop(library);
+
+        if podcast.is_none() {
+            self.send_notification(format!("Could not delete feed (hash does not exist ?)"))
+                .await;
+            return Err(IoError::new(
+                io::ErrorKind::NotFound,
+                "Could not find podcast matching hash",
+            ));
+        }
+        let url = podcast.unwrap().link;
+        if let Err(e) = self.rss_provider.delete_url(&url) {
+            self.send_notification("Deletion of URL failed".to_string())
+                .await;
+            return Err(e);
+        };
+        self.send_notification(format!("RSS feed deletion successful"))
             .await;
         Ok(())
     }

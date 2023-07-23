@@ -93,6 +93,21 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
     Ok(Command::AddRss(CommandUrl(url.unwrap())))
 }
 
+pub fn build_delete_rss_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("delete_rss"));
+    }
+
+    let hash = &parameters[0];
+    if hash.len() != HASH_LEN || !is_hash(hash) {
+        return Err(build_parsing_failed_error(
+            "delete_rss",
+            "Parameter parsing failed",
+        ));
+    }
+    Ok(Command::DeleteRss(hash.to_string()))
+}
+
 pub fn build_advance_command(parameters: Vec<String>) -> Result<Command, CommandError> {
     if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("advance"));
@@ -150,6 +165,10 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     factory_hashmap.insert(
         Command::AddRss(CommandUrl(Url::parse("https://www.google.com").unwrap())).to_string(),
         build_add_rss_command,
+    );
+    factory_hashmap.insert(
+        Command::DeleteRss("".to_string()).to_string(),
+        build_delete_rss_command,
     );
     factory_hashmap.insert(
         Command::Advance(CommandDuration(chrono::Duration::seconds(0))).to_string(),

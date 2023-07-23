@@ -29,6 +29,28 @@ impl PodcastLibrary {
         }
         None
     }
+
+    pub fn search_podcast(&self, hash: &str) -> Option<Podcast> {
+        for p in &self.podcasts {
+            if p.hash() == hash {
+                return Some(p.shallow_copy());
+            }
+        }
+        None
+    }
+
+    pub fn delete_podcast(&mut self, hash: &str) -> Result<(), std::io::Error> {
+        let prev_len = self.podcasts.len();
+        self.podcasts.retain(|p| p.hash() != hash);
+        let new_len = self.podcasts.len();
+        if prev_len == new_len {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                format!("Could not find podcast with hash {}", hash),
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl Default for PodcastLibrary {
