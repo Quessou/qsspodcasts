@@ -48,7 +48,7 @@ mod tests {
         let podcast_builder = PodcastBuilder::new();
         let mut library = PodcastLibrary::new();
         assert_eq!(library.podcasts.len(), 0);
-        let mut podcasts = vec![podcast_builder.build(&rss::Channel::default())];
+        let podcasts = vec![podcast_builder.build(&rss::Channel::default())];
         library.push(podcasts);
         assert_eq!(library.podcasts.len(), 1);
         Ok(())
@@ -58,7 +58,7 @@ mod tests {
     fn test_clear() -> Result<(), String> {
         let podcast_builder = PodcastBuilder::new();
         let mut library = PodcastLibrary::new();
-        let mut podcasts = vec![podcast_builder.build(&rss::Channel::default())];
+        let podcasts = vec![podcast_builder.build(&rss::Channel::default())];
         library.push(podcasts);
         assert_eq!(library.podcasts.len(), 1);
         library.clear();
