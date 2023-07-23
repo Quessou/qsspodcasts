@@ -3,6 +3,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
+use command_management::commands::command_enum::Command;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
 use crossterm::{
@@ -345,6 +346,11 @@ impl<D: UiDrawer> Frontend<D> {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
 
+        self.command_sender
+            .send(Command::ListPodcasts.to_string())
+            .await
+            .unwrap();
+
         let tick_rate = Duration::from_millis(250);
         let mut last_tick = Instant::now();
         loop {
@@ -371,6 +377,7 @@ impl<D: UiDrawer> Frontend<D> {
 
             if let Ok(n) = self.notification_receiver.try_receive() {
                 self.context.notifications_buffer.push_front(n);
+                // TODO : Put the 4 in a constant variable called "notification_window_height"
                 self.context.notifications_buffer.truncate(4);
             }
 
