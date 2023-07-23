@@ -1,12 +1,25 @@
 use bytes::Bytes;
-use std::fs::File;
+use itertools::Itertools;
 use std::fs::OpenOptions;
+use std::fs::{read_to_string, File};
+use std::io::BufWriter;
 use std::io::{Error as IoError, ErrorKind, Write};
 use std::path;
 
 pub fn write_at_end_of_file(file_path: &path::Path, line: &str) -> Result<(), IoError> {
     let mut file = OpenOptions::new().append(true).open(file_path)?;
     writeln!(file, "{}", line)?;
+    Ok(())
+}
+
+pub fn delete_line_in_file(file_path: &path::Path, line: &str) -> Result<(), IoError> {
+    let file = read_to_string(file_path).unwrap();
+    let lines = file.lines();
+    let lines = lines.filter(|l| !l.contains(line));
+    let file_content: String = Itertools::intersperse(lines, "\n").collect();
+    let file = File::create(file_path).unwrap();
+    let mut writer = BufWriter::new(file);
+    writer.write(file_content.as_bytes())?; //file_content.as_bytes())?;
     Ok(())
 }
 

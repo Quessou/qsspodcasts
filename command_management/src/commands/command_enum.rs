@@ -10,10 +10,6 @@ pub struct CommandUrl(pub extern_url::Url);
 
 impl Default for CommandUrl {
     fn default() -> Self {
-        //Self { serialization: Default::default(), scheme_end: Default::default(),
-        // username_end: Default::default(), host_start: Default::default(), host_end: Default::default(),
-        // host: Default::default(), port: Default::default(), path_start: Default::default(), query_start: Default::default(),
-        //  fragment_start: Default::default() }
         CommandUrl(extern_url::Url::from_str("https://www.example.com").unwrap())
     }
 }
@@ -42,7 +38,7 @@ pub enum Command {
     VolumeUp,
     VolumeDown,
     AddRss(CommandUrl),
-    DeleteRss,
+    DeleteRss(String),
     Select(String),
     Advance(CommandDuration),
     GoBack(CommandDuration),
