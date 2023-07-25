@@ -39,9 +39,7 @@ mod tests {
             fs::set_permissions(&file_path, permissions).expect("Set of permissions failed");
             f.sync_all().expect("Sync failed");
 
-            FilePermissionsTestData {
-                file_path,
-            }
+            FilePermissionsTestData { file_path }
         }
     }
 
