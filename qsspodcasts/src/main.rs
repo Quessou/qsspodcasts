@@ -51,11 +51,16 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
     let core = BusinessCore::new(
         mp3_player.clone(),
         Rc::new(path_provider),
-        Some(notifications_sender),
+        Some(notifications_sender.clone()),
     );
 
     let executor = CommandExecutor::new(core, Some(autocompletion_request_sender.clone()));
-    let command_engine = CommandEngine::new(executor, Some(command_reader), Some(output_sender));
+    let command_engine = CommandEngine::new(
+        executor,
+        Some(command_reader),
+        Some(output_sender),
+        Some(notifications_sender),
+    );
 
     let frontend = Frontend::new(
         command_sender,
