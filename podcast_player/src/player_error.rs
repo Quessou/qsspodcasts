@@ -3,7 +3,7 @@ use std::fmt;
 
 use rodio::decoder::DecoderError;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
     FileNotFound,
     RodioError,
@@ -30,6 +30,12 @@ impl PlayerError {
     }
     pub fn new(source: Option<Box<dyn Error>>, kind: ErrorKind) -> PlayerError {
         PlayerError { source, kind }
+    }
+}
+
+impl PartialEq for PlayerError {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
     }
 }
 
