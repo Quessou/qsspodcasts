@@ -292,7 +292,7 @@ impl<D: UiDrawer> Frontend<D> {
                         .borrow_mut()
                         .selected()
                         .unwrap();
-                    if let Err(_) = actions[selected_index].call().await {
+                    if (actions[selected_index].call().await).is_err() {
                         panic!("Execution of modal action failed")
                     }
                     self.context.current_action = ScreenAction::TypingCommand;

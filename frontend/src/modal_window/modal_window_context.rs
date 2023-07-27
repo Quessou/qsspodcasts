@@ -4,6 +4,7 @@ use tui::widgets::ListState;
 
 use super::modal_action::ModalAction;
 
+#[derive(Default)]
 pub struct ModalWindowContext {
     pub modal_actions: Option<Vec<ModalAction>>,
     pub modal_actions_list_state: Option<RefCell<ListState>>,
@@ -15,7 +16,7 @@ impl ModalWindowContext {
             Some(v) => {
                 self.modal_actions = Some(v);
                 self.modal_actions_list_state = Some(RefCell::new(ListState::default()));
-                if self.modal_actions.as_ref().unwrap().len() > 0 {
+                if self.modal_actions.as_ref().unwrap().is_empty() {
                     self.modal_actions_list_state
                         .as_mut()
                         .unwrap()
@@ -27,15 +28,6 @@ impl ModalWindowContext {
                 self.modal_actions = None;
                 self.modal_actions_list_state = None;
             }
-        }
-    }
-}
-
-impl Default for ModalWindowContext {
-    fn default() -> Self {
-        Self {
-            modal_actions: None,
-            modal_actions_list_state: None,
         }
     }
 }

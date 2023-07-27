@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use log::{error, info};
+use podcast_player::player_error;
 use tokio::sync::Mutex as TokioMutex;
 
 use rss_management::{
@@ -91,7 +92,7 @@ impl BusinessCore {
         drop(library);
 
         if podcast.is_none() {
-            self.send_notification(format!("Could not delete feed (hash does not exist ?)"))
+            self.send_notification("Could not delete feed (hash does not exist ?)".to_string())
                 .await;
             return Err(IoError::new(
                 io::ErrorKind::NotFound,
@@ -104,7 +105,7 @@ impl BusinessCore {
                 .await;
             return Err(e);
         };
-        self.send_notification(format!("RSS feed deletion successful"))
+        self.send_notification("RSS feed deletion successful".to_string())
             .await;
         Ok(())
     }
@@ -165,24 +166,50 @@ impl BusinessCore {
         self.player.lock().await.seek(duration)
     }
 
-    pub async fn play(&mut self) {
+    pub async fn play(&mut self) -> Result<(), PlayerError> {
+        if self.player.lock().await.get_selected_episode().is_none() {
+            self.send_notification("No episode selected".to_owned())
+                .await;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::NoEpisodeSelected,
+            ));
+        }
         if self.player.lock().await.is_paused() {
             self.player.lock().await.play();
-            self.send_notification("Player launched".to_string()).await;
+            self.send_notification("Player launched".to_owned()).await;
         } else {
-            self.send_notification("Player already running".to_string())
+            self.send_notification("Player already running".to_owned())
                 .await;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::AlreadyPlaying,
+            ));
         }
+        Ok(())
     }
 
-    pub async fn pause(&mut self) {
+    pub async fn pause(&mut self) -> Result<(), PlayerError> {
+        if self.player.lock().await.get_selected_episode().is_none() {
+            self.send_notification("No episode selected".to_owned())
+                .await;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::NoEpisodeSelected,
+            ));
+        }
         if !self.player.lock().await.is_paused() {
             self.player.lock().await.pause();
             self.send_notification("Player paused".to_string()).await;
         } else {
             self.send_notification("Player already paused".to_string())
                 .await;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::AlreadyPaused,
+            ));
         }
+        Ok(())
     }
 
     pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {

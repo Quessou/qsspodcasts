@@ -7,6 +7,10 @@ use rodio::decoder::DecoderError;
 pub enum ErrorKind {
     FileNotFound,
     RodioError,
+    GStreamerError,
+    NoEpisodeSelected,
+    AlreadyPlaying,
+    AlreadyPaused,
 }
 
 /// Error type that wraps error that can come from the Player.

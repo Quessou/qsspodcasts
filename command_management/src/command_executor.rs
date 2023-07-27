@@ -42,13 +42,28 @@ impl CommandExecutor {
     }
 
     async fn handle_play(&mut self, _: Command) -> Result<OutputType, CommandError> {
-        self.core.play().await;
-        Ok(OutputType::None)
+        match self.core.play().await {
+            Ok(_) => Ok(OutputType::None),
+            Err(e) => Err(CommandError::new(
+                Some(Box::new(e)),
+                CommandErrorKind::ExecutionFailed,
+                Some("play".to_owned()),
+                None,
+            )),
+        }
+        //Ok(OutputType::None)
     }
 
     async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
-        self.core.pause().await;
-        Ok(OutputType::None)
+        match self.core.pause().await {
+            Ok(_) => Ok(OutputType::None),
+            Err(e) => Err(CommandError::new(
+                Some(Box::new(e)),
+                CommandErrorKind::ExecutionFailed,
+                Some("pause".to_owned()),
+                None,
+            )),
+        }
     }
 
     async fn update_autocompleter_hashes(&mut self, hashes: Vec<String>) -> Result<(), ()> {

@@ -38,8 +38,8 @@ impl CommandError {
         CommandError {
             source,
             kind,
-            command: command,
-            message: message,
+            command,
+            message,
         }
     }
 
