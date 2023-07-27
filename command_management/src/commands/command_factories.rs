@@ -87,7 +87,10 @@ pub fn build_add_rss_command(parameters: Vec<String>) -> Result<Command, Command
 
     let url = Url::parse(&parameters[0]);
     if url.is_err() {
-        return Err(build_parsing_failed_error("add_url", "Url parsing failed"));
+        return Err(build_parsing_failed_error(
+            "add_url",
+            &format!("Parsing of URL {} parsing failed", &parameters[0]),
+        ));
     }
 
     Ok(Command::AddRss(CommandUrl(url.unwrap())))

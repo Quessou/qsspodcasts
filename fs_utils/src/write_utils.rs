@@ -19,7 +19,10 @@ pub fn delete_line_in_file(file_path: &path::Path, line: &str) -> Result<(), IoE
     let file_content: String = Itertools::intersperse(lines, "\n").collect();
     let file = File::create(file_path).unwrap();
     let mut writer = BufWriter::new(file);
-    writer.write(file_content.as_bytes())?; //file_content.as_bytes())?;
+    match writer.write(file_content.as_bytes()) {
+        Ok(s) => assert!(s > 0),
+        Err(e) => return Err(IoError::new(ErrorKind::Other, e)),
+    }
     Ok(())
 }
 

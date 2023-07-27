@@ -24,6 +24,7 @@ pub struct PodcastEpisode {
 }
 
 impl PodcastEpisode {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         title: &str,
         link: &str,

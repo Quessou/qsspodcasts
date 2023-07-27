@@ -3,10 +3,14 @@ use std::fmt;
 
 use rodio::decoder::DecoderError;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
     FileNotFound,
     RodioError,
+    GStreamerError,
+    NoEpisodeSelected,
+    AlreadyPlaying,
+    AlreadyPaused,
 }
 
 /// Error type that wraps error that can come from the Player.
@@ -26,6 +30,12 @@ impl PlayerError {
     }
     pub fn new(source: Option<Box<dyn Error>>, kind: ErrorKind) -> PlayerError {
         PlayerError { source, kind }
+    }
+}
+
+impl PartialEq for PlayerError {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind
     }
 }
 

@@ -71,11 +71,8 @@ impl Mp3Player for GStreamerMp3Player {
         }
         self.reset_progression();
 
-        if episode.is_none() {
-            self.player_state = None;
-            self.player.set_uri(None);
-        } else {
-            let tmp_path = self.compute_episode_path(episode.as_ref().unwrap());
+        if let Some(episode) = episode {
+            let tmp_path = self.compute_episode_path(&episode);
             let tmp_path = tmp_path.into_os_string().into_string();
             let tmp_path = tmp_path.unwrap();
             let tmp_path = &format!("file://{}", &tmp_path);
@@ -84,11 +81,14 @@ impl Mp3Player for GStreamerMp3Player {
             let discoverer = Discoverer::new(ClockTime::from_mseconds(1000)).unwrap();
             let info = discoverer.discover_uri(tmp_path).unwrap();
             self.player_state = Some(GStreamerPlayerState {
-                selected_episode: episode.unwrap(),
+                selected_episode: episode,
                 info,
             });
 
             self.player.set_uri(path.map(|x| &**x));
+        } else {
+            self.player_state = None;
+            self.player.set_uri(None);
         }
     }
 
@@ -135,9 +135,7 @@ impl Mp3Player for GStreamerMp3Player {
     }
 
     fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
-        if self.get_selected_episode().is_none() {
-            return None;
-        }
+        self.get_selected_episode()?;
 
         let duration = self.player_state.as_ref().unwrap().info.duration().unwrap();
         let duration = Duration::new(duration.seconds(), 0);
@@ -145,10 +143,7 @@ impl Mp3Player for GStreamerMp3Player {
     }
 
     fn get_selected_episode_progression(&self) -> Option<DurationWrapper> {
-        if self.get_selected_episode().is_none() {
-            return None;
-        }
-
+        self.get_selected_episode()?;
         let progression = self.player.position().unwrap_or_default();
 
         let progression = Duration::new(progression.seconds(), 0);

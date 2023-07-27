@@ -30,7 +30,6 @@ impl CommandParser {
         let parameters: Vec<String> = command_components.map(|s| s.to_string()).collect();
 
         if !parameters.is_empty() {
-            // TODO
             info!("There are parameters to parse !")
         }
 
@@ -40,7 +39,7 @@ impl CommandParser {
                 Err(e) => return Err(e),
             },
             None => {
-                let error_message = format!("Unknown verb {verb}");
+                let error_message = format!("Unknown command : {verb}");
                 error!("{error_message}");
                 return Err(CommandError::new(
                     None,
