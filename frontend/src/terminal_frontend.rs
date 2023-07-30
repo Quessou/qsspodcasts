@@ -24,6 +24,7 @@ use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
 use crate::modal_window::action_list_builder::ActionListBuilder;
+use crate::modal_window::read_only_modal_contents::first_launch_help::get_first_launch_help;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
@@ -166,12 +167,7 @@ impl<D: UiDrawer> Frontend<D> {
                 }
             }
             ScreenAction::ScrollingOutput => match key_event.code {
-                KeyCode::Char(c) => {
-                    if c == '²' {
-                        self.context.current_action = ScreenAction::TypingCommand;
-                    }
-                }
-                KeyCode::Down => {
+                KeyCode::Down | KeyCode::Char('j') => {
                     if let Some(ref state) = self.context.list_output_state {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
@@ -188,7 +184,7 @@ impl<D: UiDrawer> Frontend<D> {
                         state.select(Some(selected_index));
                     }
                 }
-                KeyCode::Up => {
+                KeyCode::Up | KeyCode::Char('k') => {
                     if let Some(ref state) = self.context.list_output_state {
                         let output_length = match self.context.last_command_output {
                             OutputType::Episodes(ref v) => v.len(),
@@ -224,24 +220,29 @@ impl<D: UiDrawer> Frontend<D> {
                     let actions = self
                         .context
                         .get_element_modal_actions_data(selected_index, &self.action_list_builder);
-                    self.context.modal_context.reset(Some(actions));
+                    self.context.interactable_modal_context.reset(Some(actions));
+                }
+                KeyCode::Char('²') | KeyCode::Char('q') | KeyCode::Esc => {
+                    self.context.current_action = ScreenAction::TypingCommand;
                 }
                 _ => (),
             },
             ScreenAction::ScrollingModalWindow => match key_event.code {
-                KeyCode::Esc => self.context.current_action = ScreenAction::ScrollingOutput,
-                KeyCode::Up => {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    self.context.current_action = ScreenAction::ScrollingOutput
+                }
+                KeyCode::Up | KeyCode::Char('k') => {
                     // TODO : Mutualize
                     let mut state = self
                         .context
-                        .modal_context
+                        .interactable_modal_context
                         .modal_actions_list_state
                         .as_ref()
                         .unwrap()
                         .borrow_mut();
                     let actions_list_length = self
                         .context
-                        .modal_context
+                        .interactable_modal_context
                         .modal_actions
                         .as_ref()
                         .unwrap()
@@ -258,18 +259,18 @@ impl<D: UiDrawer> Frontend<D> {
                     };
                     state.select(Some(selected_index));
                 }
-                KeyCode::Down => {
+                KeyCode::Down | KeyCode::Char('j') => {
                     // TODO : Mutualize
                     let mut state = self
                         .context
-                        .modal_context
+                        .interactable_modal_context
                         .modal_actions_list_state
                         .as_ref()
                         .unwrap()
                         .borrow_mut();
                     let actions_list_length = self
                         .context
-                        .modal_context
+                        .interactable_modal_context
                         .modal_actions
                         .as_ref()
                         .unwrap()
@@ -282,10 +283,15 @@ impl<D: UiDrawer> Frontend<D> {
                     state.select(Some(selected_index));
                 }
                 KeyCode::Enter => {
-                    let actions = self.context.modal_context.modal_actions.as_mut().unwrap();
+                    let actions = self
+                        .context
+                        .interactable_modal_context
+                        .modal_actions
+                        .as_mut()
+                        .unwrap();
                     let selected_index = self
                         .context
-                        .modal_context
+                        .interactable_modal_context
                         .modal_actions_list_state
                         .as_ref()
                         .unwrap()
@@ -297,6 +303,13 @@ impl<D: UiDrawer> Frontend<D> {
                     }
                     self.context.current_action = ScreenAction::TypingCommand;
                     self.context.autocompletion_context.clear();
+                }
+                _ => {}
+            },
+            ScreenAction::ShowingReadOnlyModalWindow => match key_event.code {
+                KeyCode::Esc | KeyCode::Char('q') => {
+                    let prev_state = self.context.pop_previous_state();
+                    self.context.current_action = prev_state.unwrap();
                 }
                 _ => {}
             },
@@ -342,7 +355,7 @@ impl<D: UiDrawer> Frontend<D> {
         debug!("Screen context updated");
     }
 
-    pub async fn run(&mut self) -> Result<(), Box<dyn Error>> {
+    pub async fn run(&mut self, first_start: bool) -> Result<(), Box<dyn Error>> {
         enable_raw_mode()?;
         execute!(self.terminal.backend_mut(), EnterAlternateScreen)?;
 
@@ -350,8 +363,15 @@ impl<D: UiDrawer> Frontend<D> {
             .send(Command::ListPodcasts.to_string())
             .await
             .unwrap();
+        self.context
+            .stacked_states
+            .push(self.context.current_action);
+        if first_start {
+            self.context.current_action = ScreenAction::ShowingReadOnlyModalWindow;
+            self.context.read_only_modal_context.content = Some(get_first_launch_help());
+        }
 
-        let tick_rate = Duration::from_millis(250);
+        let tick_rate = self.context.ui_refresh_tickrate;
         let mut last_tick = Instant::now();
         loop {
             self.terminal

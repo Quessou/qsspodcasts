@@ -23,11 +23,19 @@ impl PathProvider for DefaultPathProvider {
         p.push(PathBuf::from(self.download_dir_name()));
         p
     }
+    fn first_start_marker_file_path(&self) -> PathBuf {
+        let mut p = self.app_dir_path();
+        p.push(PathBuf::from(self.first_start_marker_file_name()));
+        p
+    }
     fn rss_feed_list_file_name(&self) -> &'static str {
         "rss_feed_list"
     }
 
     fn download_dir_name(&self) -> &'static str {
         "downloads"
+    }
+    fn first_start_marker_file_name(&self) -> &'static str {
+        "first_start"
     }
 }

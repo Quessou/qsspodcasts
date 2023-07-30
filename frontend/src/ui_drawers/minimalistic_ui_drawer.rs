@@ -4,6 +4,7 @@ use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::{Borrow, Cow};
+use std::fmt::Alignment;
 use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
@@ -16,6 +17,7 @@ use tui::{
     widgets::{Block, Borders, Clear, Gauge, List, ListItem, Paragraph, Wrap},
 };
 
+use crate::modal_window;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
@@ -308,14 +310,19 @@ impl MinimalisticUiDrawer<'_> {
             .wrap(Wrap { trim: true })
     }
 
-    fn build_modal_window(&self, screen_size: Rect) -> Rect {
+    fn build_modal_window(
+        &self,
+        screen_size: Rect,
+        percentage_height: u16,
+        percentage_width: u16,
+    ) -> Rect {
         let popup_layout = Layout::default()
             .direction(Direction::Vertical)
             .constraints(
                 [
-                    Constraint::Percentage((100 - 60) / 2),
-                    Constraint::Percentage(60),
-                    Constraint::Percentage((100 - 60) / 2),
+                    Constraint::Percentage((100 - percentage_height) / 2),
+                    Constraint::Percentage(percentage_height),
+                    Constraint::Percentage((100 - percentage_height) / 2),
                 ]
                 .as_ref(),
             )
@@ -325,17 +332,25 @@ impl MinimalisticUiDrawer<'_> {
             .direction(Direction::Horizontal)
             .constraints(
                 [
-                    Constraint::Percentage((100 - 20) / 2),
-                    Constraint::Percentage(20),
-                    Constraint::Percentage((100 - 20) / 2),
+                    Constraint::Percentage((100 - percentage_width) / 2),
+                    Constraint::Percentage(percentage_width),
+                    Constraint::Percentage((100 - percentage_width) / 2),
                 ]
                 .as_ref(),
             )
             .split(popup_layout[1])[1]
     }
 
-    fn build_modal_list(&self, ctxt: &ScreenContext) -> List {
-        let modal_actions = ctxt.modal_context.modal_actions.as_ref().unwrap();
+    /// .
+    ///
+    /// # TODO
+    /// - Make this function more abstract to allow to use in more contexts ?
+    fn build_interactable_modal_list(&self, ctxt: &ScreenContext) -> List {
+        let modal_actions = ctxt
+            .interactable_modal_context
+            .modal_actions
+            .as_ref()
+            .unwrap();
         List::new(
             modal_actions
                 .iter()
@@ -348,6 +363,43 @@ impl MinimalisticUiDrawer<'_> {
                 .bg(Color::LightMagenta)
                 .add_modifier(Modifier::ITALIC),
         )
+    }
+
+    /// God this function is bad.
+    fn build_readonly_modal_list(&self, ctxt: &ScreenContext) -> List {
+        let empty_vec = vec![];
+        let read_only_content = ctxt
+            .read_only_modal_context
+            .content
+            .as_ref()
+            .unwrap_or(&empty_vec);
+        if read_only_content.is_empty() {
+            return List::new(vec![]);
+        }
+
+        let mut modifiers: Vec<Style> = read_only_content
+            .iter()
+            .map(|s| {
+                let style = Style::default();
+                if !s.starts_with(" ") {
+                    style.add_modifier(Modifier::BOLD)
+                } else {
+                    style.add_modifier(Modifier::ITALIC)
+                }
+            })
+            .collect();
+        let last_element_index = modifiers.len() - 1;
+        let last_style = modifiers
+            .remove(last_element_index)
+            .add_modifier(Modifier::ITALIC);
+        modifiers.push(last_style);
+
+        let items = read_only_content
+            .iter()
+            .enumerate()
+            .map(|(i, s)| ListItem::new(*s).style(modifiers[i]))
+            .collect::<Vec<_>>();
+        List::new(items).block(Block::default().borders(Borders::ALL))
     }
 
     fn draw_main_screen<B: Backend>(&mut self, f: &mut Frame<B>, context: &ScreenContext) {
@@ -417,21 +469,28 @@ impl MinimalisticUiDrawer<'_> {
 
         if context.current_action == ScreenAction::ScrollingModalWindow {
             let block = Block::default().borders(Borders::ALL);
-            let modal_window = self.build_modal_window(size);
-            let modal_list = self.build_modal_list(context);
+            let modal_window = self.build_modal_window(size, 60, 20);
+            let modal_list = self.build_interactable_modal_list(context);
             f.render_widget(Clear, modal_window); //this clears out the background
             f.render_widget(block, modal_window);
             f.render_stateful_widget(
                 modal_list,
                 modal_window,
                 &mut context
-                    .modal_context
+                    .interactable_modal_context
                     .modal_actions_list_state
                     .as_ref()
                     .unwrap()
                     .try_borrow_mut()
                     .unwrap(),
             )
+        } else if context.current_action == ScreenAction::ShowingReadOnlyModalWindow {
+            let block = Block::default().borders(Borders::ALL);
+            let modal_window = self.build_modal_window(size, 60, 60);
+            let modal_list = self.build_readonly_modal_list(context);
+            f.render_widget(Clear, modal_window);
+            f.render_widget(block, modal_window);
+            f.render_widget(modal_list, modal_window);
         }
     }
 }
