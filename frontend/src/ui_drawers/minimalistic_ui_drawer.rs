@@ -4,12 +4,12 @@ use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::{Borrow, Cow};
-use std::fmt::Alignment;
+
 use std::iter;
 use tui::backend::Backend;
 use tui::layout::{Corner, Rect};
 use tui::style::Modifier;
-use tui::text::{Span, Spans};
+use tui::text::{Line, Span};
 use tui::Frame;
 use tui::{
     layout::{Constraint, Direction, Layout},
@@ -17,7 +17,6 @@ use tui::{
     widgets::{Block, Borders, Clear, Gauge, List, ListItem, Paragraph, Wrap},
 };
 
-use crate::modal_window;
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 
@@ -48,7 +47,7 @@ impl MinimalisticUiDrawer<'_> {
         let logs_list: Vec<ListItem> = logs
             .iter()
             .rev()
-            .map(|s| ListItem::new(Spans::from(vec![Span::raw(s)])))
+            .map(|s| ListItem::new(Line::from(vec![Span::raw(s)])))
             .collect();
 
         let log_output = List::new(logs_list)
@@ -71,6 +70,7 @@ impl MinimalisticUiDrawer<'_> {
                 .as_ref(),
             )
             .split(*size)
+            .to_vec()
     }
 
     fn build_input_field(context: &ScreenContext) -> Paragraph {
@@ -108,6 +108,7 @@ impl MinimalisticUiDrawer<'_> {
             .direction(Direction::Horizontal)
             .constraints([Constraint::Min(1), Constraint::Max(1)].as_ref())
             .split(*size)
+            .to_vec()
     }
 
     fn build_output_field_paragraph(context: &ScreenContext) -> Paragraph {
@@ -142,12 +143,12 @@ impl MinimalisticUiDrawer<'_> {
                     let output = episodes
                         .iter()
                         .map(move |e| {
-                            let vec_spans = iter::once(Spans::from(Span::styled(
+                            let vec_spans = iter::once(Line::from(Span::styled(
                                 e.title.clone(),
                                 Style::default().bg(Color::LightGreen).fg(Color::Red),
                             )));
 
-                            let metadata_display = iter::once(Spans::from(vec![
+                            let metadata_display = iter::once(Line::from(vec![
                                 Span::from("["),
                                 Span::styled(
                                     e.hash(),
@@ -176,9 +177,9 @@ impl MinimalisticUiDrawer<'_> {
                             let description = &e.description;
                             let lines = str_to_lines(description, available_width)
                                 .into_iter()
-                                .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
-                            let vec_spans: Vec<Spans> =
-                                vec_spans.chain(lines).collect::<Vec<Spans>>();
+                                .map(|s| Line::from(vec![Span::styled(s, description_style)]));
+                            let vec_spans: Vec<Line> =
+                                vec_spans.chain(lines).collect::<Vec<Line>>();
 
                             ListItem::new(vec_spans)
                         })
@@ -189,12 +190,12 @@ impl MinimalisticUiDrawer<'_> {
                     let output = podcasts
                         .iter()
                         .map(move |p| {
-                            let vec_spans = iter::once(Spans::from(Span::styled::<String>(
+                            let vec_spans = iter::once(Line::from(Span::styled::<String>(
                                 p.title.clone(),
                                 Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
                             )));
 
-                            let hash_display = iter::once(Spans::from(vec![
+                            let hash_display = iter::once(Line::from(vec![
                                 Span::from("["),
                                 Span::styled(
                                     p.hash(),
@@ -210,8 +211,8 @@ impl MinimalisticUiDrawer<'_> {
 
                             let lines = str_to_lines(&p.description, available_width)
                                 .into_iter()
-                                .map(|s| Spans::from(vec![Span::styled(s, description_style)]));
-                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Spans>>();
+                                .map(|s| Line::from(vec![Span::styled(s, description_style)]));
+                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Line>>();
 
                             ListItem::new(vec_spans)
                         })
@@ -223,11 +224,11 @@ impl MinimalisticUiDrawer<'_> {
                         .iter()
                         .map(move |c| {
                             let vec_spans = vec![
-                                Spans::from(Span::styled(
+                                Line::from(Span::styled(
                                     "NAME",
                                     Style::default().add_modifier(Modifier::BOLD),
                                 )),
-                                Spans::from(vec![
+                                Line::from(vec![
                                     Span::raw("    "),
                                     Span::styled(
                                         c.command_name.to_owned(),
@@ -240,18 +241,15 @@ impl MinimalisticUiDrawer<'_> {
                             .into_iter();
 
                             let sample = vec![
-                                Spans::from(vec![Span::styled(
+                                Line::from(vec![Span::styled(
                                     "SAMPLE",
                                     Style::default().add_modifier(Modifier::BOLD),
                                 )]),
-                                Spans::from(vec![
-                                    Span::raw("    "),
-                                    Span::raw(c.sample.to_owned()),
-                                ]),
+                                Line::from(vec![Span::raw("    "), Span::raw(c.sample.to_owned())]),
                             ];
                             let vec_spans = vec_spans.chain(sample);
 
-                            let lines = vec![Spans::from(Span::styled(
+                            let lines = vec![Line::from(Span::styled(
                                 "DESCRIPTION",
                                 Style::default().add_modifier(Modifier::BOLD),
                             ))]
@@ -259,10 +257,10 @@ impl MinimalisticUiDrawer<'_> {
                             let lines = lines.chain(
                                 str_to_lines(c.description, available_width)
                                     .into_iter()
-                                    .map(|s| Spans::from(vec![Span::raw("   "), Span::raw(s)])),
+                                    .map(|s| Line::from(vec![Span::raw("   "), Span::raw(s)])),
                             );
 
-                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Spans>>();
+                            let vec_spans = vec_spans.chain(lines).collect::<Vec<Line>>();
                             ListItem::new(vec_spans)
                         })
                         .collect::<Vec<ListItem>>();
@@ -294,15 +292,15 @@ impl MinimalisticUiDrawer<'_> {
             .notifications_buffer
             .iter()
             .rev()
-            .map(|s| Spans::from(s.as_ref()));
+            .map(|s| Line::from(s.as_ref()));
 
         let empty_lines_count: i16 =
             std::cmp::max(0, 4 - (context.notifications_buffer.len() as i16));
         let empty_spaces =
-            iter::repeat(Spans::from(" ")).take(empty_lines_count.try_into().unwrap());
+            iter::repeat(Line::from(" ")).take(empty_lines_count.try_into().unwrap());
 
         let notifications = empty_spaces.chain(notifications);
-        let notifications: Vec<Spans> = notifications.collect();
+        let notifications: Vec<Line> = notifications.collect();
 
         Paragraph::new(notifications)
             .style(Style::default().fg(Color::LightBlue))
@@ -381,7 +379,7 @@ impl MinimalisticUiDrawer<'_> {
             .iter()
             .map(|s| {
                 let style = Style::default();
-                if !s.starts_with(" ") {
+                if !s.starts_with(' ') {
                     style.add_modifier(Modifier::BOLD)
                 } else {
                     style.add_modifier(Modifier::ITALIC)
@@ -391,7 +389,7 @@ impl MinimalisticUiDrawer<'_> {
         let last_element_index = modifiers.len() - 1;
         let last_style = modifiers
             .remove(last_element_index)
-            .add_modifier(Modifier::ITALIC);
+            .add_modifier(Modifier::ITALIC | Modifier::SLOW_BLINK);
         modifiers.push(last_style);
 
         let items = read_only_content

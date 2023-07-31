@@ -150,7 +150,7 @@ mod tests {
         assert!(ApplicationDirInitializer::is_path_valid(&absolute_file_path).is_ok());
 
         // Cleanup
-        env::set_current_dir(&cwd).expect("Cleanup of test failed");
+        env::set_current_dir(cwd).expect("Cleanup of test failed");
 
         Ok(())
     }
@@ -206,11 +206,11 @@ mod tests {
         };
         assert!(!PathBuf::from(dummy_app_dir).is_dir());
         app_dir_initializer
-            .initialize_application_dir(&dummy_app_dir)
+            .initialize_application_dir(dummy_app_dir)
             .expect("Initialization application dir failed");
         assert!(PathBuf::from(dummy_app_dir).is_dir());
 
-        fs::remove_dir_all(PathBuf::from(dummy_app_dir).to_path_buf())
+        fs::remove_dir_all(PathBuf::from(dummy_app_dir))
             .expect("Cleanup of test failed");
 
         Ok(())

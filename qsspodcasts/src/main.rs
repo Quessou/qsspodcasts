@@ -16,7 +16,7 @@ use command_management::{
 use data_transport::{DataReceiver, DataSender};
 use path_providing::{
     default_path_provider::DefaultPathProvider,
-    path_provider::{self, PathProvider},
+    path_provider::{PathProvider},
 };
 use podcast_player::players::gstreamer_mp3_player::GStreamerMp3Player;
 
@@ -101,7 +101,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let is_first_start = is_first_start() || cli.show_first_start_popup;
     if is_first_start {
         let path_provider = DefaultPathProvider {};
-        let f = File::create(path_provider.first_start_marker_file_path()).unwrap();
+        let _f = File::create(path_provider.first_start_marker_file_path()).unwrap();
     }
     let command_frontend_future = frontend.run(is_first_start);
     let command_engine_future = command_engine.run();

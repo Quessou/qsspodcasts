@@ -1,5 +1,5 @@
 use tui::style::*;
-use tui::text::{Span, Spans};
+use tui::text::{Line, Span};
 
 #[derive(Default)]
 pub struct AutocompletionContext {
@@ -38,7 +38,7 @@ impl AutocompletionContext {
         }
     }
 
-    pub fn get_displayed_input(&self) -> Spans {
+    pub fn get_displayed_input(&self) -> Line {
         let empty_string = String::default();
         let current_choice = self.current_choice.unwrap_or(0);
         let autocompletion_text = self
@@ -48,7 +48,7 @@ impl AutocompletionContext {
             .split(&self.current_input)
             .nth(1)
             .unwrap_or("");
-        Spans::from(vec![
+        Line::from(vec![
             Span::from(self.current_input.clone()),
             Span::styled(
                 autocompletion_text.to_owned(),
