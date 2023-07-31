@@ -281,7 +281,7 @@ impl MinimalisticUiDrawer<'_> {
             .block(Block::default().borders(Borders::ALL).title(title))
             .highlight_style(match context.current_action {
                 ScreenAction::ScrollingOutput => Style::default()
-                    .bg(Color::LightMagenta)
+                    .fg(Color::LightMagenta)
                     .add_modifier(Modifier::ITALIC),
                 _ => Style::default(),
             })
@@ -358,7 +358,7 @@ impl MinimalisticUiDrawer<'_> {
         .block(Block::default().borders(Borders::ALL))
         .highlight_style(
             Style::default()
-                .bg(Color::LightMagenta)
+                .fg(Color::LightMagenta)
                 .add_modifier(Modifier::ITALIC),
         )
     }
