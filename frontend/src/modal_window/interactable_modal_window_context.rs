@@ -15,7 +15,15 @@ impl InteractableModalWindowContext {
         match modal_actions {
             Some(v) => {
                 self.modal_actions = Some(v);
-                self.modal_actions_list_state = Some(RefCell::new(ListState::default()));
+                let default_index = if self.modal_actions.as_ref().unwrap().is_empty() {
+                    None
+                } else {
+                    Some(0)
+                };
+                self.modal_actions_list_state = Some(RefCell::new(
+                    ListState::default().with_selected(default_index),
+                ));
+                /*
                 if self.modal_actions.as_ref().unwrap().is_empty() {
                     self.modal_actions_list_state
                         .as_mut()
@@ -23,6 +31,7 @@ impl InteractableModalWindowContext {
                         .get_mut()
                         .select(Some(0));
                 }
+                */
             }
             None => {
                 self.modal_actions = None;
