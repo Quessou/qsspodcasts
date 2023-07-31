@@ -37,4 +37,12 @@ impl PathProvider for DummyPathProvider {
     fn download_dir_name(&self) -> &'static str {
         "test_downloads"
     }
+
+    fn first_start_marker_file_name(&self) -> &'static str {
+        todo!()
+    }
+
+    fn first_start_marker_file_path(&self) -> PathBuf {
+        todo!()
+    }
 }

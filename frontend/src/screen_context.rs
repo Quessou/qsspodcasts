@@ -9,8 +9,9 @@ use podcast_player::player_status::PlayerStatus;
 
 use crate::autocompletion_context::AutocompletionContext;
 use crate::modal_window::action_list_builder::ActionListBuilder;
+use crate::modal_window::interactable_modal_window_context::InteractableModalWindowContext;
 use crate::modal_window::modal_action::ModalAction;
-use crate::modal_window::modal_window_context::ModalWindowContext;
+use crate::modal_window::readonly_modal_context::ReadonlyModalContext;
 use crate::screen_action::ScreenAction;
 
 use tui::widgets::ListState;
@@ -24,14 +25,15 @@ pub struct ScreenContext {
     pub(crate) list_output_state: Option<RefCell<ListState>>,
     pub(crate) previous_output_pane_available_width: Cell<Option<usize>>,
     pub(crate) must_invalidate_cache: Cell<bool>,
-
     pub(crate) logs: Arc<Mutex<Vec<String>>>,
     pub(crate) current_action: ScreenAction,
-    pub(crate) _ui_refresh_tickrate: Duration, // TODO : Check why this isn't used anymore ??
+    pub(crate) stacked_states: Vec<ScreenAction>,
+    pub(crate) ui_refresh_tickrate: Duration,
     pub(crate) player_status: PlayerStatus,
     pub(crate) notifications_buffer: VecDeque<Notification>,
     pub(crate) autocompletion_context: AutocompletionContext,
-    pub(crate) modal_context: ModalWindowContext,
+    pub(crate) interactable_modal_context: InteractableModalWindowContext,
+    pub(crate) read_only_modal_context: ReadonlyModalContext,
 }
 
 impl ScreenContext {
@@ -56,6 +58,10 @@ impl ScreenContext {
             _ => unreachable!(),
         }
     }
+
+    pub fn pop_previous_state(&mut self) -> Option<ScreenAction> {
+        self.stacked_states.pop()
+    }
 }
 
 impl Default for ScreenContext {
@@ -68,11 +74,13 @@ impl Default for ScreenContext {
             must_invalidate_cache: Cell::new(false),
             logs: Arc::new(Mutex::new(vec![])),
             current_action: ScreenAction::TypingCommand,
-            _ui_refresh_tickrate: Duration::from_millis(20),
+            stacked_states: vec![],
+            ui_refresh_tickrate: Duration::from_millis(250),
             player_status: PlayerStatus::Stopped,
             notifications_buffer: VecDeque::with_capacity(4),
             autocompletion_context: AutocompletionContext::default(),
-            modal_context: ModalWindowContext::default(),
+            interactable_modal_context: InteractableModalWindowContext::default(),
+            read_only_modal_context: ReadonlyModalContext::default(),
         }
     }
 }

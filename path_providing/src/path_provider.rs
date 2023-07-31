@@ -14,4 +14,6 @@ pub trait PathProvider {
         download_dir.push(PathBuf::from(episode.get_file_name().replace(' ', "_")));
         download_dir
     }
+    fn first_start_marker_file_name(&self) -> &'static str;
+    fn first_start_marker_file_path(&self) -> PathBuf;
 }
