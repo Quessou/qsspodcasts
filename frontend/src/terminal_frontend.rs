@@ -24,7 +24,9 @@ use podcast_player::mp3_player_exposer::Mp3PlayerExposer;
 
 use crate::crossterm_async_event::poll;
 use crate::modal_window::action_list_builder::ActionListBuilder;
-use crate::modal_window::read_only_modal_contents::first_launch_help::get_first_launch_help;
+use crate::modal_window::read_only_modal_contents::first_launch_help::{
+    self, get_first_launch_help,
+};
 use crate::screen_action::ScreenAction;
 use crate::screen_context::ScreenContext;
 use crate::terminal_frontend_logger::TerminalFrontendLogger;
@@ -157,8 +159,16 @@ impl<D: UiDrawer> Frontend<D> {
                     if self.context.autocompletion_context.is_ctxt_initialized() {
                         self.context.autocompletion_context.pop_state();
                     }
-                } // TODO : Handle auto-completion
+                }
                 KeyCode::Delete => self.context.current_action = ScreenAction::ScrollingLogs,
+                KeyCode::F(1) => {
+                    self.context
+                        .stacked_states
+                        .push(self.context.current_action);
+                    self.context.current_action = ScreenAction::ShowingReadOnlyModalWindow;
+                    self.context.read_only_modal_context.content =
+                        Some(first_launch_help::get_first_launch_help());
+                }
                 _ => (),
             },
             ScreenAction::ScrollingLogs => {
@@ -224,6 +234,14 @@ impl<D: UiDrawer> Frontend<D> {
                 }
                 KeyCode::Char('²') | KeyCode::Char('q') | KeyCode::Esc => {
                     self.context.current_action = ScreenAction::TypingCommand;
+                }
+                KeyCode::F(1) => {
+                    self.context
+                        .stacked_states
+                        .push(self.context.current_action);
+                    self.context.current_action = ScreenAction::ShowingReadOnlyModalWindow;
+                    self.context.read_only_modal_context.content =
+                        Some(first_launch_help::get_first_launch_help());
                 }
                 _ => (),
             },
@@ -307,7 +325,7 @@ impl<D: UiDrawer> Frontend<D> {
                 _ => {}
             },
             ScreenAction::ShowingReadOnlyModalWindow => match key_event.code {
-                KeyCode::Esc | KeyCode::Char('q') => {
+                KeyCode::Esc | KeyCode::Char('q') | KeyCode::F(1) => {
                     let prev_state = self.context.pop_previous_state();
                     self.context.current_action = prev_state.unwrap();
                 }

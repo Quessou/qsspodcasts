@@ -2,7 +2,7 @@ pub(crate) fn get_first_launch_help() -> Vec<&'static str> {
     vec![
         "Generic shortcuts :",
         "    ²           Switch between command input and output panes",
-        "    TODO        Show this popup again",
+        "    <F1>        Show this popup again",
         "Command shortcuts :",
         "    <Tab>       Command&Hash auto-completion",
         "Scrolling output shortcuts :",
