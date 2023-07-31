@@ -1,5 +1,7 @@
 use std::io;
 
+use log;
+
 use crate::channel_tuple::ChannelTuple;
 use crate::rss_feed_reading::feed_downloader::{self, FeedDownloader};
 use crate::url_storage::url_storer::UrlStorer;
@@ -35,19 +37,31 @@ impl<T: UrlStorer> RssProvider<T> {
         Ok(())
     }
 
-    pub async fn get_feed<'a>(&'a self, url: &'a str) -> ChannelTuple<'a> {
-        self.feed_downloader.download_feed(url).await.unwrap()
+    pub async fn get_feed<'a>(&'a self, url: &'a str) -> Option<ChannelTuple<'a>> {
+        match self.feed_downloader.download_feed(url).await {
+            Ok(t) => Some(t),
+            Err(e) => {
+                log::error!("Could not load rss feed : {}", e);
+                None
+            }
+        }
     }
 
-    pub async fn get_all_feeds(&mut self) -> Vec<ChannelTuple> {
+    pub async fn get_all_feeds(&mut self) -> (Vec<ChannelTuple>, Vec<String>) {
         // Note : This is bad AF
         let rss_feeds = &self.rss_feeds;
 
         let mut feeds: Vec<ChannelTuple> = vec![];
+        let mut faulty_feeds = vec![];
         for f in rss_feeds {
-            feeds.push(self.get_feed(f).await);
+            let feed = self.get_feed(f).await;
+            if feed.is_some() {
+                feeds.push(feed.unwrap());
+            } else {
+                faulty_feeds.push(f.clone());
+            }
         }
-        feeds
+        (feeds, faulty_feeds)
     }
 }
 

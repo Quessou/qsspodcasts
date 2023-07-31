@@ -112,7 +112,7 @@ impl BusinessCore {
 
     pub async fn load_feed(&mut self, url: &str) -> Result<(), ()> {
         let feeds = self.rss_provider.get_all_feeds().await;
-        let channel = feeds.iter().find(|c| c.0 == url);
+        let channel = feeds.0.iter().find(|c| c.0 == url);
         if channel.is_none() {
             error!("Could not find channel matching URL {}", url);
             return Err(());
@@ -128,10 +128,18 @@ impl BusinessCore {
 
         let channels = self.rss_provider.get_all_feeds().await;
         let mut podcasts: Vec<Podcast> = vec![];
-        for channel in &channels {
+        for channel in &channels.0 {
             podcasts.push(self.podcast_builder.build(&channel.1))
         }
         self.podcast_library.lock().await.push(podcasts);
+        if !channels.1.is_empty() {
+            let failed_feeds = channels.1.join(", ");
+            self.send_notification(format!(
+                "Failed to download feeds for following urls : {}",
+                failed_feeds
+            ))
+            .await;
+        }
         self.send_notification("Building library done".to_string())
             .await;
     }
