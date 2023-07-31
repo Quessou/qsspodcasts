@@ -85,7 +85,8 @@ impl<D: UiDrawer> Frontend<D> {
             if let OutputType::RawString(_) = output {
                 self.context.list_output_state = None;
             } else {
-                self.context.list_output_state = Some(RefCell::new(ListState::default()));
+                self.context.list_output_state =
+                    Some(RefCell::new(ListState::default().with_selected(Some(0))));
             }
         }
     }
@@ -187,6 +188,9 @@ impl<D: UiDrawer> Frontend<D> {
                         };
 
                         let mut state = state.borrow_mut();
+                        if state.selected().is_none() {
+                            return Ok(());
+                        }
                         let selected_index = match state.selected() {
                             Some(i) => (i + 1) % output_length,
                             None => 0,
@@ -204,6 +208,9 @@ impl<D: UiDrawer> Frontend<D> {
                         };
                         // TODO : Mutualize this properly
                         let mut state = state.borrow_mut();
+                        if state.selected().is_none() {
+                            return Ok(());
+                        }
                         let selected_index = match state.selected() {
                             Some(i) => {
                                 if i == 0 {
@@ -225,8 +232,11 @@ impl<D: UiDrawer> Frontend<D> {
                         .as_ref()
                         .unwrap()
                         .borrow()
-                        .selected()
-                        .unwrap();
+                        .selected();
+                    if selected_index.is_none() {
+                        return Ok(());
+                    }
+                    let selected_index = selected_index.unwrap();
                     let actions = self
                         .context
                         .get_element_modal_actions_data(selected_index, &self.action_list_builder);
@@ -258,6 +268,9 @@ impl<D: UiDrawer> Frontend<D> {
                         .as_ref()
                         .unwrap()
                         .borrow_mut();
+                    if state.selected().is_none() {
+                        return Ok(());
+                    }
                     let actions_list_length = self
                         .context
                         .interactable_modal_context
@@ -286,6 +299,9 @@ impl<D: UiDrawer> Frontend<D> {
                         .as_ref()
                         .unwrap()
                         .borrow_mut();
+                    if state.selected().is_none() {
+                        return Ok(());
+                    }
                     let actions_list_length = self
                         .context
                         .interactable_modal_context
@@ -293,6 +309,9 @@ impl<D: UiDrawer> Frontend<D> {
                         .as_ref()
                         .unwrap()
                         .len();
+                    if state.selected().is_none() {
+                        return Ok(());
+                    }
 
                     let selected_index = match state.selected() {
                         Some(i) => (i + 1) % actions_list_length,
@@ -314,8 +333,11 @@ impl<D: UiDrawer> Frontend<D> {
                         .as_ref()
                         .unwrap()
                         .borrow_mut()
-                        .selected()
-                        .unwrap();
+                        .selected();
+                    if selected_index.is_none() {
+                        return Ok(());
+                    }
+                    let selected_index = selected_index.unwrap();
                     if (actions[selected_index].call().await).is_err() {
                         panic!("Execution of modal action failed")
                     }
