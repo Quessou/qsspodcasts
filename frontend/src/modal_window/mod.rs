@@ -4,6 +4,5 @@ pub(crate) mod modal_action;
 mod modal_action_callbacks;
 pub(crate) mod modal_action_data;
 pub(crate) mod modal_actionable;
-pub(crate) mod read_only_element;
 pub(crate) mod read_only_modal_contents;
 pub(crate) mod readonly_modal_context;

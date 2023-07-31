@@ -134,8 +134,8 @@ mod tests {
         let mut engine = instanciate_engine(Arc::new(TokioMutex::new(player)));
 
         match aw!(engine.handle_command("play")) {
-            Ok(_) => return Ok(()),
-            Err(_) => return Err(String::from("Something went wrong")),
-        };
+            Ok(_) => Ok(()),
+            Err(_) => Err(String::from("Something went wrong")),
+        }
     }
 }
