@@ -1,3 +1,19 @@
+[package]
+name = "qsspocasts"
+version = "0.1.0"
+rust-version = "1.70.0"
+edition = "2021"
+description = "An attempt to make a CLI podcast player"
+authors = ["Maxime Mikotajewski <maximemikotajewski@gmail.com>"]
+categories = ["command-line-utilities"]
+readme = "README.md"
+license-file = "LICENSE"
+repository = "https://github.com/Quessou/qsspodcasts"
+
+[[bin]]
+name = "qsspodcasts"
+path = "src/main.rs"
+
 [workspace]
 
 members = [
