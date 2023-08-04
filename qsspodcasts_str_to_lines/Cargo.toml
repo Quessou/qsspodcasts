@@ -1,5 +1,5 @@
 [package]
-name = "str_to_lines"
+name = "qsspodcasts_str_to_lines"
 description = "Some utility crate for QSSPodcasts, you probably don't need it"
 categories = ["command-line-utilities"]
 

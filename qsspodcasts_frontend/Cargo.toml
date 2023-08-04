@@ -1,5 +1,5 @@
 [package]
-name = "frontend"
+name = "qsspodcasts_frontend"
 description = "Default frontend crate for QSSPodcasts. You probably don't need to use it."
 categories = ["command-line-utilities"]
 
@@ -17,13 +17,13 @@ tui = { package = "ratatui", version = "0.22.0", features = ["crossterm"], defau
 crossterm = "0.19"
 tokio = { version = "1.26.0", features = ["full"] }
 command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management" , version = "0.1.0"}
-podcast_player = { path = "../podcast_player" }
-podcast_management = { path = "../podcast_management" }
+podcast_player = { package = "qsspodcasts_podcast_player", path = "../qsspodcasts_podcast_player" , version = "0.1.0" }
+podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }
 business_core = {package = "qsspodcasts_business_core", path = "../qsspodcasts_business_core" , version = "0.1.0"}
 log = "0.4.17"
 simple_logger = "2.1.0"
-str_to_lines = { path = "../str_to_lines" }
-data_transport = { path = "../data_transport" }
+str_to_lines = {package = "qsspodcasts_str_to_lines", path = "../qsspodcasts_str_to_lines" , version = "0.1.0"}
+data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
 autocomplete_server = {package = "qsspodcasts_autocomplete_server", path = "../qsspodcasts_autocomplete_server", version = "0.1.0"}
 
 [dev-dependencies]

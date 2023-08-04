@@ -14,7 +14,7 @@ repository.workspace = true
 [dependencies]
 tokio = { version = "1.26.0", features = ["full"] }
 command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management", version = "0.1.0" }
-data_transport = { path = "../data_transport" }
+data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
 strum_macros = "0.24"
 
 [dev-dependencies]

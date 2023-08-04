@@ -3,17 +3,17 @@
 
 members = [
 	"qsspodcasts",
-	"rss_management",
-	"fs_utils",
+	"qsspodcasts_rss_management",
+	"qsspodcasts_fs_utils",
 	"qsspodcasts_business_core",
-	"podcast_management",
-	"podcast_download",
-	"podcast_player",
-	"path_providing",
-	"frontend",
+	"qsspodcasts_podcast_management",
+	"qsspodcasts_podcast_download",
+	"qsspodcasts_podcast_player",
+	"qsspodcasts_path_providing",
+	"qsspodcasts_frontend",
 	"qsspodcasts_abstract_frontend",
-	"str_to_lines",
-	"data_transport",
+	"qsspodcasts_str_to_lines",
+	"qsspodcasts_data_transport",
 	"qsspodcasts_autocomplete_server",
     "qsspodcasts_command_management"
 ]
