@@ -1,9 +1,15 @@
 [package]
 name = "fs_utils"
-version = "0.1.0"
-authors = ["Maxime Mikotajewski <maximemikotajewski@gmail.com>"]
-edition = "2018"
+description = "filesystem utils for QSSPodcasts. You probably don't have any need for it."
+categories = ["command-line-utilities"]
 
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

@@ -1,18 +1,3 @@
-[package]
-name = "qsspocasts"
-version = "0.1.0"
-rust-version = "1.70.0"
-edition = "2021"
-description = "An attempt to make a CLI podcast player"
-authors = ["Maxime Mikotajewski <maximemikotajewski@gmail.com>"]
-categories = ["command-line-utilities"]
-readme = "README.md"
-license-file = "LICENSE"
-repository = "https://github.com/Quessou/qsspodcasts"
-
-[[bin]]
-name = "qsspodcasts"
-path = "src/main.rs"
 
 [workspace]
 
@@ -20,14 +5,24 @@ members = [
 	"qsspodcasts",
 	"rss_management",
 	"fs_utils",
-	"business_core",
+	"qsspodcasts_business_core",
 	"podcast_management",
 	"podcast_download",
 	"podcast_player",
 	"path_providing",
 	"frontend",
-	"abstract_frontend",
+	"qsspodcasts_abstract_frontend",
 	"str_to_lines",
 	"data_transport",
-	"autocomplete_server",
+	"qsspodcasts_autocomplete_server",
+    "qsspodcasts_command_management"
 ]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Maxime Mikotajewski <maximemikotajewski@gmail.com>"]
+rust-version = "1.70.0"
+edition = "2021"
+readme = "README.md"
+license = "BSD-2-Clause"
+repository = "https://github.com/Quessou/qsspodcasts"
