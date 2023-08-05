@@ -128,8 +128,8 @@ mod tests {
         };
         let input = ctxt.get_displayed_input();
         (
-            input.0[0].content.to_string(),
-            input.0[1].content.to_string(),
+            input.spans[0].content.to_string(),
+            input.spans[1].content.to_string(),
         )
     }
 

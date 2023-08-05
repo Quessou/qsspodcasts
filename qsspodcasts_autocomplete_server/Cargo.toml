@@ -1,0 +1,21 @@
+[package]
+name = "qsspodcasts_autocomplete_server"
+description = "autocomplete server for QSSPodcasts, you probably don't need it."
+categories = ["command-line-utilities"]
+
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tokio = { version = "1.26.0", features = ["full"] }
+command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management", version = "0.1.0" }
+data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
+strum_macros = "0.24"
+
+[dev-dependencies]
+test-case = "3.0.0"
