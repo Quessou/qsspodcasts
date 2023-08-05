@@ -1,0 +1,26 @@
+[package]
+name = "qsspodcasts"
+description = "An attempt to make a CLI podcast player"
+categories = ["command-line-utilities"]
+
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+futures = "0.3.21"
+frontend = { package = "qsspodcasts_frontend",path = "../qsspodcasts_frontend" , version = "0.1.0"}
+clap = { version = "3.0", features = ["derive"] }
+tokio = { version = "1.26.0", features = ["full"] }
+abstract_frontend = { package = "qsspodcasts_abstract_frontend",path = "../qsspodcasts_abstract_frontend" , version = "0.1.0"}
+business_core = { package = "qsspodcasts_business_core", path = "../qsspodcasts_business_core" , version = "0.1.0"}
+command_management = {package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management" , version = "0.1.0"}
+podcast_player = { package = "qsspodcasts_podcast_player", path = "../qsspodcasts_podcast_player", version = "0.1.0"}
+path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.1.0" }
+data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
+autocomplete_server = { package = "qsspodcasts_autocomplete_server", path = "../qsspodcasts_autocomplete_server", version = "0.1.0" }
+simple_logger = "2.1.0"

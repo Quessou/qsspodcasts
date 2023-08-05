@@ -1,0 +1,22 @@
+name: Cargo test
+on: [push]
+jobs:
+  cargo-test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt update && sudo apt install -y libunwind-dev alsa-utils alsa-base libasound2-dev portaudio19-dev build-essential libpulse-dev libssl-dev libgstreamer1.0-dev libgstreamer-plugins-bad1.0-dev
+      - uses: actions/checkout@v3
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: check
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+

@@ -1,0 +1,16 @@
+[package]
+name = "qsspodcasts_data_transport"
+description = "Data transport utilities for QSSPodcasts, you probably don't need it."
+categories = ["command-line-utilities"]
+
+version.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+edition.workspace = true
+readme.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tokio = { version = "1.26.0", features = ["full"] }
+log = "0.4.17"
