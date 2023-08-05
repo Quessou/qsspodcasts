@@ -29,5 +29,5 @@ once_cell = "1.17.1"
 
 [dev-dependencies]
 mockall = "0.11.2"
-tokio-test = "*"
+tokio-test = "0.4.2"
 test-case = "3.0.0"
