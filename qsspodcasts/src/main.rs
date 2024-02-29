@@ -3,7 +3,6 @@ use business_core::business_core::BusinessCore;
 use clap::Parser;
 use frontend::terminal_frontend::Frontend;
 
-use std::fs::File;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -14,10 +13,7 @@ use command_management::{
     command_engine::CommandEngine, command_executor::CommandExecutor,
 };
 use data_transport::{DataReceiver, DataSender};
-use path_providing::{
-    default_path_provider::DefaultPathProvider,
-    path_provider::{PathProvider},
-};
+use path_providing::{default_path_provider::DefaultPathProvider, path_provider::PathProvider};
 use podcast_player::players::gstreamer_mp3_player::GStreamerMp3Player;
 
 use tokio::sync::mpsc::channel;
@@ -89,7 +85,7 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
 fn is_first_start() -> bool {
     let path_provider = DefaultPathProvider {};
 
-    !path_provider.first_start_marker_file_path().exists()
+    !path_provider.app_dir_path().is_dir()
 }
 
 #[tokio::main]
@@ -99,10 +95,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     >();
     let cli = Args::parse();
     let is_first_start = is_first_start() || cli.show_first_start_popup;
-    if is_first_start {
-        let path_provider = DefaultPathProvider {};
-        let _f = File::create(path_provider.first_start_marker_file_path()).unwrap();
-    }
     let command_frontend_future = frontend.run(is_first_start);
     let command_engine_future = command_engine.run();
     let autocompleter_future = autocompleter.run();

@@ -442,24 +442,30 @@ impl MinimalisticUiDrawer<'_> {
 
         let list_state = context.list_output_state.borrow();
         if list_state.is_some() {
-            let progress_bar_height = chunks[2].height - 2;
-            let selected_index = list_state
-                .as_ref()
-                .unwrap()
-                .try_borrow()
-                .unwrap()
-                .selected()
-                .unwrap_or_default();
-            let list_length = context.get_output_list_length().unwrap();
-            let progress_ratio = selected_index * usize::from(progress_bar_height) / list_length;
-            let mut progress_bar_string = "\n".repeat(progress_ratio);
-            progress_bar_string.push('#');
+            'display_progress_bar: {
+                let progress_bar_height = chunks[2].height - 2;
+                let selected_index = list_state
+                    .as_ref()
+                    .unwrap()
+                    .try_borrow()
+                    .unwrap()
+                    .selected()
+                    .unwrap_or_default();
+                let list_length = context.get_output_list_length().unwrap();
+                if list_length == 0 {
+                    break 'display_progress_bar;
+                }
+                let progress_ratio =
+                    selected_index * usize::from(progress_bar_height) / list_length;
+                let mut progress_bar_string = "\n".repeat(progress_ratio);
+                progress_bar_string.push('#');
 
-            let output_progress_bar = Paragraph::new(progress_bar_string)
-                .style(Style::default().bg(Color::Gray).fg(Color::Black))
-                .block(Block::default().borders(Borders::TOP | Borders::BOTTOM))
-                .wrap(Wrap { trim: true });
-            f.render_widget(output_progress_bar, output_layout[1]);
+                let output_progress_bar = Paragraph::new(progress_bar_string)
+                    .style(Style::default().bg(Color::Gray).fg(Color::Black))
+                    .block(Block::default().borders(Borders::TOP | Borders::BOTTOM))
+                    .wrap(Wrap { trim: true });
+                f.render_widget(output_progress_bar, output_layout[1]);
+            }
         }
 
         let notifications_layout = MinimalisticUiDrawer::build_notifications_field(context);

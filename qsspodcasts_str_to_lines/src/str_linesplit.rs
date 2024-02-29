@@ -1,4 +1,4 @@
-fn get_line_width(line: &Vec<&str>) -> usize {
+fn get_line_width(line: &[&str]) -> usize {
     if line.is_empty() {
         return 0;
     }
@@ -8,7 +8,7 @@ fn get_line_width(line: &Vec<&str>) -> usize {
     width + line.len() - 1
 }
 
-pub fn can_line_contain_word(line: &Vec<&str>, word_length: usize, line_width: usize) -> bool {
+pub fn can_line_contain_word(line: &[&str], word_length: usize, line_width: usize) -> bool {
     let additional_space: usize = if line.is_empty() { 0 } else { 1 };
     line_width >= get_line_width(line) + word_length + additional_space
 }
