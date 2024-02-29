@@ -55,8 +55,8 @@ impl<T: UrlStorer> RssProvider<T> {
         let mut faulty_feeds = vec![];
         for f in rss_feeds {
             let feed = self.get_feed(f).await;
-            if feed.is_some() {
-                feeds.push(feed.unwrap());
+            if let Some(f) = feed {
+                feeds.push(f);
             } else {
                 faulty_feeds.push(f.clone());
             }

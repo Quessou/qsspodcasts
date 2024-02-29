@@ -242,6 +242,7 @@ impl<D: UiDrawer> Frontend<D> {
                         .get_element_modal_actions_data(selected_index, &self.action_list_builder);
                     self.context.interactable_modal_context.reset(Some(actions));
                 }
+                // TODO(mmiko) : Replace this reference to ² by something else tbd
                 KeyCode::Char('²') | KeyCode::Char('q') | KeyCode::Esc => {
                     self.context.current_action = ScreenAction::TypingCommand;
                 }

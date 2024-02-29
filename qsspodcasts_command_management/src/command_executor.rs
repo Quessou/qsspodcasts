@@ -114,11 +114,7 @@ impl CommandExecutor {
                 let p = podcasts
                     .iter()
                     .find(|p| &p.hash() == hash.as_ref().unwrap());
-                let title = if p.is_none() {
-                    ""
-                } else {
-                    &p.as_ref().unwrap().title
-                };
+                let title = if let Some(t) = &p { &t.title } else { "" };
 
                 e.podcast_name == title
             });
@@ -295,7 +291,7 @@ mod tests {
     use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::player_error::{ErrorKind, PlayerError};
     use podcast_player::players::mp3_player::Mp3Player as TraitMp3Player;
-    
+
     use std::rc::Rc;
     use std::sync::Arc;
     use test_case::test_case;
