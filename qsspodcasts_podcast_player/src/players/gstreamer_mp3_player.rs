@@ -1,5 +1,6 @@
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::rc::Rc;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use gstreamer_play::{
@@ -26,7 +27,7 @@ struct GStreamerPlayerState {
 
 pub struct GStreamerMp3Player {
     player_state: Option<GStreamerPlayerState>,
-    path_provider: Arc<Mutex<Box<dyn PathProvider>>>,
+    path_provider: Rc<Mutex<Box<dyn PathProvider>>>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
 }
@@ -37,7 +38,7 @@ impl GStreamerMp3Player {
         let player = GStreamerInnerPlayer::new(None::<PlayVideoRenderer>);
         GStreamerMp3Player {
             player_state: None,
-            path_provider: Arc::new(Mutex::new(path_provider)),
+            path_provider: Rc::new(Mutex::new(path_provider)),
             is_paused: true,
             player,
         }
