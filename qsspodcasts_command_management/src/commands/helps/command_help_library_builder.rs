@@ -42,7 +42,7 @@ pub fn get_command_help_library() -> CommandHelpLibrary {
                                                                                         - A number of seconds (e.g. : 40)
                                                                                         - Numbers separated by colons (e.g. : 2:30)
                                                                                         - A duration specified in an idomatic way (e.g. : 1h01m20s)"))),
-    (Command::Advance(CommandDuration::default()).to_string(), CommandHelpRegister::new("advance", "go_back <DURATION>", "Goes back into the podcast of the given duration",
+    (Command::GoBack(CommandDuration::default()).to_string(), CommandHelpRegister::new("go_back", "go_back <DURATION>", "Goes back into the podcast of the given duration",
                                                                                         Some("Goes back in the podcast of the duration given in parameter.
                                                                                         The duration can be expressed a lot of ways, including :
                                                                                         - A number of seconds (e.g. : 40)
