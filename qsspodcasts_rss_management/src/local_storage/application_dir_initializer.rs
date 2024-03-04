@@ -14,7 +14,6 @@ pub struct ApplicationDirInitializer {
 
 impl ApplicationDirInitializer {
     pub fn is_app_dir_created(&self, path: PathBuf) -> bool {
-        // TODO : What to do with this ?
         Path::new(&path).exists()
             && Path::new(
                 &(path.to_str().unwrap().to_owned()
@@ -46,7 +45,9 @@ impl ApplicationDirInitializer {
             app_dir_path.join(self.path_provider.rss_feed_list_file_name());
         fs::File::create(rss_feed_list_file_path)?;
         let download_dir_path: PathBuf = app_dir_path.join(self.path_provider.download_dir_name());
+        let progresses_dir_path = self.path_provider.podcast_progresses_dir_path();
         fs::create_dir_all(download_dir_path)?;
+        fs::create_dir_all(progresses_dir_path)?;
 
         Ok(())
     }
@@ -210,8 +211,7 @@ mod tests {
             .expect("Initialization application dir failed");
         assert!(PathBuf::from(dummy_app_dir).is_dir());
 
-        fs::remove_dir_all(PathBuf::from(dummy_app_dir))
-            .expect("Cleanup of test failed");
+        fs::remove_dir_all(PathBuf::from(dummy_app_dir)).expect("Cleanup of test failed");
 
         Ok(())
     }

@@ -51,7 +51,6 @@ impl CommandExecutor {
                 None,
             )),
         }
-        //Ok(OutputType::None)
     }
 
     async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
