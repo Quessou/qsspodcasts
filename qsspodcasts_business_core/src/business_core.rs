@@ -4,6 +4,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use log::{error, info};
+use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_error;
 use tokio::sync::Mutex as TokioMutex;
 
@@ -197,6 +198,39 @@ impl BusinessCore {
         Ok(())
     }
 
+    async fn save_current_podcast_progression(
+        &self, /*
+               path_provider: Rc<dyn PathProvider>,
+               player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+               episode: &PodcastEpisode,
+               */
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let hash = self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .unwrap()
+            .hash();
+        let mut progression_file_path = self.path_provider.podcast_progresses_dir_path();
+        progression_file_path.push(hash);
+        let current_progression = self
+            .player
+            .lock()
+            .await
+            .get_selected_episode_progression()
+            .expect(
+            "Tried to get progression of podcast while saving but no progression could be found",
+        );
+        fs_utils::progression_write_utils::write_progression_in_file(
+            current_progression.inner_ref(),
+            progression_file_path,
+        )
+        .await
+        .expect("Writing of progression in file failed");
+        Ok(())
+    }
+
     pub async fn pause(&mut self) -> Result<(), PlayerError> {
         if self.player.lock().await.get_selected_episode().is_none() {
             self.send_notification("No episode selected".to_owned())
@@ -206,8 +240,10 @@ impl BusinessCore {
                 player_error::ErrorKind::NoEpisodeSelected,
             ));
         }
+        // Actually pause the player
         if !self.player.lock().await.is_paused() {
             self.player.lock().await.pause();
+            self.save_current_podcast_progression().await.unwrap();
             self.send_notification("Player paused".to_string()).await;
         } else {
             self.send_notification("Player already paused".to_string())
@@ -217,6 +253,7 @@ impl BusinessCore {
                 player_error::ErrorKind::AlreadyPaused,
             ));
         }
+
         Ok(())
     }
 
