@@ -37,6 +37,10 @@ impl CommandEngine {
         }
     }
 
+    async fn clean(&mut self) {
+        self.command_executor.clean().await;
+    }
+
     pub async fn handle_command(&mut self, command: &str) -> Result<OutputType, CommandError> {
         let command = match self.command_parser.lock().await.parse_command(command) {
             Ok(c) => c,
@@ -61,6 +65,7 @@ impl CommandEngine {
                 .await
                 .unwrap();
             // TODO: Add cleaning of command executor (that will launch cleanings of its parts)
+            self.clean().await;
             self.command_receiver.as_mut().unwrap().close();
         }
 

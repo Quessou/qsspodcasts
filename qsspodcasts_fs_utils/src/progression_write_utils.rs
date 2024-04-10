@@ -7,6 +7,7 @@ pub async fn write_progression_in_file(
     progression: &Duration,
     file_path: PathBuf,
 ) -> Result<(), ()> {
+    assert!(file_path.parent().unwrap().exists());
     let file = tokio::fs::File::create(file_path)
         .await
         .expect("Opening of file containing progression failed");
@@ -17,5 +18,13 @@ pub async fn write_progression_in_file(
         .write_u64(progression_s)
         .await
         .expect("Writing of progression failed");
+    file_writer
+        .flush()
+        .await
+        .expect("Flushing of file containing progression failed");
+    file_writer
+        .shutdown()
+        .await
+        .expect("Closing of file writer failed");
     Ok(())
 }

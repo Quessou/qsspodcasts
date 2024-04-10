@@ -23,6 +23,12 @@ pub struct CommandExecutor {
     autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
 }
 
+/*impl Drop for CommandExecutor {
+    fn drop(&mut self) {
+        core.stop()
+    }
+}*/
+
 impl CommandExecutor {
     pub fn new(
         business_core: BusinessCore,
@@ -92,6 +98,10 @@ impl CommandExecutor {
             .expect("Sending of new hashes to autocompleter failed");
 
         Ok(OutputType::Podcasts(podcasts))
+    }
+
+    pub async fn clean(&mut self) {
+        self.core.clean().await;
     }
 
     async fn handle_list_episodes(

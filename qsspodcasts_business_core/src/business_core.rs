@@ -198,13 +198,7 @@ impl BusinessCore {
         Ok(())
     }
 
-    async fn save_current_podcast_progression(
-        &self, /*
-               path_provider: Rc<dyn PathProvider>,
-               player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-               episode: &PodcastEpisode,
-               */
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    async fn save_current_podcast_progression(&self) -> Result<(), Box<dyn std::error::Error>> {
         let hash = self
             .player
             .lock()
@@ -270,5 +264,14 @@ impl BusinessCore {
             }
         };
         r
+    }
+    pub async fn clean(&mut self) {
+        if self.player.lock().await.get_selected_episode().is_some() {
+            self.send_notification("Writing progression of current podcast".to_string())
+                .await;
+            self.save_current_podcast_progression()
+                .await
+                .expect("Cleaning failed");
+        }
     }
 }
