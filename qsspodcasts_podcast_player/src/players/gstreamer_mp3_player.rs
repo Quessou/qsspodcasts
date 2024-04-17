@@ -118,6 +118,7 @@ impl Mp3Player for GStreamerMp3Player {
             Some(p) => {
                 let p = p.seconds();
                 let offset = duration.num_seconds();
+                // Why does duration() return None here ?
                 let episode_duration = self.player.duration().unwrap().seconds();
                 let p: u64 = if offset + (p as i64) < 0 {
                     0

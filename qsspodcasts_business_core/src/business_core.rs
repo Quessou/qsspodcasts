@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use fs_utils::progression_read_utils;
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_error;
@@ -252,11 +253,24 @@ impl BusinessCore {
     }
 
     pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+        // TODO(mmiko): Load the current progression
+        let hash = episode.hash();
+        let path = self.path_provider.podcast_progress_file_path(&hash);
+        let duration = progression_read_utils::read_progression_in_file(path).await;
+
         let r = self.player.lock().await.select_episode(episode);
         match r {
             Ok(_) => {
                 self.send_notification("Episode selection successful".to_string())
-                    .await
+                    .await;
+                // This probably crashes because we do not have loaded the episode yet
+                if duration.is_some() {
+                    let duration: chrono::Duration =
+                        chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
+                    self.seek(duration)
+                        .await
+                        .expect("Seeking resuming position of podcast failed");
+                }
             }
             Err(_) => {
                 self.send_notification("Episode selection failed".to_string())

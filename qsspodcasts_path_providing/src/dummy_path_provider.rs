@@ -53,4 +53,8 @@ impl PathProvider for DummyPathProvider {
     fn first_start_marker_file_path(&self) -> PathBuf {
         todo!()
     }
+
+    fn podcast_progress_file_path(&self, hash: &str) -> PathBuf {
+        todo!()
+    }
 }

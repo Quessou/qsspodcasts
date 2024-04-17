@@ -46,4 +46,9 @@ impl PathProvider for DefaultPathProvider {
         p.push(self.podcast_progresses_dir_name());
         p
     }
+    fn podcast_progress_file_path(&self, hash: &str) -> PathBuf {
+        let mut p = self.podcast_progresses_dir_path();
+        p.push(hash);
+        p
+    }
 }

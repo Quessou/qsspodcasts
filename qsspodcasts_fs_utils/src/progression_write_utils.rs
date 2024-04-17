@@ -7,6 +7,7 @@ pub async fn write_progression_in_file(
     progression: &Duration,
     file_path: PathBuf,
 ) -> Result<(), ()> {
+    // If the parent directory does not exist, we're screwed
     assert!(file_path.parent().unwrap().exists());
     let file = tokio::fs::File::create(file_path)
         .await
