@@ -54,7 +54,7 @@ impl PathProvider for DummyPathProvider {
         todo!()
     }
 
-    fn podcast_progress_file_path(&self, hash: &str) -> PathBuf {
+    fn podcast_progress_file_path(&self, _hash: &str) -> PathBuf {
         todo!()
     }
 }

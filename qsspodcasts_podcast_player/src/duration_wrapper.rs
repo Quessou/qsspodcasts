@@ -10,7 +10,7 @@ impl DurationWrapper {
     pub fn new(duration: Duration) -> DurationWrapper {
         DurationWrapper { duration }
     }
-    pub fn inner_ref<'a>(&'a self) -> &'a Duration {
+    pub fn inner_ref(&self) -> &Duration {
         &self.duration
     }
 }

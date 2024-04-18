@@ -64,7 +64,6 @@ impl CommandEngine {
                 .send("Exiting...".to_owned())
                 .await
                 .unwrap();
-            // TODO: Add cleaning of command executor (that will launch cleanings of its parts)
             self.clean().await;
             self.command_receiver.as_mut().unwrap().close();
         }

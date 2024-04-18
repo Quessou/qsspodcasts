@@ -23,12 +23,6 @@ pub struct CommandExecutor {
     autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
 }
 
-/*impl Drop for CommandExecutor {
-    fn drop(&mut self) {
-        core.stop()
-    }
-}*/
-
 impl CommandExecutor {
     pub fn new(
         business_core: BusinessCore,
