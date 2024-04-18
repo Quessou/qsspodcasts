@@ -265,6 +265,10 @@ impl BusinessCore {
                     .await;
                 // This probably crashes because we do not have loaded the episode yet
                 if duration.is_some() {
+                    assert!(
+                        self.player.lock().await.get_selected_episode().is_some(),
+                        "The episode is actually not selected"
+                    );
                     let duration: chrono::Duration =
                         chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
                     self.seek(duration)
