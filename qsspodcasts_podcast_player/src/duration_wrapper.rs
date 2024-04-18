@@ -10,6 +10,9 @@ impl DurationWrapper {
     pub fn new(duration: Duration) -> DurationWrapper {
         DurationWrapper { duration }
     }
+    pub fn inner_ref(&self) -> &Duration {
+        &self.duration
+    }
 }
 
 fn to_string(dw: &DurationWrapper) -> String {

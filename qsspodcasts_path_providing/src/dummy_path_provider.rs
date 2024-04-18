@@ -30,6 +30,14 @@ impl PathProvider for DummyPathProvider {
         p.push(PathBuf::from(self.download_dir_name()));
         p
     }
+    fn podcast_progresses_dir_name(&self) -> &'static str {
+        "podcast_progresses"
+    }
+    fn podcast_progresses_dir_path(&self) -> PathBuf {
+        let mut p = self.app_dir_path();
+        p.push(self.podcast_progresses_dir_name());
+        p
+    }
     fn rss_feed_list_file_name(&self) -> &'static str {
         "test_rss_feed_list"
     }
@@ -43,6 +51,10 @@ impl PathProvider for DummyPathProvider {
     }
 
     fn first_start_marker_file_path(&self) -> PathBuf {
+        todo!()
+    }
+
+    fn podcast_progress_file_path(&self, _hash: &str) -> PathBuf {
         todo!()
     }
 }

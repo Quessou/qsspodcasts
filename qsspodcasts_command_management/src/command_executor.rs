@@ -51,7 +51,6 @@ impl CommandExecutor {
                 None,
             )),
         }
-        //Ok(OutputType::None)
     }
 
     async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
@@ -93,6 +92,10 @@ impl CommandExecutor {
             .expect("Sending of new hashes to autocompleter failed");
 
         Ok(OutputType::Podcasts(podcasts))
+    }
+
+    pub async fn clean(&mut self) {
+        self.core.clean().await;
     }
 
     async fn handle_list_episodes(

@@ -118,7 +118,9 @@ impl Mp3Player for GStreamerMp3Player {
             Some(p) => {
                 let p = p.seconds();
                 let offset = duration.num_seconds();
-                let episode_duration = self.player.duration().unwrap().seconds();
+                let episode_duration = self.get_selected_episode_duration();
+
+                let episode_duration = episode_duration.unwrap().inner_ref().as_secs();
                 let p: u64 = if offset + (p as i64) < 0 {
                     0
                 } else if offset > 0 && (offset as u64) + p > episode_duration {
