@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use fs_utils::progression_read_utils;
+use fs_utils::{progression_read_utils, write_utils};
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_error;
@@ -249,6 +249,21 @@ impl BusinessCore {
             ));
         }
 
+        Ok(())
+    }
+
+    pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), ()> {
+        let hash = self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .unwrap()
+            .hash();
+        let finished_podcast_file_path =
+            self.path_provider.compute_finished_podcast_file_path(&hash);
+        let _ =
+            write_utils::open_or_create_file(finished_podcast_file_path.to_str().unwrap()).unwrap();
         Ok(())
     }
 

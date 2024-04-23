@@ -46,8 +46,10 @@ impl ApplicationDirInitializer {
         fs::File::create(rss_feed_list_file_path)?;
         let download_dir_path: PathBuf = app_dir_path.join(self.path_provider.download_dir_name());
         let progresses_dir_path = self.path_provider.podcast_progresses_dir_path();
+        let finished_podcasts_dir_path = self.path_provider.finished_podcasts_dir_path();
         fs::create_dir_all(download_dir_path)?;
         fs::create_dir_all(progresses_dir_path)?;
+        fs::create_dir_all(finished_podcasts_dir_path)?;
 
         Ok(())
     }

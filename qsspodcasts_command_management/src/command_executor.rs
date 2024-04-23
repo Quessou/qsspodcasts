@@ -230,6 +230,18 @@ impl CommandExecutor {
         Ok(OutputType::None)
     }
 
+    async fn handle_mark_as_finished_command(&mut self) -> Result<OutputType, CommandError> {
+        match self.core.mark_current_podcast_as_finished().await {
+            Ok(_) => Ok(OutputType::None),
+            Err(_) => Err(CommandError::new(
+                None,
+                command_error::ErrorKind::ExecutionFailed,
+                None,
+                Some("Marking as finished failed".to_string()),
+            )),
+        }
+    }
+
     fn handle_help_command(&mut self, command: Option<String>) -> Result<OutputType, CommandError> {
         let helps = match command {
             Some(c) => match self.command_help_library.get_description(&c) {
@@ -271,6 +283,7 @@ impl CommandExecutor {
             Command::DeleteRss(hash) => self.delete_rss(&hash).await?,
             Command::Advance(duration) => self.advance_in_podcast(duration.0).await?,
             Command::GoBack(duration) => self.go_back_in_podcast(duration.0).await?,
+            Command::MarkAsFinished => self.handle_mark_as_finished_command().await?,
             _ => {
                 return Err(CommandError::new(
                     None,

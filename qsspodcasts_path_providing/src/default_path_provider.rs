@@ -51,4 +51,17 @@ impl PathProvider for DefaultPathProvider {
         p.push(hash);
         p
     }
+    fn finished_podcasts_dir_name(&self) -> &'static str {
+        "finished_podcasts"
+    }
+    fn finished_podcasts_dir_path(&self) -> PathBuf {
+        let mut p = self.app_dir_path();
+        p.push(self.finished_podcasts_dir_name());
+        p
+    }
+    fn compute_finished_podcast_file_path(&self, hash: &str) -> PathBuf {
+        let mut p = self.finished_podcasts_dir_path();
+        p.push(hash);
+        p
+    }
 }
