@@ -379,6 +379,7 @@ mod tests {
     /// # TODO  
     /// - Find a way to circumvent the issues related to mockall to make this test relevant
     /// again
+    #[allow(unused_must_use)]
     #[ignore = "Irrelevant test since I added a check on get_selected_episode()"]
     #[test_case(true, 1, 1 => Ok(()); "Launches the player if it is paused")]
     #[test_case(false, 1, 0 => Ok(()); "Does not launch the player if it is not paused")]

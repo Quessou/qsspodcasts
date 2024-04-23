@@ -63,7 +63,7 @@ impl PathProvider for DummyPathProvider {
     fn finished_podcasts_dir_path(&self) -> PathBuf {
         todo!()
     }
-    fn compute_finished_podcast_file_path(&self, hash: &str) -> PathBuf {
+    fn compute_finished_podcast_file_path(&self, _hash: &str) -> PathBuf {
         todo!()
     }
 }
