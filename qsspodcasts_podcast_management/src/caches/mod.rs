@@ -1,1 +1,3 @@
-pub mod podcast_state_cache;
+mod podcast_state_cache;
+
+pub use podcast_state_cache::PodcastStateCache;

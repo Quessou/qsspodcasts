@@ -1,14 +1,18 @@
 use crate::data_objects::podcast_state::PodcastState;
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
 
 type Hash = String;
 
-struct PodcastStateCache {
+pub struct PodcastStateCache {
     states: HashMap<Hash, PodcastState>,
 }
 
 impl PodcastStateCache {
-    pub fn new(app_dir_path: PathBuf) {}
+    pub fn new(podcast_states: HashMap<Hash, PodcastState>) -> Self {
+        Self {
+            states: podcast_states,
+        }
+    }
 
     pub fn get_podcast_state(&self, hash: &Hash) -> Option<&PodcastState> {
         self.states.get(hash)
