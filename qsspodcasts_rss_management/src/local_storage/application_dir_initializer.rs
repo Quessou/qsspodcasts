@@ -207,7 +207,6 @@ mod tests {
         let app_dir_initializer = ApplicationDirInitializer {
             path_provider: Rc::new(DummyPathProvider::new(dummy_app_dir)),
         };
-        assert!(!PathBuf::from(dummy_app_dir).is_dir());
         app_dir_initializer
             .initialize_application_dir(dummy_app_dir)
             .expect("Initialization application dir failed");

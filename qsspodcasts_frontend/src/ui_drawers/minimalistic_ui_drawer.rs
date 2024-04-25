@@ -289,13 +289,13 @@ impl MinimalisticUiDrawer<'_> {
 
     fn build_notifications_field(context: &ScreenContext) -> Paragraph {
         let notifications = context
-            .notifications_buffer
+            .message_notifications_buffer
             .iter()
             .rev()
             .map(|s| Line::from(s.as_ref()));
 
         let empty_lines_count: i16 =
-            std::cmp::max(0, 4 - (context.notifications_buffer.len() as i16));
+            std::cmp::max(0, 4 - (context.message_notifications_buffer.len() as i16));
         let empty_spaces =
             iter::repeat(Line::from(" ")).take(empty_lines_count.try_into().unwrap());
 

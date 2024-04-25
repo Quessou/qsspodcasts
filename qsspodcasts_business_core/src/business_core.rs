@@ -77,13 +77,18 @@ impl BusinessCore {
 
     pub async fn add_url(&mut self, url: &str) -> Result<(), IoError> {
         if let Err(e) = self.rss_provider.add_url(url) {
-            self.send_notification("Writing of URL failed (already added ?)".to_string())
-                .await;
+            self.send_notification(Notification::Message(
+                "Writing of URL failed (already added ?)".to_string(),
+            ))
+            .await;
             return Err(e);
         }
         info!("Url added successfully");
-        self.send_notification(format!("Url {} added successfully", url))
-            .await;
+        self.send_notification(Notification::Message(format!(
+            "Url {} added successfully",
+            url
+        )))
+        .await;
         Ok(())
     }
 
@@ -94,8 +99,10 @@ impl BusinessCore {
         drop(library);
 
         if podcast.is_none() {
-            self.send_notification("Could not delete feed (hash does not exist ?)".to_string())
-                .await;
+            self.send_notification(Notification::Message(
+                "Could not delete feed (hash does not exist ?)".to_string(),
+            ))
+            .await;
             return Err(IoError::new(
                 io::ErrorKind::NotFound,
                 "Could not find podcast matching hash",
@@ -103,12 +110,14 @@ impl BusinessCore {
         }
         let url = podcast.unwrap().link;
         if let Err(e) = self.rss_provider.delete_url(&url) {
-            self.send_notification("Deletion of URL failed".to_string())
+            self.send_notification(Notification::Message("Deletion of URL failed".to_string()))
                 .await;
             return Err(e);
         };
-        self.send_notification("RSS feed deletion successful".to_string())
-            .await;
+        self.send_notification(Notification::Message(
+            "RSS feed deletion successful".to_string(),
+        ))
+        .await;
         Ok(())
     }
 
@@ -125,7 +134,7 @@ impl BusinessCore {
     }
 
     pub async fn build_podcasts(&mut self) {
-        self.send_notification("Building library...".to_string())
+        self.send_notification(Notification::Message("Building library...".to_string()))
             .await;
 
         let channels = self.rss_provider.get_all_feeds().await;
@@ -136,25 +145,28 @@ impl BusinessCore {
         self.podcast_library.lock().await.push(podcasts);
         if !channels.1.is_empty() {
             let failed_feeds = channels.1.join(", ");
-            self.send_notification(format!(
+            self.send_notification(Notification::Message(format!(
                 "Failed to download feeds for following urls : {}",
                 failed_feeds
-            ))
+            )))
             .await;
         }
-        self.send_notification("Building library done".to_string())
+        self.send_notification(Notification::Message("Building library done".to_string()))
             .await;
     }
 
     pub async fn download_episode(&mut self, episode: &PodcastEpisode) -> Result<(), ()> {
-        self.send_notification(format!("Downloading \"{}\"", episode.title))
-            .await;
+        self.send_notification(Notification::Message(format!(
+            "Downloading \"{}\"",
+            episode.title
+        )))
+        .await;
         if (self.podcast_downloader.download_episode(episode).await).is_err() {
-            self.send_notification("Downloading failed".to_string())
+            self.send_notification(Notification::Message("Downloading failed".to_string()))
                 .await;
             return Err(());
         }
-        self.send_notification("Downloading successful".to_string())
+        self.send_notification(Notification::Message("Downloading successful".to_string()))
             .await;
 
         Ok(())
@@ -178,7 +190,7 @@ impl BusinessCore {
 
     pub async fn play(&mut self) -> Result<(), PlayerError> {
         if self.player.lock().await.get_selected_episode().is_none() {
-            self.send_notification("No episode selected".to_owned())
+            self.send_notification(Notification::Message("No episode selected".to_owned()))
                 .await;
             return Err(PlayerError::new(
                 None,
@@ -187,9 +199,10 @@ impl BusinessCore {
         }
         if self.player.lock().await.is_paused() {
             self.player.lock().await.play();
-            self.send_notification("Player launched".to_owned()).await;
+            self.send_notification(Notification::Message("Player launched".to_owned()))
+                .await;
         } else {
-            self.send_notification("Player already running".to_owned())
+            self.send_notification(Notification::Message("Player already running".to_owned()))
                 .await;
             return Err(PlayerError::new(
                 None,
@@ -228,7 +241,7 @@ impl BusinessCore {
 
     pub async fn pause(&mut self) -> Result<(), PlayerError> {
         if self.player.lock().await.get_selected_episode().is_none() {
-            self.send_notification("No episode selected".to_owned())
+            self.send_notification(Notification::Message("No episode selected".to_owned()))
                 .await;
             return Err(PlayerError::new(
                 None,
@@ -239,9 +252,10 @@ impl BusinessCore {
         if !self.player.lock().await.is_paused() {
             self.player.lock().await.pause();
             self.save_current_podcast_progression().await.unwrap();
-            self.send_notification("Player paused".to_string()).await;
+            self.send_notification(Notification::Message("Player paused".to_string()))
+                .await;
         } else {
-            self.send_notification("Player already paused".to_string())
+            self.send_notification(Notification::Message("Player already paused".to_string()))
                 .await;
             return Err(PlayerError::new(
                 None,
@@ -276,8 +290,10 @@ impl BusinessCore {
         let r = self.player.lock().await.select_episode(episode);
         match r {
             Ok(_) => {
-                self.send_notification("Episode selection successful".to_string())
-                    .await;
+                self.send_notification(Notification::Message(
+                    "Episode selection successful".to_string(),
+                ))
+                .await;
                 // This probably crashes because we do not have loaded the episode yet
                 if duration.is_some() {
                     assert!(
@@ -292,16 +308,20 @@ impl BusinessCore {
                 }
             }
             Err(_) => {
-                self.send_notification("Episode selection failed".to_string())
-                    .await
+                self.send_notification(Notification::Message(
+                    "Episode selection failed".to_string(),
+                ))
+                .await
             }
         };
         r
     }
     pub async fn clean(&mut self) {
         if self.player.lock().await.get_selected_episode().is_some() {
-            self.send_notification("Writing progression of current podcast".to_string())
-                .await;
+            self.send_notification(Notification::Message(
+                "Writing progression of current podcast".to_string(),
+            ))
+            .await;
             self.save_current_podcast_progression()
                 .await
                 .expect("Cleaning failed");

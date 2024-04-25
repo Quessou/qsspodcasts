@@ -3,6 +3,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
+use business_core::event_type::EventType::PodcastFinished;
 use command_management::commands::command_enum::Command;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
@@ -437,9 +438,24 @@ impl<D: UiDrawer> Frontend<D> {
             }
 
             if let Ok(n) = self.notification_receiver.try_receive() {
-                self.context.notifications_buffer.push_front(n);
-                // TODO : Put the 4 in a constant variable called "notification_window_height"
-                self.context.notifications_buffer.truncate(4);
+                #[allow(unreachable_patterns)]
+                match n {
+                    Notification::Message(m) => {
+                        self.context.message_notifications_buffer.push_front(m);
+                        // TODO : Put the 4 in a constant variable called "notification_window_height"
+                        self.context.message_notifications_buffer.truncate(4);
+                    }
+                    Notification::Event(e) => match e {
+                        PodcastFinished(hash) => {
+                            // Have to update display and thus, invalidate current cache
+                            // TODO: Add a condition to invalidate cache
+                            self.context.must_invalidate_cache.set(true);
+                        }
+                        _ => {
+                            error!("Received unhandled event {:?}", e);
+                        }
+                    },
+                }
             }
 
             if self.command_sender.is_closed() {

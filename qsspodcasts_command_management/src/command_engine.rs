@@ -48,7 +48,7 @@ impl CommandEngine {
                 self.notifications_sender
                     .as_mut()
                     .unwrap()
-                    .send(e.message.as_ref().unwrap().clone())
+                    .send(Notification::Message(e.message.as_ref().unwrap().clone()))
                     .await
                     .unwrap();
 
@@ -61,7 +61,7 @@ impl CommandEngine {
             self.notifications_sender
                 .as_mut()
                 .unwrap()
-                .send("Exiting...".to_owned())
+                .send(Notification::Message("Exiting...".to_owned()))
                 .await
                 .unwrap();
             self.clean().await;
