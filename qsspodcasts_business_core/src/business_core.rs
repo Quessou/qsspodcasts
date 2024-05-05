@@ -16,6 +16,7 @@ use rss_management::{
     url_storage::file_url_storer::FileUrlStorer,
 };
 
+use crate::event_type::EventType;
 use crate::notification::Notification;
 use data_transport::DataSender;
 use path_providing::default_path_provider::PathProvider;
@@ -266,18 +267,38 @@ impl BusinessCore {
         Ok(())
     }
 
-    pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), ()> {
-        let hash = self
-            .player
-            .lock()
-            .await
-            .get_selected_episode()
-            .unwrap()
-            .hash();
-        let finished_podcast_file_path =
-            self.path_provider.compute_finished_podcast_file_path(&hash);
+    #[allow(unused_assignments)]
+    pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), PlayerError> {
+        let mut hash: Option<String> = None;
+        {
+            let player = self.player.lock().await;
+            let episode = player.get_selected_episode();
+            hash = if let Some(e) = episode {
+                Some(e.hash().clone())
+            } else {
+                None
+            };
+        }
+
+        if hash.is_none() {
+            self.send_notification(Notification::Message(
+                "No episode currently selected".to_string(),
+            ))
+            .await;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::NoEpisodeSelected,
+            ));
+        }
+        let finished_podcast_file_path = self
+            .path_provider
+            .compute_finished_podcast_file_path(hash.as_ref().unwrap());
         let _ =
             write_utils::open_or_create_file(finished_podcast_file_path.to_str().unwrap()).unwrap();
+        self.send_notification(Notification::Event(EventType::PodcastFinished(
+            hash.unwrap(),
+        )))
+        .await;
         Ok(())
     }
 

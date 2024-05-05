@@ -12,6 +12,7 @@ use command_management::{
     autocompletion::autocompletion_data_list_build::build_command_autocompletion_data_list,
     command_engine::CommandEngine, command_executor::CommandExecutor,
 };
+use data_caches::podcast_state_cache_builder::build_podcast_state_cache;
 use data_transport::{DataReceiver, DataSender};
 use path_providing::{default_path_provider::DefaultPathProvider, path_provider::PathProvider};
 use podcast_player::players::gstreamer_mp3_player::GStreamerMp3Player;
@@ -32,7 +33,7 @@ fn build_data_transfer_endpoints<T>(slots: usize) -> (DataSender<T>, DataReceive
     (DataSender::new(sender), DataReceiver::new(reader))
 }
 
-fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Default>(
+async fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Default>(
 ) -> (CommandEngine, Frontend<Drawer>, AutocompleterMessageProxy) {
     let path_provider = DefaultPathProvider {};
     let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
@@ -62,6 +63,10 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
         Some(notifications_sender),
     );
 
+    let podcast_state_cache = build_podcast_state_cache(path_provider)
+        .await
+        .expect("Building of podcast state cache failed");
+
     let frontend = Frontend::new(
         command_sender,
         output_reader,
@@ -70,6 +75,7 @@ fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Defa
         autocompletion_response_reader,
         mp3_player,
         Box::<Drawer>::default(),
+        podcast_state_cache,
     );
 
     let autocompleter_engine = Autocompleter::new(build_command_autocompletion_data_list());
@@ -92,7 +98,8 @@ fn is_first_start() -> bool {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let (mut command_engine, mut frontend, mut autocompleter) = build_app_components::<
         frontend::ui_drawers::minimalistic_ui_drawer::MinimalisticUiDrawer,
-    >();
+    >()
+    .await;
     let cli = Args::parse();
     let is_first_start = is_first_start() || cli.show_first_start_popup;
     let command_frontend_future = frontend.run(is_first_start);

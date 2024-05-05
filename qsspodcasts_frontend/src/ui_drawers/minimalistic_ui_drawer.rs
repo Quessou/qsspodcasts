@@ -1,6 +1,7 @@
 use command_management::output::output_type::OutputType;
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
+use podcast_management::data_objects::podcast_state::PodcastState;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::{Borrow, Cow};
@@ -148,7 +149,7 @@ impl MinimalisticUiDrawer<'_> {
                                 Style::default().bg(Color::LightGreen).fg(Color::Red),
                             )));
 
-                            let metadata_display = iter::once(Line::from(vec![
+                            let mut metadata_display = vec![
                                 Span::from("["),
                                 Span::styled(
                                     e.hash(),
@@ -169,7 +170,21 @@ impl MinimalisticUiDrawer<'_> {
                                         .bg(Color::Black)
                                         .add_modifier(Modifier::ITALIC),
                                 ),
-                            ]));
+                            ];
+                            if let Some(PodcastState::Finished) =
+                                context.podcasts_state_cache.get_podcast_state(&e.hash())
+                            {
+                                metadata_display.append(&mut vec![
+                                    Span::from("    "),
+                                    Span::styled(
+                                        "[FINISHED]",
+                                        Style::default()
+                                            .add_modifier(Modifier::BOLD)
+                                            .fg(Color::Red),
+                                    ),
+                                ]);
+                            }
+                            let metadata_display = iter::once(Line::from(metadata_display));
                             let vec_spans = vec_spans.chain(metadata_display);
 
                             let description_style = Style::default().add_modifier(Modifier::ITALIC);

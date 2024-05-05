@@ -12,5 +12,6 @@ repository.workspace = true
 
 [dependencies]
 tokio = { version = "1.26.0", features = ["full"] }
+log = "0.4.17"
 podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }
 path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.1.0" }

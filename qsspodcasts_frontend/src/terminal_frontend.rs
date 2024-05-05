@@ -12,7 +12,9 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use data_caches::PodcastStateCache;
 use log::{debug, error};
+use podcast_management::data_objects::podcast_state::PodcastState;
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
 use tokio::sync::Mutex as TokioMutex;
@@ -58,10 +60,11 @@ impl<D: UiDrawer> Frontend<D> {
         autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
         mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
         ui_drawer: Box<D>,
+        podcast_state_cache: PodcastStateCache,
     ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
-        let context = ScreenContext::default();
+        let context = ScreenContext::build(podcast_state_cache);
         TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
@@ -447,7 +450,9 @@ impl<D: UiDrawer> Frontend<D> {
                     }
                     Notification::Event(e) => match e {
                         PodcastFinished(hash) => {
-                            // Have to update display and thus, invalidate current cache
+                            self.context
+                                .podcasts_state_cache
+                                .set_podcast_state(&hash, &PodcastState::Finished);
                             // TODO: Add a condition to invalidate cache
                             self.context.must_invalidate_cache.set(true);
                         }

@@ -3,8 +3,9 @@ use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use business_core::notification::Notification;
 use command_management::output::output_type::OutputType;
+use data_caches::{podcast_state_cache_builder::build_podcast_state_cache, PodcastStateCache};
+use path_providing::path_provider::PathProvider;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_status::PlayerStatus;
 
@@ -35,9 +36,19 @@ pub struct ScreenContext {
     pub(crate) autocompletion_context: AutocompletionContext,
     pub(crate) interactable_modal_context: InteractableModalWindowContext,
     pub(crate) read_only_modal_context: ReadonlyModalContext,
+    pub(crate) podcasts_state_cache: PodcastStateCache,
 }
 
 impl ScreenContext {
+    pub fn build(podcasts_state_cache: PodcastStateCache) -> Self {
+        let mut ctxt = ScreenContext::default();
+        //let podcasts_state_cache = build_podcast_state_cache(path_provider)
+        //.await
+        //.expect("Building of podcasts state cache failed");
+        ctxt.podcasts_state_cache = podcasts_state_cache;
+        ctxt
+    }
+
     pub fn get_output_list_length(&self) -> Option<usize> {
         match &self.last_command_output {
             OutputType::Episodes(l) => Some(l.len()),
@@ -73,7 +84,6 @@ impl ScreenContext {
             assert_eq!(matching_episodes.clone().count(), 1);
             // TODO: Mark the podcast as finished
         }
-        return;
     }
 }
 
@@ -94,6 +104,7 @@ impl Default for ScreenContext {
             autocompletion_context: AutocompletionContext::default(),
             interactable_modal_context: InteractableModalWindowContext::default(),
             read_only_modal_context: ReadonlyModalContext::default(),
+            podcasts_state_cache: PodcastStateCache::default(),
         }
     }
 }
