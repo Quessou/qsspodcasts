@@ -47,7 +47,7 @@ impl BusinessCore {
         notifications_sender: Option<DataSender<Notification>>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
-        BusinessCore {
+        let core = BusinessCore {
             rss_provider: RssProvider::new(FileUrlStorer::new(PathBuf::from(
                 path_provider.rss_feed_list_file_path().to_str().unwrap(),
             ))),
@@ -60,7 +60,9 @@ impl BusinessCore {
             },
             path_provider,
             notifications_sender,
-        }
+        };
+        // TODO: plug behavior on state change of player
+        core
     }
 
     pub fn initialize(&self) {

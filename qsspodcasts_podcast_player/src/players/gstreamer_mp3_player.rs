@@ -6,7 +6,7 @@ use std::time::Duration;
 use gstreamer_play::{
     self,
     gst::{init, ClockTime},
-    Play as GStreamerInnerPlayer, PlayVideoRenderer,
+    Play as GStreamerInnerPlayer, PlaySignalAdapter, PlayState, PlayVideoRenderer,
 };
 
 use gstreamer_pbutils::{Discoverer, DiscovererInfo};
@@ -15,8 +15,8 @@ use log::{error, warn};
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
-use crate::duration_wrapper::DurationWrapper;
 use crate::player_error::PlayerError;
+use crate::{duration_wrapper::DurationWrapper, traits::PlayerObserver};
 
 use super::mp3_player::Mp3Player;
 
@@ -25,22 +25,33 @@ struct GStreamerPlayerState {
     pub info: DiscovererInfo,
 }
 
-pub struct GStreamerMp3Player {
+pub struct GStreamerMp3Player<'a> {
     player_state: Option<GStreamerPlayerState>,
     path_provider: Rc<Mutex<Box<dyn PathProvider>>>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
+    signal_catcher: PlaySignalAdapter,
+    observers: Vec<&'a dyn PlayerObserver>,
 }
 
-impl GStreamerMp3Player {
+impl<'a> GStreamerMp3Player<'a> {
+    // TODO : Add callback to call when a podcast is finished
     pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
         init().unwrap();
         let player = GStreamerInnerPlayer::new(None::<PlayVideoRenderer>);
+        let signal_catcher = PlaySignalAdapter::new_sync_emit(&player);
+        signal_catcher.connect_state_changed(|_, b| {
+            if let PlayState::Stopped = b {
+                println!("coucou !");
+            }
+        });
         GStreamerMp3Player {
             player_state: None,
             path_provider: Rc::new(Mutex::new(path_provider)),
             is_paused: true,
             player,
+            signal_catcher,
+            observers: vec![],
         }
     }
 
@@ -49,7 +60,7 @@ impl GStreamerMp3Player {
     }
 }
 
-impl Mp3Player for GStreamerMp3Player {
+impl<'a> Mp3Player for GStreamerMp3Player<'a> {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         self.path_provider
             .lock()
@@ -93,16 +104,6 @@ impl Mp3Player for GStreamerMp3Player {
         }
     }
 
-    fn is_paused(&self) -> bool {
-        self.is_paused
-    }
-
-    fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
-        self.player.set_uri(Some(&format!("file://{}", path)));
-        self.play();
-        Ok(())
-    }
-
     fn pause(&mut self) {
         self.player.pause();
         self.is_paused = true;
@@ -135,6 +136,20 @@ impl Mp3Player for GStreamerMp3Player {
             }
             None => Ok(()),
         }
+    }
+
+    fn is_paused(&self) -> bool {
+        self.is_paused
+    }
+
+    fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
+        self.player.set_uri(Some(&format!("file://{}", path)));
+        self.play();
+        Ok(())
+    }
+
+    fn register_observer(&mut self, observer: &'a dyn PlayerObserver) {
+        self.observers.push(observer);
     }
 
     fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
@@ -208,4 +223,4 @@ impl Mp3Player for GStreamerMp3Player {
     }
 }
 
-unsafe impl Send for GStreamerMp3Player {}
+unsafe impl<'a> Send for GStreamerMp3Player<'a> {}
