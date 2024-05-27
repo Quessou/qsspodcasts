@@ -1,4 +1,6 @@
+use std::cell::RefCell;
 use std::path::{Path, PathBuf};
+use std::rc::Weak;
 use std::time::Duration;
 
 use path_providing::path_provider::PodcastEpisode;
@@ -11,7 +13,7 @@ use crate::{
     duration_wrapper::DurationWrapper,
     player_error::{ErrorKind as PlayerErrorKind, PlayerError},
 };
-pub trait Mp3Player<'a> {
+pub trait Mp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
     fn get_selected_episode(&self) -> Option<&PodcastEpisode>;
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
@@ -21,7 +23,7 @@ pub trait Mp3Player<'a> {
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
-    fn register_observer(&mut self, observer: &'a dyn PlayerObserver);
+    fn register_observer(&mut self, observer: Weak<RefCell<dyn PlayerObserver>>);
 
     fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
     fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;

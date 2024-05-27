@@ -1,4 +1,7 @@
+use std::borrow::{Borrow, BorrowMut};
+use std::cell::RefCell;
 use std::io::{self, Error as IoError};
+use std::ops::Deref;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -7,6 +10,7 @@ use fs_utils::{progression_read_utils, write_utils};
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_error;
+use podcast_player::traits::PlayerObserver;
 use tokio::sync::Mutex as TokioMutex;
 
 use rss_management::{
@@ -61,7 +65,27 @@ impl BusinessCore {
             path_provider,
             notifications_sender,
         };
-        // TODO: plug behavior on state change of player
+        // TODO: plug behavior on state change of player ? Probably not here
+        core
+    }
+
+    pub async fn new_in_rc(
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        path_provider: Rc<dyn PathProvider>,
+        notifications_sender: Option<DataSender<Notification>>,
+    ) -> Rc<RefCell<BusinessCore>> {
+        let core = Rc::new(RefCell::new(Self::new(
+            mp3_player,
+            path_provider,
+            notifications_sender,
+        )));
+        let tmp_core = core.as_ref().borrow_mut();
+        let mut player = tmp_core.player.lock().await;
+        let casted_core: Rc<RefCell<dyn PlayerObserver>> = core.clone();
+        player.register_observer(Rc::downgrade(&casted_core));
+        drop(casted_core);
+        drop(player);
+        drop(tmp_core);
         core
     }
 
@@ -349,5 +373,11 @@ impl BusinessCore {
                 .await
                 .expect("Cleaning failed");
         }
+    }
+}
+
+impl PlayerObserver for BusinessCore {
+    fn on_podcast_finished(&mut self, hash: &str) {
+        todo!()
     }
 }

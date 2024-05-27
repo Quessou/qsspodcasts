@@ -1,3 +1,7 @@
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_management::data_objects::podcast::Podcast;
@@ -18,14 +22,14 @@ pub use podcast_management::podcast_library::PodcastLibrary;
 pub use podcast_player::players::mp3_player::Mp3Player;
 
 pub struct CommandExecutor {
-    core: BusinessCore,
+    core: Rc<RefCell<BusinessCore>>,
     command_help_library: CommandHelpLibrary,
     autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
 }
 
 impl CommandExecutor {
     pub fn new(
-        business_core: BusinessCore,
+        business_core: Rc<RefCell<BusinessCore>>,
         autocompleter_command_sender: Option<DataSender<AutocompleterMessageType>>,
     ) -> CommandExecutor {
         let command_help_library = get_command_help_library();
@@ -37,12 +41,12 @@ impl CommandExecutor {
     }
 
     pub async fn initialize(&mut self) {
-        self.core.initialize();
-        self.core.build_podcasts().await;
+        self.core.as_ref().borrow_mut().initialize();
+        self.core.as_ref().borrow_mut().build_podcasts().await;
     }
 
     async fn handle_play(&mut self, _: Command) -> Result<OutputType, CommandError> {
-        match self.core.play().await {
+        match self.core.as_ref().borrow_mut().play().await {
             Ok(_) => Ok(OutputType::None),
             Err(e) => Err(CommandError::new(
                 Some(Box::new(e)),
@@ -54,7 +58,7 @@ impl CommandExecutor {
     }
 
     async fn handle_pause(&mut self, _: Command) -> Result<OutputType, CommandError> {
-        match self.core.pause().await {
+        match self.core.as_ref().borrow_mut().pause().await {
             Ok(_) => Ok(OutputType::None),
             Err(e) => Err(CommandError::new(
                 Some(Box::new(e)),
@@ -77,7 +81,8 @@ impl CommandExecutor {
     }
 
     async fn handle_list_podcasts(&mut self, _: Command) -> Result<OutputType, CommandError> {
-        let podcast_library = self.core.podcast_library.lock().await;
+        let tmp_core = self.core.as_ref().borrow_mut();
+        let podcast_library = tmp_core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let podcasts = podcasts
@@ -85,6 +90,7 @@ impl CommandExecutor {
             .map(|p| p.shallow_copy())
             .collect::<Vec<Podcast>>();
         drop(podcast_library);
+        drop(tmp_core);
 
         let hashes = podcasts.iter().map(|p| p.hash()).collect();
         self.update_autocompleter_hashes(hashes)
@@ -95,7 +101,7 @@ impl CommandExecutor {
     }
 
     pub async fn clean(&mut self) {
-        self.core.clean().await;
+        self.core.as_ref().borrow_mut().clean().await;
     }
 
     async fn handle_list_episodes(
@@ -103,7 +109,8 @@ impl CommandExecutor {
         _: Command,
         hash: Option<String>,
     ) -> Result<OutputType, CommandError> {
-        let podcast_library = self.core.podcast_library.lock().await;
+        let tmp_core = self.core.as_ref().borrow_mut();
+        let podcast_library = tmp_core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
         let episodes_iter = podcasts
@@ -125,6 +132,7 @@ impl CommandExecutor {
         let mut episodes: Vec<PodcastEpisode> = episodes_iter.collect();
         episodes.sort_by(|p1, p2| p1.pub_date.cmp(&p2.pub_date).reverse());
         drop(podcast_library);
+        drop(tmp_core);
 
         let hashes = episodes.iter().map(|p| p.hash()).collect();
         self.update_autocompleter_hashes(hashes)
@@ -135,12 +143,22 @@ impl CommandExecutor {
     }
 
     async fn search_episode(&self, hash: &str) -> Option<PodcastEpisode> {
-        self.core.podcast_library.lock().await.search_episode(hash)
+        let tmp_core = self.core.as_ref().borrow_mut();
+        let episode = tmp_core.podcast_library.lock().await.search_episode(hash);
+        drop(tmp_core);
+        episode
     }
 
     async fn select_episode(&mut self, hash: &str) -> Result<OutputType, CommandError> {
         if let Some(ep) = self.search_episode(hash).await {
-            if self.core.download_episode(&ep).await.is_err() {
+            if self
+                .core
+                .as_ref()
+                .borrow_mut()
+                .download_episode(&ep)
+                .await
+                .is_err()
+            {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::DownloadFailed,
@@ -148,7 +166,14 @@ impl CommandExecutor {
                     Some("Episode download failed".to_string()),
                 ));
             }
-            if self.core.select_episode(&ep).await.is_err() {
+            if self
+                .core
+                .as_ref()
+                .borrow_mut()
+                .select_episode(&ep)
+                .await
+                .is_err()
+            {
                 return Err(CommandError::new(
                     None,
                     CommandErrorKind::SelectionFailed,
@@ -169,7 +194,7 @@ impl CommandExecutor {
 
     async fn add_rss(&mut self, url: &Url) -> Result<OutputType, CommandError> {
         let url = url.to_string();
-        if let Err(e) = self.core.add_url(&url).await {
+        if let Err(e) = self.core.as_ref().borrow_mut().add_url(&url).await {
             return Err(CommandError::new(
                 Some(Box::new(e)),
                 command_error::ErrorKind::ExecutionFailed,
@@ -177,7 +202,14 @@ impl CommandExecutor {
                 Some("URL writing failed".to_string()),
             ));
         }
-        if self.core.load_feed(&url).await.is_err() {
+        if self
+            .core
+            .as_ref()
+            .borrow_mut()
+            .load_feed(&url)
+            .await
+            .is_err()
+        {
             return Err(CommandError::new(
                 None,
                 command_error::ErrorKind::ExecutionFailed,
@@ -189,7 +221,7 @@ impl CommandExecutor {
     }
 
     async fn delete_rss(&mut self, hash: &str) -> Result<OutputType, CommandError> {
-        if let Err(e) = self.core.delete_rss(hash).await {
+        if let Err(e) = self.core.as_ref().borrow_mut().delete_rss(hash).await {
             return Err(CommandError::new(
                 Some(Box::new(e)),
                 command_error::ErrorKind::ExecutionFailed,
@@ -204,7 +236,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        if self.core.seek(duration).await.is_err() {
+        if self
+            .core
+            .as_ref()
+            .borrow_mut()
+            .seek(duration)
+            .await
+            .is_err()
+        {
             return Err(CommandError::new(
                 None,
                 command_error::ErrorKind::ExecutionFailed,
@@ -219,7 +258,14 @@ impl CommandExecutor {
         &mut self,
         duration: chrono::Duration,
     ) -> Result<OutputType, CommandError> {
-        if self.core.seek(duration * -1).await.is_err() {
+        if self
+            .core
+            .as_ref()
+            .borrow_mut()
+            .seek(duration * -1)
+            .await
+            .is_err()
+        {
             return Err(CommandError::new(
                 None,
                 command_error::ErrorKind::ExecutionFailed,
@@ -231,7 +277,13 @@ impl CommandExecutor {
     }
 
     async fn handle_mark_as_finished_command(&mut self) -> Result<OutputType, CommandError> {
-        match self.core.mark_current_podcast_as_finished().await {
+        match self
+            .core
+            .as_ref()
+            .borrow_mut()
+            .mark_current_podcast_as_finished()
+            .await
+        {
             Ok(_) => Ok(OutputType::None),
             Err(_) => Err(CommandError::new(
                 None,
@@ -328,7 +380,7 @@ mod tests {
         mp3_player: Arc<TokioMutex<dyn TraitMp3Player + Send>>,
     ) -> CommandExecutor {
         let core = BusinessCore::new(mp3_player, Rc::new(DummyPathProvider::new("")), None);
-        CommandExecutor::new(core, None)
+        CommandExecutor::new(Rc::new(RefCell::new(core)), None)
     }
 
     #[test]

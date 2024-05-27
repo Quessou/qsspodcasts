@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Mutex;
 use std::time::Duration;
+use std::{path::PathBuf, rc::Weak};
 
 use gstreamer_play::{
     self,
@@ -25,16 +26,16 @@ struct GStreamerPlayerState {
     pub info: DiscovererInfo,
 }
 
-pub struct GStreamerMp3Player<'a> {
+pub struct GStreamerMp3Player {
     player_state: Option<GStreamerPlayerState>,
     path_provider: Rc<Mutex<Box<dyn PathProvider>>>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
     signal_catcher: PlaySignalAdapter,
-    observers: Vec<&'a dyn PlayerObserver>,
+    observers: Vec<Weak<RefCell<dyn PlayerObserver>>>,
 }
 
-impl<'a> GStreamerMp3Player<'a> {
+impl GStreamerMp3Player {
     // TODO : Add callback to call when a podcast is finished
     pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
         init().unwrap();
@@ -60,7 +61,7 @@ impl<'a> GStreamerMp3Player<'a> {
     }
 }
 
-impl<'a> Mp3Player for GStreamerMp3Player<'a> {
+impl Mp3Player for GStreamerMp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         self.path_provider
             .lock()
@@ -148,7 +149,7 @@ impl<'a> Mp3Player for GStreamerMp3Player<'a> {
         Ok(())
     }
 
-    fn register_observer(&mut self, observer: &'a dyn PlayerObserver) {
+    fn register_observer(&mut self, observer: Weak<RefCell<dyn PlayerObserver>>) {
         self.observers.push(observer);
     }
 
@@ -223,4 +224,4 @@ impl<'a> Mp3Player for GStreamerMp3Player<'a> {
     }
 }
 
-unsafe impl<'a> Send for GStreamerMp3Player<'a> {}
+unsafe impl Send for GStreamerMp3Player {}

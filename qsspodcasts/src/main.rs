@@ -49,11 +49,12 @@ async fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer 
     let (autocompletion_response_sender, autocompletion_response_reader) =
         build_data_transfer_endpoints(10);
 
-    let core = BusinessCore::new(
+    let core = BusinessCore::new_in_rc(
         mp3_player.clone(),
         Rc::new(path_provider),
         Some(notifications_sender.clone()),
-    );
+    )
+    .await;
 
     let executor = CommandExecutor::new(core, Some(autocompletion_request_sender.clone()));
     let command_engine = CommandEngine::new(
