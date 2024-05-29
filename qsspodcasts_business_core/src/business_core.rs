@@ -1,11 +1,9 @@
 use std::borrow::{Borrow, BorrowMut};
-use std::cell::RefCell;
 use std::io::{self, Error as IoError};
-use std::ops::Deref;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::sync::Arc;
 
+use async_trait::async_trait;
 use fs_utils::{progression_read_utils, write_utils};
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
@@ -38,16 +36,16 @@ pub struct BusinessCore {
     rss_provider: RssProvider<FileUrlStorer>,
     podcast_builder: PodcastBuilder,
     podcast_downloader: PodcastDownloader,
-    player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
     pub podcast_library: Arc<TokioMutex<PodcastLibrary>>,
-    path_provider: Rc<dyn PathProvider>,
+    path_provider: Arc<dyn PathProvider + Send + Sync>,
     notifications_sender: Option<DataSender<Notification>>,
 }
 
 impl BusinessCore {
     pub fn new(
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        path_provider: Rc<dyn PathProvider>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
+        path_provider: Arc<dyn PathProvider + Send + Sync>,
         notifications_sender: Option<DataSender<Notification>>,
     ) -> BusinessCore {
         let podcast_library = Arc::new(TokioMutex::new(PodcastLibrary::new()));
@@ -69,23 +67,25 @@ impl BusinessCore {
         core
     }
 
-    pub async fn new_in_rc(
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
-        path_provider: Rc<dyn PathProvider>,
+    pub async fn new_in_arc(
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
+        path_provider: Arc<dyn PathProvider + Send + Sync>,
         notifications_sender: Option<DataSender<Notification>>,
-    ) -> Rc<RefCell<BusinessCore>> {
-        let core = Rc::new(RefCell::new(Self::new(
+    ) -> Arc<TokioMutex<BusinessCore>> {
+        let core = Arc::new(TokioMutex::new(Self::new(
             mp3_player,
             path_provider,
             notifications_sender,
         )));
-        let tmp_core = core.as_ref().borrow_mut();
-        let mut player = tmp_core.player.lock().await;
-        let casted_core: Rc<RefCell<dyn PlayerObserver>> = core.clone();
-        player.register_observer(Rc::downgrade(&casted_core));
+        let mut core_ref = core.as_ref();
+        let tmp_core = core_ref.borrow_mut();
+        let tmp_core_locked = tmp_core.lock().await;
+        let mut player = tmp_core_locked.player.lock().await;
+        let casted_core: Arc<TokioMutex<dyn PlayerObserver + Send + Sync>> = core.clone();
+        player.register_observer(Arc::downgrade(&casted_core));
         drop(casted_core);
         drop(player);
-        drop(tmp_core);
+        drop(tmp_core_locked);
         core
     }
 
@@ -293,6 +293,17 @@ impl BusinessCore {
         Ok(())
     }
 
+    async fn create_mark_as_finished_marker_file(&mut self, hash: &str) -> Result<(), ()> {
+        let cloned_hash = hash.to_owned();
+        let finished_podcast_file_path =
+            self.path_provider.compute_finished_podcast_file_path(hash);
+        let _ =
+            write_utils::open_or_create_file(finished_podcast_file_path.to_str().unwrap()).unwrap();
+        self.send_notification(Notification::Event(EventType::PodcastFinished(cloned_hash)))
+            .await;
+        Ok(())
+    }
+
     #[allow(unused_assignments)]
     pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), PlayerError> {
         let mut hash: Option<String> = None;
@@ -316,16 +327,13 @@ impl BusinessCore {
                 player_error::ErrorKind::NoEpisodeSelected,
             ));
         }
-        let finished_podcast_file_path = self
-            .path_provider
-            .compute_finished_podcast_file_path(hash.as_ref().unwrap());
-        let _ =
-            write_utils::open_or_create_file(finished_podcast_file_path.to_str().unwrap()).unwrap();
-        self.send_notification(Notification::Event(EventType::PodcastFinished(
-            hash.unwrap(),
-        )))
-        .await;
-        Ok(())
+        match self
+            .create_mark_as_finished_marker_file(hash.as_ref().unwrap())
+            .await
+        {
+            Ok(_) => Ok(()),
+            Err(_) => Err(PlayerError::new(None, player_error::ErrorKind::Other)),
+        }
     }
 
     pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
@@ -376,8 +384,14 @@ impl BusinessCore {
     }
 }
 
+#[async_trait]
 impl PlayerObserver for BusinessCore {
-    fn on_podcast_finished(&mut self, hash: &str) {
-        todo!()
+    async fn on_podcast_finished(&mut self, hash: &str) {
+        self.create_mark_as_finished_marker_file(hash)
+            .await
+            .unwrap();
     }
 }
+
+unsafe impl Send for BusinessCore {}
+unsafe impl Sync for BusinessCore {}

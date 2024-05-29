@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 
 use log;
 
@@ -16,8 +17,8 @@ pub enum ErrorKind {
 
 #[derive(Debug)]
 pub struct CommandError {
-    source: Option<Box<dyn Error>>,
-    kind: ErrorKind,
+    _source: Option<Box<dyn Error>>,
+    _kind: ErrorKind,
 }
 
 fn is_hash(hash: &str) -> bool {
@@ -26,8 +27,8 @@ fn is_hash(hash: &str) -> bool {
 
 /// # TODO
 ///   - Add an explicit error type instead of just unit type
-pub async fn build_podcast_state_cache<P: PathProvider>(
-    path_provider: P,
+pub async fn build_podcast_state_cache<P: PathProvider + Send + Sync>(
+    path_provider: Arc<P>,
 ) -> Result<PodcastStateCache, ()> {
     let finished_podcasts_dir = path_provider.finished_podcasts_dir_path();
     let mut dir = if let Ok(d) = tokio::fs::read_dir(&finished_podcasts_dir).await {

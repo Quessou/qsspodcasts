@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use super::event_type::EventType;
 
 #[derive(Debug)]

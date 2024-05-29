@@ -3,13 +3,13 @@ use log::{error, warn};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::result::Result;
+use std::sync::Arc;
 
 use path_providing::path_provider::PathProvider;
 
 pub struct ApplicationDirInitializer {
-    pub path_provider: Rc<dyn PathProvider>,
+    pub path_provider: Arc<dyn PathProvider + Send + Sync>,
 }
 
 impl ApplicationDirInitializer {
@@ -27,7 +27,7 @@ impl ApplicationDirInitializer {
             .exists()
     }
 
-    pub fn new(path_provider: Rc<dyn PathProvider>) -> ApplicationDirInitializer {
+    pub fn new(path_provider: Arc<dyn PathProvider + Send + Sync>) -> ApplicationDirInitializer {
         ApplicationDirInitializer { path_provider }
     }
 
@@ -205,7 +205,7 @@ mod tests {
 
         let dummy_app_dir = "/tmp/.qsspodcasts";
         let app_dir_initializer = ApplicationDirInitializer {
-            path_provider: Rc::new(DummyPathProvider::new(dummy_app_dir)),
+            path_provider: Arc::new(DummyPathProvider::new(dummy_app_dir)),
         };
         app_dir_initializer
             .initialize_application_dir(dummy_app_dir)

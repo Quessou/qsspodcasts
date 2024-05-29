@@ -20,6 +20,7 @@ podcast_player= { package = "qsspodcasts_podcast_player",path = "../qsspodcasts_
 path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.1.0" }
 data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
 fs_utils= { package = "qsspodcasts_fs_utils",path = "../qsspodcasts_fs_utils", version = "0.1.0" }
+async-trait = "0.1.53"
 
 tokio = { version = "1.26.0", features = ["full"] }
 log = "0.4.17"

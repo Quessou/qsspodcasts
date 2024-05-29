@@ -66,3 +66,6 @@ impl PathProvider for DefaultPathProvider {
         p
     }
 }
+
+unsafe impl Send for DefaultPathProvider {}
+unsafe impl Sync for DefaultPathProvider {}

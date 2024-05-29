@@ -79,3 +79,5 @@ impl PathProvider for DummyPathProvider {
         p
     }
 }
+unsafe impl Send for DummyPathProvider {}
+unsafe impl Sync for DummyPathProvider {}

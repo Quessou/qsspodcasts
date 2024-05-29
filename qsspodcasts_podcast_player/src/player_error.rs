@@ -5,6 +5,7 @@ use rodio::decoder::DecoderError;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ErrorKind {
+    Other,
     FileNotFound,
     RodioError,
     GStreamerError,

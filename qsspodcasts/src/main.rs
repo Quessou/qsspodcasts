@@ -35,10 +35,10 @@ fn build_data_transfer_endpoints<T>(slots: usize) -> (DataSender<T>, DataReceive
 
 async fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer + Default>(
 ) -> (CommandEngine, Frontend<Drawer>, AutocompleterMessageProxy) {
-    let path_provider = DefaultPathProvider {};
-    let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(Box::new(
-        path_provider,
-    ))));
+    let path_provider = Arc::new(DefaultPathProvider {});
+    let mp3_player = Arc::new(TokioMutex::new(GStreamerMp3Player::new(
+        path_provider.clone(),
+    )));
 
     let (command_sender, command_reader) = build_data_transfer_endpoints(10);
 
@@ -49,9 +49,9 @@ async fn build_app_components<Drawer: frontend::ui_drawers::ui_drawer::UiDrawer 
     let (autocompletion_response_sender, autocompletion_response_reader) =
         build_data_transfer_endpoints(10);
 
-    let core = BusinessCore::new_in_rc(
+    let core = BusinessCore::new_in_arc(
         mp3_player.clone(),
-        Rc::new(path_provider),
+        path_provider.clone(),
         Some(notifications_sender.clone()),
     )
     .await;

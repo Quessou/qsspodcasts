@@ -1,14 +1,17 @@
 use std::cell::RefCell;
-use std::rc::Rc;
-use std::sync::Mutex;
+use std::pin::Pin;
+use std::sync::Arc;
 use std::time::Duration;
-use std::{path::PathBuf, rc::Weak};
+use std::{path::PathBuf, sync::Weak};
 
+use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
     gst::{init, ClockTime},
-    Play as GStreamerInnerPlayer, PlaySignalAdapter, PlayState, PlayVideoRenderer,
+    Play as GStreamerInnerPlayer, PlaySignalAdapter, PlayVideoRenderer,
 };
+use podcast_management::data_objects::hashable::Hashable;
+use tokio::sync::Mutex;
 
 use gstreamer_pbutils::{Discoverer, DiscovererInfo};
 
@@ -28,30 +31,51 @@ struct GStreamerPlayerState {
 
 pub struct GStreamerMp3Player {
     player_state: Option<GStreamerPlayerState>,
-    path_provider: Rc<Mutex<Box<dyn PathProvider>>>,
+    path_provider: Arc<dyn PathProvider + Send + Sync>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
-    signal_catcher: PlaySignalAdapter,
-    observers: Vec<Weak<RefCell<dyn PlayerObserver>>>,
+    signal_catcher: Pin<Box<PlaySignalAdapter>>,
+    observers: Vec<Weak<Mutex<dyn PlayerObserver + Send + Sync>>>,
 }
 
 impl GStreamerMp3Player {
-    // TODO : Add callback to call when a podcast is finished
-    pub fn new(path_provider: Box<dyn PathProvider>) -> Self {
+    pub async fn build(path_provider: Arc<dyn PathProvider + Send + Sync>) -> Arc<Mutex<Self>> {
+        let player = Arc::new(Mutex::new(Self::new(path_provider)));
+        player
+            .lock()
+            .await
+            .signal_catcher
+            .connect_state_changed(|_, b| {
+                let toto = async move |b| {
+                    if let PlayState::Stopped = b {
+                        let p = player.lock().await;
+                        p.observers.iter().cloned().for_each(|o| {
+                            async {
+                                let a = o.upgrade().unwrap();
+                                a.lock()
+                                    .await
+                                    .on_podcast_finished(
+                                        &p.player_state.unwrap().selected_episode.hash(),
+                                    )
+                                    .await;
+                            };
+                        })
+                    };
+                };
+            });
+        player
+    }
+
+    pub fn new(path_provider: Arc<dyn PathProvider + Send + Sync>) -> Self {
         init().unwrap();
         let player = GStreamerInnerPlayer::new(None::<PlayVideoRenderer>);
         let signal_catcher = PlaySignalAdapter::new_sync_emit(&player);
-        signal_catcher.connect_state_changed(|_, b| {
-            if let PlayState::Stopped = b {
-                println!("coucou !");
-            }
-        });
         GStreamerMp3Player {
             player_state: None,
-            path_provider: Rc::new(Mutex::new(path_provider)),
+            path_provider,
             is_paused: true,
             player,
-            signal_catcher,
+            signal_catcher: Box::pin(signal_catcher),
             observers: vec![],
         }
     }
@@ -63,10 +87,7 @@ impl GStreamerMp3Player {
 
 impl Mp3Player for GStreamerMp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
-        self.path_provider
-            .lock()
-            .unwrap()
-            .compute_episode_path(episode)
+        (*self.path_provider).compute_episode_path(episode)
     }
     fn get_selected_episode(&self) -> Option<&PodcastEpisode> {
         if self.player_state.is_none() {
@@ -149,7 +170,7 @@ impl Mp3Player for GStreamerMp3Player {
         Ok(())
     }
 
-    fn register_observer(&mut self, observer: Weak<RefCell<dyn PlayerObserver>>) {
+    fn register_observer(&mut self, observer: Weak<Mutex<dyn PlayerObserver + Send + Sync>>) {
         self.observers.push(observer);
     }
 

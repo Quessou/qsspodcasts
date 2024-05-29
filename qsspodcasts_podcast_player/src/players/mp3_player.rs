@@ -1,7 +1,7 @@
-use std::cell::RefCell;
 use std::path::{Path, PathBuf};
-use std::rc::Weak;
+use std::sync::Weak;
 use std::time::Duration;
+use tokio::sync::Mutex;
 
 use path_providing::path_provider::PodcastEpisode;
 
@@ -23,7 +23,7 @@ pub trait Mp3Player {
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
-    fn register_observer(&mut self, observer: Weak<RefCell<dyn PlayerObserver>>);
+    fn register_observer(&mut self, observer: Weak<Mutex<dyn PlayerObserver + Send + Sync>>);
 
     fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
     fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
