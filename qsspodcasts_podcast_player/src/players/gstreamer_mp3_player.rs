@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
@@ -12,6 +11,7 @@ use gstreamer_play::{
 };
 use podcast_management::data_objects::hashable::Hashable;
 use tokio::sync::Mutex;
+use tokio::task::spawn;
 
 use gstreamer_pbutils::{Discoverer, DiscovererInfo};
 
@@ -41,27 +41,32 @@ pub struct GStreamerMp3Player {
 impl GStreamerMp3Player {
     pub async fn build(path_provider: Arc<dyn PathProvider + Send + Sync>) -> Arc<Mutex<Self>> {
         let player = Arc::new(Mutex::new(Self::new(path_provider)));
+        let cloned_player_pointer = player.clone();
+        // TODO: Try to use tokio::task::spawn here
         player
             .lock()
             .await
             .signal_catcher
-            .connect_state_changed(|_, b| {
-                let toto = async move |b| {
-                    if let PlayState::Stopped = b {
-                        let p = player.lock().await;
-                        p.observers.iter().cloned().for_each(|o| {
-                            async {
+            .connect_state_changed(move |_, b| {
+                if let PlayState::Stopped = b {
+                    let rt = tokio::runtime::Runtime::new().unwrap();
+                    let notify_all_observers = async {
+                        let p = cloned_player_pointer.lock().await;
+                        p.observers.iter().for_each(|o| {
+                            let notify_observer = async {
                                 let a = o.upgrade().unwrap();
                                 a.lock()
                                     .await
                                     .on_podcast_finished(
-                                        &p.player_state.unwrap().selected_episode.hash(),
+                                        &p.player_state.as_ref().unwrap().selected_episode.hash(),
                                     )
                                     .await;
                             };
-                        })
+                            rt.block_on(notify_observer);
+                        });
                     };
-                };
+                    rt.block_on(notify_all_observers);
+                }
             });
         player
     }

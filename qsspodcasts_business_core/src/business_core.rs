@@ -299,6 +299,8 @@ impl BusinessCore {
             self.path_provider.compute_finished_podcast_file_path(hash);
         let _ =
             write_utils::open_or_create_file(finished_podcast_file_path.to_str().unwrap()).unwrap();
+        self.send_notification(Notification::Message("Episode finished".to_owned()))
+            .await;
         self.send_notification(Notification::Event(EventType::PodcastFinished(cloned_hash)))
             .await;
         Ok(())
