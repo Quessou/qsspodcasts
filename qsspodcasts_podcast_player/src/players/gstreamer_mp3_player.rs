@@ -1,8 +1,10 @@
+use std::borrow::Borrow;
 use std::pin::Pin;
 use std::sync::Arc;
 use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
+use async_trait::async_trait;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
@@ -25,12 +27,13 @@ use crate::{duration_wrapper::DurationWrapper, traits::PlayerObserver};
 use super::mp3_player::Mp3Player;
 
 struct GStreamerPlayerState {
+    // TODO: Make this async-friendle
     pub selected_episode: PodcastEpisode,
     pub info: DiscovererInfo,
 }
 
 pub struct GStreamerMp3Player {
-    player_state: Option<GStreamerPlayerState>,
+    player_state: Option<Arc<Mutex<GStreamerPlayerState>>>,
     path_provider: Arc<dyn PathProvider + Send + Sync>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
@@ -49,7 +52,6 @@ impl GStreamerMp3Player {
             .signal_catcher
             .connect_state_changed(move |_, b| {
                 if let PlayState::Stopped = b {
-                    let rt = tokio::runtime::Runtime::new().unwrap();
                     let notify_all_observers = async {
                         let p = cloned_player_pointer.lock().await;
                         p.observers.iter().for_each(|o| {
@@ -62,10 +64,11 @@ impl GStreamerMp3Player {
                                     )
                                     .await;
                             };
-                            rt.block_on(notify_observer);
+                            spawn(notify_observer);
                         });
                     };
-                    rt.block_on(notify_all_observers);
+                    spawn(notify_all_observers);
+                    //rt.block_on(notify_all_observers);
                 }
             });
         player
@@ -90,15 +93,23 @@ impl GStreamerMp3Player {
     }
 }
 
+#[async_trait::async_trait]
 impl Mp3Player for GStreamerMp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         (*self.path_provider).compute_episode_path(episode)
     }
-    fn get_selected_episode(&self) -> Option<&PodcastEpisode> {
+    async fn get_selected_episode(&self) -> Option<&PodcastEpisode> {
         if self.player_state.is_none() {
             None
         } else {
-            Some(&self.player_state.as_ref().unwrap().selected_episode)
+            let selected_episode = &self
+                .player_state
+                .as_ref()
+                .unwrap()
+                .lock()
+                .await
+                .selected_episode;
+            Some(selected_episode)
         }
     }
     fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
