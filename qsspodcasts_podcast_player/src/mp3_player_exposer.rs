@@ -11,16 +11,20 @@ use crate::players::mp3_player::Mp3Player;
 /// TODO :
 /// * Check if there isn't a more elegant solution
 pub struct Mp3PlayerExposer {
-    mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+    mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
 }
 
 impl Mp3PlayerExposer {
-    pub fn new(mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>) -> Mp3PlayerExposer {
+    pub fn new(mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>) -> Mp3PlayerExposer {
         Mp3PlayerExposer { mp3_player }
     }
 
     pub async fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
-        self.mp3_player.lock().await.get_selected_episode_duration()
+        self.mp3_player
+            .lock()
+            .await
+            .get_selected_episode_duration()
+            .await
     }
 
     pub async fn get_selected_episode_progression(&self) -> Option<DurationWrapper> {
@@ -28,6 +32,7 @@ impl Mp3PlayerExposer {
             .lock()
             .await
             .get_selected_episode_progression()
+            .await
     }
 
     pub async fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
@@ -35,6 +40,7 @@ impl Mp3PlayerExposer {
             .lock()
             .await
             .get_selected_episode_progression_percentage()
+            .await
     }
 
     pub async fn is_paused(&self) -> bool {

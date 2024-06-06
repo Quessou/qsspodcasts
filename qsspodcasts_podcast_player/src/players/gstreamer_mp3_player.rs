@@ -187,12 +187,12 @@ impl Mp3Player for GStreamerMp3Player {
         self.is_paused = false;
     }
 
-    fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
+    async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
         match self.player.position() {
             Some(p) => {
                 let p = p.seconds();
                 let offset = duration.num_seconds();
-                let episode_duration = self.get_selected_episode_duration();
+                let episode_duration = self.get_selected_episode_duration().await;
 
                 let episode_duration = episode_duration.unwrap().inner_ref().as_secs();
                 let p: u64 = if offset + (p as i64) < 0 {
@@ -225,24 +225,32 @@ impl Mp3Player for GStreamerMp3Player {
         self.observers.push(observer);
     }
 
-    fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
-        self.get_selected_episode()?;
+    async fn get_selected_episode_duration(&self) -> Option<DurationWrapper> {
+        self.get_selected_episode().await?;
 
-        let duration = self.player_state.as_ref().unwrap().info.duration().unwrap();
+        let duration = self
+            .player_state
+            .as_ref()
+            .unwrap()
+            .read()
+            .await
+            .info
+            .duration()
+            .unwrap();
         let duration = Duration::new(duration.seconds(), 0);
         Some(DurationWrapper::new(duration))
     }
 
-    fn get_selected_episode_progression(&self) -> Option<DurationWrapper> {
-        self.get_selected_episode()?;
+    async fn get_selected_episode_progression(&self) -> Option<DurationWrapper> {
+        self.get_selected_episode().await?;
         let progression = self.player.position().unwrap_or_default();
 
         let progression = Duration::new(progression.seconds(), 0);
         Some(DurationWrapper::new(progression))
     }
 
-    fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
-        let episode_duration: Duration = match self.get_selected_episode_duration() {
+    async fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
+        let episode_duration: Duration = match self.get_selected_episode_duration().await {
             Some(d) => d.into(),
             None => return None,
         };
@@ -254,6 +262,7 @@ impl Mp3Player for GStreamerMp3Player {
 
         let episode_progression: Duration = self
             .get_selected_episode_progression()
+            .await
             .unwrap_or_default()
             .into();
         let episode_progression = episode_progression.as_secs();
@@ -265,7 +274,7 @@ impl Mp3Player for GStreamerMp3Player {
         )
     }
 
-    fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+    async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
         if !self.compute_episode_path(episode).exists() {
             warn!("Cannot select an episode which has not been downloaded first");
             return Err(PlayerError::new(
@@ -273,13 +282,16 @@ impl Mp3Player for GStreamerMp3Player {
                 crate::player_error::ErrorKind::FileNotFound,
             ));
         }
-        self.set_selected_episode(Some(episode.clone()));
+        self.set_selected_episode(Some(episode.clone())).await;
         Ok(())
     }
 
-    fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
+    async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
+        let selected_episode = self.get_selected_episode().await;
+        let selected_episode_lock = selected_episode.as_ref().unwrap().read().await;
+        let selected_episode_ref = &selected_episode_lock.to_owned();
         let path = self
-            .compute_episode_path(self.get_selected_episode().as_ref().unwrap())
+            .compute_episode_path(selected_episode_ref)
             .into_os_string()
             .into_string()
             .unwrap();

@@ -22,16 +22,16 @@ pub trait Mp3Player {
     async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
     fn pause(&mut self);
     fn play(&mut self);
-    fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
+    async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
     fn register_observer(&mut self, observer: Weak<Mutex<dyn PlayerObserver + Send + Sync>>);
 
-    fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
-    fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
-    fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
-        let episode_duration: Duration = match self.get_selected_episode_duration() {
+    async fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
+    async fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
+    async fn get_selected_episode_progression_percentage(&self) -> Option<u8> {
+        let episode_duration: Duration = match self.get_selected_episode_duration().await {
             Some(d) => d.into(),
             None => return None,
         };
@@ -43,6 +43,7 @@ pub trait Mp3Player {
 
         let episode_progression: Duration = self
             .get_selected_episode_progression()
+            .await
             .unwrap_or_default()
             .into();
         let episode_progression = episode_progression.as_secs();
@@ -54,18 +55,22 @@ pub trait Mp3Player {
         )
     }
 
-    fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
+    async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
         if !self.compute_episode_path(episode).exists() {
             warn!("Cannot select an episode which has not been downloaded first");
             return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
-        self.set_selected_episode(Some(episode.clone()));
+        self.set_selected_episode(Some(episode.clone())).await;
         Ok(())
     }
 
-    fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
+    async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
+        let selected_episode = self.get_selected_episode().await;
+        let selected_episode_lock_guard = selected_episode.as_ref().unwrap().read().await;
+        let selected_episode_ref = &selected_episode_lock_guard.to_owned();
+
         let path = self
-            .compute_episode_path(self.get_selected_episode().as_ref().unwrap())
+            .compute_episode_path(selected_episode_ref)
             .into_os_string()
             .into_string()
             .unwrap();
