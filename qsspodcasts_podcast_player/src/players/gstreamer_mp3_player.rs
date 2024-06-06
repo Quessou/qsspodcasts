@@ -1,6 +1,7 @@
 use std::borrow::Borrow;
+use std::future::IntoFuture;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, RwLockReadGuard};
 use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
@@ -12,7 +13,7 @@ use gstreamer_play::{
     Play as GStreamerInnerPlayer, PlaySignalAdapter, PlayVideoRenderer,
 };
 use podcast_management::data_objects::hashable::Hashable;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 use tokio::task::spawn;
 
 use gstreamer_pbutils::{Discoverer, DiscovererInfo};
@@ -27,13 +28,19 @@ use crate::{duration_wrapper::DurationWrapper, traits::PlayerObserver};
 use super::mp3_player::Mp3Player;
 
 struct GStreamerPlayerState {
-    // TODO: Make this async-friendle
-    pub selected_episode: PodcastEpisode,
+    // TODO: Make this async-friendly
+    pub selected_episode: Arc<RwLock<PodcastEpisode>>,
     pub info: DiscovererInfo,
 }
 
+/*impl GStreamerPlayerState {
+    pub async fn get_selected_episode(&self) -> RwLockReadGuard<'_, PodcastEpisode> {
+        self.selected_episode.read().await
+    }
+}*/
+
 pub struct GStreamerMp3Player {
-    player_state: Option<Arc<Mutex<GStreamerPlayerState>>>,
+    player_state: Option<Arc<RwLock<GStreamerPlayerState>>>,
     path_provider: Arc<dyn PathProvider + Send + Sync>,
     is_paused: bool,
     player: GStreamerInnerPlayer,
@@ -45,30 +52,49 @@ impl GStreamerMp3Player {
     pub async fn build(path_provider: Arc<dyn PathProvider + Send + Sync>) -> Arc<Mutex<Self>> {
         let player = Arc::new(Mutex::new(Self::new(path_provider)));
         let cloned_player_pointer = player.clone();
-        // TODO: Try to use tokio::task::spawn here
+        let cloned_player_pointer_2 = player.clone();
+        let notify_observer = |o: Weak<Mutex<dyn PlayerObserver + Send + Sync>>| async move {
+            let a = o.upgrade().unwrap();
+            let tutu = cloned_player_pointer_2.clone();
+            let state = &tutu.lock().await.player_state;
+            a.as_ref()
+                .lock()
+                .await
+                .on_podcast_finished(
+                    &state
+                        .as_ref()
+                        .unwrap()
+                        .read()
+                        .await
+                        .selected_episode
+                        .as_ref()
+                        .read()
+                        .await
+                        .hash(),
+                )
+                .await;
+        };
         player
             .lock()
             .await
             .signal_catcher
-            .connect_state_changed(move |_, b| {
-                if let PlayState::Stopped = b {
-                    let notify_all_observers = async {
-                        let p = cloned_player_pointer.lock().await;
+            .connect_state_changed(move |_, play_state| {
+                if let PlayState::Stopped = play_state {
+                    let toto = cloned_player_pointer.clone();
+                    let notify_observer = notify_observer.clone();
+                    let notify_all_observers = async move {
+                        let tata = toto.clone();
+                        let p = tata.lock().await;
+                        let notify_observer = notify_observer.clone();
                         p.observers.iter().for_each(|o| {
-                            let notify_observer = async {
-                                let a = o.upgrade().unwrap();
-                                a.lock()
-                                    .await
-                                    .on_podcast_finished(
-                                        &p.player_state.as_ref().unwrap().selected_episode.hash(),
-                                    )
-                                    .await;
+                            let notify_observer = notify_observer.clone();
+                            async {
+                                let notification_future = notify_observer(o.clone()).into_future();
+                                spawn(notification_future);
                             };
-                            spawn(notify_observer);
                         });
                     };
                     spawn(notify_all_observers);
-                    //rt.block_on(notify_all_observers);
                 }
             });
         player
@@ -98,24 +124,33 @@ impl Mp3Player for GStreamerMp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         (*self.path_provider).compute_episode_path(episode)
     }
-    async fn get_selected_episode(&self) -> Option<&PodcastEpisode> {
+
+    async fn get_selected_episode(&self) -> Option<Arc<RwLock<PodcastEpisode>>> {
         if self.player_state.is_none() {
             None
         } else {
-            let selected_episode = &self
+            let selected_episode = self
                 .player_state
                 .as_ref()
                 .unwrap()
-                .lock()
+                .read()
                 .await
-                .selected_episode;
+                .selected_episode
+                .clone();
             Some(selected_episode)
         }
     }
-    fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
+    async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
         if (episode.is_none() && self.player_state.is_none())
             || (self.player_state.is_some()
-                && episode.as_ref() == Some(&self.player_state.as_ref().unwrap().selected_episode))
+                && episode.as_ref().unwrap().hash()
+                    == (*self.player_state.as_ref().unwrap())
+                        .read()
+                        .await
+                        .selected_episode
+                        .read()
+                        .await
+                        .hash())
         {
             return;
         }
@@ -130,10 +165,10 @@ impl Mp3Player for GStreamerMp3Player {
 
             let discoverer = Discoverer::new(ClockTime::from_mseconds(1000)).unwrap();
             let info = discoverer.discover_uri(tmp_path).unwrap();
-            self.player_state = Some(GStreamerPlayerState {
-                selected_episode: episode,
+            self.player_state = Some(Arc::new(RwLock::new(GStreamerPlayerState {
+                selected_episode: Arc::new(RwLock::new(episode)),
                 info,
-            });
+            })));
 
             self.player.set_uri(path.map(|x| &**x));
         } else {

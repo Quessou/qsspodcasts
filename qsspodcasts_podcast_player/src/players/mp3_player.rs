@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::sync::Weak;
+use std::sync::{Arc, Weak};
 use std::time::Duration;
 
 use async_trait::async_trait;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 
 use path_providing::path_provider::PodcastEpisode;
 
@@ -18,8 +18,8 @@ use crate::{
 #[async_trait::async_trait]
 pub trait Mp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
-    async fn get_selected_episode(&self) -> Option<&PodcastEpisode>;
-    fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
+    async fn get_selected_episode(&self) -> Option<Arc<RwLock<PodcastEpisode>>>;
+    async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
     fn pause(&mut self);
     fn play(&mut self);
     fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
