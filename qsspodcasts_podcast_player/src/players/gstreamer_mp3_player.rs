@@ -53,6 +53,7 @@ impl GStreamerMp3Player {
         let player = Arc::new(Mutex::new(Self::new(path_provider)));
         let cloned_player_pointer = player.clone();
         let cloned_player_pointer_2 = player.clone();
+
         let notify_observer = |o: Weak<Mutex<dyn PlayerObserver + Send + Sync>>| async move {
             let a = o.upgrade().unwrap();
             let tutu = cloned_player_pointer_2.clone();
@@ -74,27 +75,46 @@ impl GStreamerMp3Player {
                 )
                 .await;
         };
+        let notify_all_observers = || async move {
+            let tata = cloned_player_pointer.clone();
+            let p = tata.lock().await;
+            let notify_observer = notify_observer.clone();
+            p.observers.iter().for_each(|o| async {
+                {
+                    let notify_observer = notify_observer.clone();
+                    let a = async {
+                        let notification_future = notify_observer(o.clone()).into_future();
+                        spawn(notification_future);
+                    }
+                    .await;
+                };
+            });
+        };
         player
             .lock()
             .await
             .signal_catcher
             .connect_state_changed(move |_, play_state| {
                 if let PlayState::Stopped = play_state {
-                    let toto = cloned_player_pointer.clone();
-                    let notify_observer = notify_observer.clone();
+                    //let notify_observer = notify_observer.clone();
+                    let notify_all_observers = notify_all_observers.clone();
+                    let c = async move { notify_all_observers() };
+                    /*
                     let notify_all_observers = async move {
                         let tata = toto.clone();
                         let p = tata.lock().await;
                         let notify_observer = notify_observer.clone();
                         p.observers.iter().for_each(|o| {
                             let notify_observer = notify_observer.clone();
-                            async {
+                            let a = async {
                                 let notification_future = notify_observer(o.clone()).into_future();
                                 spawn(notification_future);
                             };
+                            spawn(a);
                         });
                     };
-                    spawn(notify_all_observers);
+                    */
+                    spawn(c);
                 }
             });
         player
