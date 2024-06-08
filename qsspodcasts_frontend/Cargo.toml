@@ -15,7 +15,7 @@ repository.workspace = true
 [dependencies]
 tui = { package = "ratatui", version = "0.22.0", features = ["crossterm"], default-features = false }
 crossterm = "0.19"
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full"] }
 command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management" , version = "0.1.0"}
 podcast_player = { package = "qsspodcasts_podcast_player", path = "../qsspodcasts_podcast_player" , version = "0.1.0" }
 podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }

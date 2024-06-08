@@ -13,6 +13,7 @@ use gstreamer_play::{
     Play as GStreamerInnerPlayer, PlaySignalAdapter, PlayVideoRenderer,
 };
 use podcast_management::data_objects::hashable::Hashable;
+use tokio::runtime::Handle;
 use tokio::sync::{Mutex, RwLock};
 use tokio::task::spawn;
 
@@ -53,6 +54,7 @@ impl GStreamerMp3Player {
         let player = Arc::new(Mutex::new(Self::new(path_provider)));
 
         let player_cloned_ptr = player.clone();
+        let handle = Handle::current();
 
         player
             .lock()
@@ -64,16 +66,16 @@ impl GStreamerMp3Player {
                 }
                 let player_cloned_ptr = player_cloned_ptr.clone();
                 let b = async move {
-                    let p = player_cloned_ptr.clone();
-                    let locked_p = p.lock().await;
-                    let hash = locked_p
+                    let player_cloned = player_cloned_ptr.clone();
+                    let locked_player = player_cloned.lock().await;
+                    let hash = locked_player
                         .get_selected_episode()
                         .await
                         .unwrap()
                         .read()
                         .await
                         .hash();
-                    let observers = &locked_p.observers;
+                    let observers = &locked_player.observers;
                     observers.iter().for_each(move |o| {
                         let hash = hash.clone();
                         let observer = o.clone().upgrade();
@@ -86,7 +88,7 @@ impl GStreamerMp3Player {
                     });
                 };
 
-                spawn(b);
+                handle.spawn(b);
             });
 
         player

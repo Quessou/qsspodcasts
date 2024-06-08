@@ -12,7 +12,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full"] }
 rodio = "0.15.0"
 # gstreamer = "0.18"
 gstreamer-play = "0.20"
