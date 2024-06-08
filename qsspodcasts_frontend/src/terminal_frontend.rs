@@ -58,7 +58,7 @@ impl<D: UiDrawer> Frontend<D> {
         notification_receiver: DataReceiver<Notification>,
         autocompletion_request_sender: DataSender<AutocompleterMessageType>,
         autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
         ui_drawer: Box<D>,
         podcast_state_cache: PodcastStateCache,
     ) -> Frontend<D> {

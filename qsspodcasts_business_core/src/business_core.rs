@@ -212,11 +212,18 @@ impl BusinessCore {
     }
 
     pub async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
-        self.player.lock().await.seek(duration)
+        self.player.lock().await.seek(duration).await
     }
 
     pub async fn play(&mut self) -> Result<(), PlayerError> {
-        if self.player.lock().await.get_selected_episode().is_none() {
+        if self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .await
+            .is_none()
+        {
             self.send_notification(Notification::Message("No episode selected".to_owned()))
                 .await;
             return Err(PlayerError::new(
@@ -245,7 +252,10 @@ impl BusinessCore {
             .lock()
             .await
             .get_selected_episode()
+            .await
             .unwrap()
+            .read()
+            .await
             .hash();
         let mut progression_file_path = self.path_provider.podcast_progresses_dir_path();
         progression_file_path.push(hash);
@@ -253,7 +263,7 @@ impl BusinessCore {
             .player
             .lock()
             .await
-            .get_selected_episode_progression()
+            .get_selected_episode_progression().await
             .expect(
             "Tried to get progression of podcast while saving but no progression could be found",
         );
@@ -267,7 +277,14 @@ impl BusinessCore {
     }
 
     pub async fn pause(&mut self) -> Result<(), PlayerError> {
-        if self.player.lock().await.get_selected_episode().is_none() {
+        if self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .await
+            .is_none()
+        {
             self.send_notification(Notification::Message("No episode selected".to_owned()))
                 .await;
             return Err(PlayerError::new(
@@ -311,9 +328,9 @@ impl BusinessCore {
         let mut hash: Option<String> = None;
         {
             let player = self.player.lock().await;
-            let episode = player.get_selected_episode();
+            let episode = player.get_selected_episode().await;
             hash = if let Some(e) = episode {
-                Some(e.hash().clone())
+                Some(e.read().await.hash().clone())
             } else {
                 None
             };
@@ -344,7 +361,7 @@ impl BusinessCore {
         let path = self.path_provider.podcast_progress_file_path(&hash);
         let duration = progression_read_utils::read_progression_in_file(path).await;
 
-        let r = self.player.lock().await.select_episode(episode);
+        let r = self.player.lock().await.select_episode(episode).await;
         match r {
             Ok(_) => {
                 self.send_notification(Notification::Message(
@@ -354,7 +371,12 @@ impl BusinessCore {
                 // This probably crashes because we do not have loaded the episode yet
                 if duration.is_some() {
                     assert!(
-                        self.player.lock().await.get_selected_episode().is_some(),
+                        self.player
+                            .lock()
+                            .await
+                            .get_selected_episode()
+                            .await
+                            .is_some(),
                         "The episode is actually not selected"
                     );
                     let duration: chrono::Duration =
@@ -374,7 +396,14 @@ impl BusinessCore {
         r
     }
     pub async fn clean(&mut self) {
-        if self.player.lock().await.get_selected_episode().is_some() {
+        if self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .await
+            .is_some()
+        {
             self.send_notification(Notification::Message(
                 "Writing progression of current podcast".to_string(),
             ))

@@ -51,72 +51,44 @@ pub struct GStreamerMp3Player {
 impl GStreamerMp3Player {
     pub async fn build(path_provider: Arc<dyn PathProvider + Send + Sync>) -> Arc<Mutex<Self>> {
         let player = Arc::new(Mutex::new(Self::new(path_provider)));
-        let cloned_player_pointer = player.clone();
-        let cloned_player_pointer_2 = player.clone();
 
-        let notify_observer = |o: Weak<Mutex<dyn PlayerObserver + Send + Sync>>| async move {
-            let a = o.upgrade().unwrap();
-            let tutu = cloned_player_pointer_2.clone();
-            let state = &tutu.lock().await.player_state;
-            a.as_ref()
-                .lock()
-                .await
-                .on_podcast_finished(
-                    &state
-                        .as_ref()
-                        .unwrap()
-                        .read()
-                        .await
-                        .selected_episode
-                        .as_ref()
-                        .read()
-                        .await
-                        .hash(),
-                )
-                .await;
-        };
-        let notify_all_observers = || async move {
-            let tata = cloned_player_pointer.clone();
-            let p = tata.lock().await;
-            let notify_observer = notify_observer.clone();
-            p.observers.iter().for_each(|o| async {
-                {
-                    let notify_observer = notify_observer.clone();
-                    let a = async {
-                        let notification_future = notify_observer(o.clone()).into_future();
-                        spawn(notification_future);
-                    }
-                    .await;
-                };
-            });
-        };
+        let player_cloned_ptr = player.clone();
+
         player
             .lock()
             .await
             .signal_catcher
             .connect_state_changed(move |_, play_state| {
-                if let PlayState::Stopped = play_state {
-                    //let notify_observer = notify_observer.clone();
-                    let notify_all_observers = notify_all_observers.clone();
-                    let c = async move { notify_all_observers() };
-                    /*
-                    let notify_all_observers = async move {
-                        let tata = toto.clone();
-                        let p = tata.lock().await;
-                        let notify_observer = notify_observer.clone();
-                        p.observers.iter().for_each(|o| {
-                            let notify_observer = notify_observer.clone();
-                            let a = async {
-                                let notification_future = notify_observer(o.clone()).into_future();
-                                spawn(notification_future);
-                            };
-                            spawn(a);
-                        });
-                    };
-                    */
-                    spawn(c);
+                if play_state != PlayState::Stopped {
+                    return;
                 }
+                let player_cloned_ptr = player_cloned_ptr.clone();
+                let b = async move {
+                    let p = player_cloned_ptr.clone();
+                    let locked_p = p.lock().await;
+                    let hash = locked_p
+                        .get_selected_episode()
+                        .await
+                        .unwrap()
+                        .read()
+                        .await
+                        .hash();
+                    let observers = &locked_p.observers;
+                    observers.iter().for_each(move |o| {
+                        let hash = hash.clone();
+                        let observer = o.clone().upgrade();
+                        let notify_observer = async move {
+                            let observer_unwrapped = observer.unwrap();
+                            let mut observer_locked = observer_unwrapped.lock().await;
+                            observer_locked.on_podcast_finished(&hash).await;
+                        };
+                        spawn(notify_observer);
+                    });
+                };
+
+                spawn(b);
             });
+
         player
     }
 
