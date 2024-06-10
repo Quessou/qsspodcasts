@@ -4,8 +4,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use command_management::output::output_type::OutputType;
-use data_caches::{podcast_state_cache_builder::build_podcast_state_cache, PodcastStateCache};
-use path_providing::path_provider::PathProvider;
+use data_caches::PodcastStateCache;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_player::player_status::PlayerStatus;
 
@@ -41,12 +40,10 @@ pub struct ScreenContext {
 
 impl ScreenContext {
     pub fn build(podcasts_state_cache: PodcastStateCache) -> Self {
-        let mut ctxt = ScreenContext::default();
-        //let podcasts_state_cache = build_podcast_state_cache(path_provider)
-        //.await
-        //.expect("Building of podcasts state cache failed");
-        ctxt.podcasts_state_cache = podcasts_state_cache;
-        ctxt
+        Self {
+            podcasts_state_cache,
+            ..Default::default()
+        }
     }
 
     pub fn get_output_list_length(&self) -> Option<usize> {

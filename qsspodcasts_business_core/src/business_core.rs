@@ -1,4 +1,4 @@
-use std::borrow::{Borrow, BorrowMut};
+use std::borrow::BorrowMut;
 use std::io::{self, Error as IoError};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -356,7 +356,6 @@ impl BusinessCore {
     }
 
     pub async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
-        // TODO(mmiko): Load the current progression
         let hash = episode.hash();
         let path = self.path_provider.podcast_progress_file_path(&hash);
         let duration = progression_read_utils::read_progression_in_file(path).await;
@@ -368,7 +367,6 @@ impl BusinessCore {
                     "Episode selection successful".to_string(),
                 ))
                 .await;
-                // This probably crashes because we do not have loaded the episode yet
                 if duration.is_some() {
                     assert!(
                         self.player

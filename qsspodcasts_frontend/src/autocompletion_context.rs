@@ -18,7 +18,7 @@ impl AutocompletionContext {
 
     pub fn clear(&mut self) {
         self.reset();
-        self.current_input = "".to_owned();
+        "".clone_into(&mut self.current_input);
     }
 
     pub fn is_autocompletion_buffer_empty(&self) -> bool {
@@ -102,7 +102,8 @@ impl AutocompletionContext {
             && self.current_input.len()
                 < self.autocompletion_choices[self.current_choice.unwrap()].len()
         {
-            self.current_input = self.autocompletion_choices[self.current_choice.unwrap()].clone();
+            self.current_input
+                .clone_from(&self.autocompletion_choices[self.current_choice.unwrap()]);
             self.reset();
         }
     }

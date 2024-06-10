@@ -1,11 +1,8 @@
-use std::borrow::Borrow;
-use std::future::IntoFuture;
 use std::pin::Pin;
-use std::sync::{Arc, RwLockReadGuard};
+use std::sync::Arc;
 use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
-use async_trait::async_trait;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,

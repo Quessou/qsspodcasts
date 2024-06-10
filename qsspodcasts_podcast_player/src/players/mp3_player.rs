@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Weak};
 use std::time::Duration;
 
-use async_trait::async_trait;
 use tokio::sync::{Mutex, RwLock};
 
 use path_providing::path_provider::PodcastEpisode;

@@ -52,6 +52,7 @@ pub struct Frontend<D: UiDrawer> {
 }
 
 impl<D: UiDrawer> Frontend<D> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         command_sender: DataSender<String>,
         output_receiver: DataReceiver<CommandResult>,

@@ -1,7 +1,6 @@
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
 use podcast_management::data_objects::podcast::Podcast;
-use std::borrow::BorrowMut;
 use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 use url::Url;
