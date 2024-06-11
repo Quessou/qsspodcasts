@@ -31,12 +31,6 @@ struct GStreamerPlayerState {
     pub info: DiscovererInfo,
 }
 
-/*impl GStreamerPlayerState {
-    pub async fn get_selected_episode(&self) -> RwLockReadGuard<'_, PodcastEpisode> {
-        self.selected_episode.read().await
-    }
-}*/
-
 pub struct GStreamerMp3Player {
     player_state: Option<Arc<RwLock<GStreamerPlayerState>>>,
     path_provider: Arc<dyn PathProvider + Send + Sync>,
@@ -58,12 +52,13 @@ impl GStreamerMp3Player {
             .await
             .signal_catcher
             .connect_state_changed(move |_, play_state| {
+                // TODO(mmiko) : Change this so that we can handle different states
                 if play_state != PlayState::Stopped {
                     return;
                 }
-                let player_cloned_ptr = player_cloned_ptr.clone();
+                let player_cloned = player_cloned_ptr.clone();
                 let b = async move {
-                    let player_cloned = player_cloned_ptr.clone();
+                    let player_cloned = player_cloned.clone();
                     let locked_player = player_cloned.lock().await;
                     let hash = locked_player
                         .get_selected_episode()
@@ -75,7 +70,7 @@ impl GStreamerMp3Player {
                     let observers = &locked_player.observers;
                     observers.iter().for_each(move |o| {
                         let hash = hash.clone();
-                        let observer = o.clone().upgrade();
+                        let observer = o.upgrade();
                         let notify_observer = async move {
                             let observer_unwrapped = observer.unwrap();
                             let mut observer_locked = observer_unwrapped.lock().await;

@@ -96,24 +96,21 @@ impl CommandEngine {
 #[cfg(test)]
 mod tests {
 
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     use business_core::business_core::BusinessCore;
     use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::players::mp3_player::Mp3Player;
-    use tokio_test;
-    macro_rules! aw {
-        ($e:expr) => {
-            tokio_test::block_on($e)
-        };
-    }
 
     use super::*;
     use crate::mocks::mp3_player::MockMp3Player;
     use test_case::test_case;
 
-    fn instanciate_engine(player: Arc<TokioMutex<dyn Mp3Player + Send>>) -> CommandEngine {
-        let core = BusinessCore::new(player, Rc::new(DummyPathProvider::new("")), None);
+    async fn instanciate_engine(
+        player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
+    ) -> CommandEngine {
+        let core =
+            BusinessCore::new_in_arc(player, Arc::new(DummyPathProvider::new("")), None).await;
         let executor = CommandExecutor::new(core, None);
         CommandEngine::new(executor, None, None, None)
     }
@@ -127,7 +124,8 @@ mod tests {
     #[ignore = "Made deprecated by changes in sanity checks in play/pause methods of Mp3 players"]
     #[test_case(true, 1 => Ok(()))]
     #[test_case(false, 0 => Ok(()))]
-    fn test_play_command(is_paused: bool, expected_play_calls: usize) -> Result<(), String> {
+    #[tokio::test]
+    async fn test_play_command(is_paused: bool, expected_play_calls: usize) -> Result<(), String> {
         let mut player = MockMp3Player::new();
 
         player.expect_is_paused().times(1).return_const(is_paused);
@@ -136,9 +134,9 @@ mod tests {
             .times(expected_play_calls)
             .return_const(());
 
-        let mut engine = instanciate_engine(Arc::new(TokioMutex::new(player)));
+        let mut engine = instanciate_engine(Arc::new(TokioMutex::new(player))).await;
 
-        match aw!(engine.handle_command("play")) {
+        match engine.handle_command("play").await {
             Ok(_) => Ok(()),
             Err(_) => Err(String::from("Something went wrong")),
         }
