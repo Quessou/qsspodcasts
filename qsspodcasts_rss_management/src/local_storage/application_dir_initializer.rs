@@ -3,13 +3,13 @@ use log::{error, warn};
 use std::io::ErrorKind;
 use std::path::Path;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::result::Result;
+use std::sync::Arc;
 
 use path_providing::path_provider::PathProvider;
 
 pub struct ApplicationDirInitializer {
-    pub path_provider: Rc<dyn PathProvider>,
+    pub path_provider: Arc<dyn PathProvider + Send + Sync>,
 }
 
 impl ApplicationDirInitializer {
@@ -27,7 +27,7 @@ impl ApplicationDirInitializer {
             .exists()
     }
 
-    pub fn new(path_provider: Rc<dyn PathProvider>) -> ApplicationDirInitializer {
+    pub fn new(path_provider: Arc<dyn PathProvider + Send + Sync>) -> ApplicationDirInitializer {
         ApplicationDirInitializer { path_provider }
     }
 
@@ -46,8 +46,10 @@ impl ApplicationDirInitializer {
         fs::File::create(rss_feed_list_file_path)?;
         let download_dir_path: PathBuf = app_dir_path.join(self.path_provider.download_dir_name());
         let progresses_dir_path = self.path_provider.podcast_progresses_dir_path();
+        let finished_podcasts_dir_path = self.path_provider.finished_podcasts_dir_path();
         fs::create_dir_all(download_dir_path)?;
         fs::create_dir_all(progresses_dir_path)?;
+        fs::create_dir_all(finished_podcasts_dir_path)?;
 
         Ok(())
     }
@@ -203,9 +205,8 @@ mod tests {
 
         let dummy_app_dir = "/tmp/.qsspodcasts";
         let app_dir_initializer = ApplicationDirInitializer {
-            path_provider: Rc::new(DummyPathProvider::new(dummy_app_dir)),
+            path_provider: Arc::new(DummyPathProvider::new(dummy_app_dir)),
         };
-        assert!(!PathBuf::from(dummy_app_dir).is_dir());
         app_dir_initializer
             .initialize_application_dir(dummy_app_dir)
             .expect("Initialization application dir failed");

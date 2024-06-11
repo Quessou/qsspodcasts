@@ -148,6 +148,10 @@ pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandErr
     Ok(Command::Help(Some(parameters[0].clone())))
 }
 
+pub fn build_mark_as_finished_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
+    Ok(Command::MarkAsFinished)
+}
+
 pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
     factory_hashmap.insert(Command::Play(None).to_string(), build_play_command);
@@ -182,6 +186,10 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
         build_go_back_command,
     );
     factory_hashmap.insert(Command::Help(None).to_string(), build_help_command);
+    factory_hashmap.insert(
+        Command::MarkAsFinished.to_string(),
+        build_mark_as_finished_command,
+    );
     factory_hashmap
 }
 

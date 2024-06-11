@@ -3,6 +3,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
+use business_core::event_type::EventType::PodcastFinished;
 use command_management::commands::command_enum::Command;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
@@ -11,7 +12,9 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use data_caches::PodcastStateCache;
 use log::{debug, error};
+use podcast_management::data_objects::podcast_state::PodcastState;
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
 use tokio::sync::Mutex as TokioMutex;
@@ -49,18 +52,20 @@ pub struct Frontend<D: UiDrawer> {
 }
 
 impl<D: UiDrawer> Frontend<D> {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         command_sender: DataSender<String>,
         output_receiver: DataReceiver<CommandResult>,
         notification_receiver: DataReceiver<Notification>,
         autocompletion_request_sender: DataSender<AutocompleterMessageType>,
         autocompletion_response_reader: DataReceiver<AutocompletionResponse>,
-        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send>>,
+        mp3_player: Arc<TokioMutex<dyn Mp3Player + Send + Sync>>,
         ui_drawer: Box<D>,
+        podcast_state_cache: PodcastStateCache,
     ) -> Frontend<D> {
         let backend = CrosstermBackend::new(stdout());
         let terminal = Terminal::new(backend).unwrap();
-        let context = ScreenContext::default();
+        let context = ScreenContext::build(podcast_state_cache);
         TerminalFrontendLogger::new(context.logs.clone())
             .init()
             .expect("Logger initialization failed");
@@ -437,9 +442,26 @@ impl<D: UiDrawer> Frontend<D> {
             }
 
             if let Ok(n) = self.notification_receiver.try_receive() {
-                self.context.notifications_buffer.push_front(n);
-                // TODO : Put the 4 in a constant variable called "notification_window_height"
-                self.context.notifications_buffer.truncate(4);
+                #[allow(unreachable_patterns)]
+                match n {
+                    Notification::Message(m) => {
+                        self.context.message_notifications_buffer.push_front(m);
+                        // TODO : Put the 4 in a constant variable called "notification_window_height"
+                        self.context.message_notifications_buffer.truncate(4);
+                    }
+                    Notification::Event(e) => match e {
+                        PodcastFinished(hash) => {
+                            self.context
+                                .podcasts_state_cache
+                                .set_podcast_state(&hash, &PodcastState::Finished);
+                            // TODO: Add a condition to invalidate cache
+                            self.context.must_invalidate_cache.set(true);
+                        }
+                        _ => {
+                            error!("Received unhandled event {:?}", e);
+                        }
+                    },
+                }
             }
 
             if self.command_sender.is_closed() {

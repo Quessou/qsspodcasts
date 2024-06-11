@@ -42,4 +42,5 @@ pub enum Command {
     Select(String),
     Advance(CommandDuration),
     GoBack(CommandDuration),
+    MarkAsFinished,
 }
