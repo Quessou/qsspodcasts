@@ -10,6 +10,7 @@ pub enum ErrorKind {
     RodioError,
     GStreamerError,
     NoEpisodeSelected,
+    EpisodeAlreadySelected,
     AlreadyPlaying,
     AlreadyPaused,
 }

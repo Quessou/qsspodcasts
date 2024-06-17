@@ -323,6 +323,26 @@ impl BusinessCore {
         Ok(())
     }
 
+    async fn delete_progression_file(&mut self, hash: &str) -> Result<(), ()> {
+        let progression_file_path = self.path_provider.podcast_progress_file_path(hash);
+        let r = tokio::fs::remove_file(progression_file_path).await;
+        match r {
+            Ok(_) => {}
+            Err(e) => {
+                let error_message = match e.kind() {
+                    io::ErrorKind::NotFound => "Not found",
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    _ => "Unhandled error",
+                };
+                log::error!(
+                    "Deletion of progression file failed. Error : {}",
+                    error_message
+                );
+            }
+        };
+        Ok(())
+    }
+
     #[allow(unused_assignments)]
     pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), PlayerError> {
         let mut hash: Option<String> = None;
@@ -384,7 +404,16 @@ impl BusinessCore {
                         .expect("Seeking resuming position of podcast failed");
                 }
             }
-            Err(_) => {
+            Err(ref e) => {
+                // If episode is already selected and finished, we want to restart the player
+                if let player_error::ErrorKind::EpisodeAlreadySelected = e.kind()
+                //    TODO: finish this
+                //    && self.player.lock().await
+                {
+                    let beginning = chrono::Duration::seconds(0);
+                    self.seek(beginning).await.expect("Reset of podcast failed");
+                }
+
                 self.send_notification(Notification::Message(
                     "Episode selection failed".to_string(),
                 ))
@@ -419,6 +448,7 @@ impl PlayerObserver for BusinessCore {
         self.create_mark_as_finished_marker_file(hash)
             .await
             .unwrap();
+        self.delete_progression_file(hash).await.unwrap();
     }
 }
 
