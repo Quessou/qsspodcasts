@@ -34,7 +34,6 @@ struct GStreamerPlayerState {
 pub struct GStreamerMp3Player {
     player_state: Option<Arc<RwLock<GStreamerPlayerState>>>,
     path_provider: Arc<dyn PathProvider + Send + Sync>,
-    //is_paused: bool,
     play_state: Option<PlayState>,
     player: GStreamerInnerPlayer,
     signal_catcher: Pin<Box<PlaySignalAdapter>>,
@@ -57,7 +56,7 @@ impl GStreamerMp3Player {
                 let set_state = async move {
                     player_cloned.lock().await.play_state = Some(play_state);
                 };
-                spawn(set_state);
+                handle.spawn(set_state);
                 // TODO(mmiko) : Change this so that we can handle different states
                 if play_state != PlayState::Stopped {
                     return;
@@ -99,8 +98,6 @@ impl GStreamerMp3Player {
         GStreamerMp3Player {
             player_state: None,
             path_provider,
-            // Probably useless ?
-            //is_paused: true,
             play_state: None,
             player,
             signal_catcher: Box::pin(signal_catcher),
@@ -180,12 +177,10 @@ impl Mp3Player for GStreamerMp3Player {
 
     fn pause(&mut self) {
         self.player.pause();
-        //self.is_paused = true;
     }
 
     fn play(&mut self) {
         self.player.play();
-        //self.is_paused = false;
     }
 
     async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
@@ -208,12 +203,13 @@ impl Mp3Player for GStreamerMp3Player {
                 self.player.seek(ClockTime::from_seconds(p));
                 Ok(())
             }
-            None => Ok(()),
+            None => Ok(()), // TODO(mmiko) : Check if we enter here when the player is stopped
         }
     }
 
     fn is_paused(&self) -> bool {
-        self.get_state() == Mp3PlayerState::Paused
+        let state = self.get_state();
+        state == Mp3PlayerState::Paused || state == Mp3PlayerState::Stopped
     }
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {

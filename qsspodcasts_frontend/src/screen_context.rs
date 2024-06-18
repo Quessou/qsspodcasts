@@ -40,10 +40,11 @@ pub struct ScreenContext {
 
 impl ScreenContext {
     pub fn build(podcasts_state_cache: PodcastStateCache) -> Self {
-        Self {
+        let ctxt = Self {
             podcasts_state_cache,
             ..Default::default()
-        }
+        };
+        ctxt
     }
 
     pub fn get_output_list_length(&self) -> Option<usize> {
@@ -79,7 +80,7 @@ impl ScreenContext {
         if let OutputType::Episodes(ref episodes) = self.last_command_output {
             let matching_episodes = episodes.iter().filter(|e| e.hash() == hash);
             assert_eq!(matching_episodes.clone().count(), 1);
-            // TODO: Mark the podcast as finished
+            // TODO: Mark the podcast as finished ? Not here I think
         }
     }
 }
@@ -96,7 +97,7 @@ impl Default for ScreenContext {
             current_action: ScreenAction::TypingCommand,
             stacked_states: vec![],
             ui_refresh_tickrate: Duration::from_millis(250),
-            player_status: PlayerStatus::Stopped,
+            player_status: PlayerStatus::Stopped(None),
             message_notifications_buffer: VecDeque::with_capacity(4),
             autocompletion_context: AutocompletionContext::default(),
             interactable_modal_context: InteractableModalWindowContext::default(),

@@ -15,6 +15,7 @@ use crossterm::{
 use data_caches::PodcastStateCache;
 use log::{debug, error};
 use podcast_management::data_objects::podcast_state::PodcastState;
+use podcast_player::enums::player_state::Mp3PlayerState;
 use podcast_player::player_status::PlayerStatus;
 use podcast_player::players::mp3_player::Mp3Player;
 use tokio::sync::Mutex as TokioMutex;
@@ -381,20 +382,29 @@ impl<D: UiDrawer> Frontend<D> {
             .get_selected_episode_progression_percentage()
             .await;
 
-        let player_status = match player_exposer.is_paused().await {
-            true => match player_exposer.get_selected_episode_progression().await {
-                None => PlayerStatus::Stopped,
+        let player_status = match player_exposer.get_state().await {
+            Mp3PlayerState::Paused => match episode_progression {
+                None => panic!(),
                 Some(_) => PlayerStatus::Paused(
                     episode_progression.unwrap(),
                     episode_duration.unwrap(),
                     progression_percentage.unwrap(),
                 ),
             },
-            false => PlayerStatus::Playing(
+            Mp3PlayerState::Playing => PlayerStatus::Playing(
                 episode_progression.unwrap(),
                 episode_duration.unwrap(),
                 progression_percentage.unwrap(),
             ),
+            Mp3PlayerState::Stopped => match episode_progression {
+                Some(_) => PlayerStatus::Stopped(Some((
+                    episode_progression.unwrap(),
+                    episode_duration.unwrap(),
+                    progression_percentage.unwrap(),
+                ))),
+                None => PlayerStatus::Stopped(None),
+            },
+            Mp3PlayerState::Buffering => PlayerStatus::Stopped(None),
         };
 
         self.context.player_status = player_status;

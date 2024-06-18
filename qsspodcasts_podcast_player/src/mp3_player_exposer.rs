@@ -3,6 +3,7 @@ use std::sync::Arc;
 use tokio::sync::Mutex as TokioMutex;
 
 use crate::duration_wrapper::DurationWrapper;
+use crate::enums::player_state::Mp3PlayerState;
 use crate::players::mp3_player::Mp3Player;
 
 /// Class that wraps an object implementing the Mp3Player trait and exposes only methods that allow
@@ -45,5 +46,8 @@ impl Mp3PlayerExposer {
 
     pub async fn is_paused(&self) -> bool {
         self.mp3_player.lock().await.is_paused()
+    }
+    pub async fn get_state(&self) -> Mp3PlayerState {
+        self.mp3_player.lock().await.get_state()
     }
 }

@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use fs_utils::{progression_read_utils, write_utils};
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
+use podcast_player::enums::player_state::Mp3PlayerState;
 use podcast_player::player_error;
 use podcast_player::traits::PlayerObserver;
 use tokio::sync::Mutex as TokioMutex;
@@ -231,7 +232,8 @@ impl BusinessCore {
                 player_error::ErrorKind::NoEpisodeSelected,
             ));
         }
-        if self.player.lock().await.is_paused() {
+        let player_state = self.player.lock().await.get_state();
+        if player_state == Mp3PlayerState::Stopped || player_state == Mp3PlayerState::Paused {
             self.player.lock().await.play();
             self.send_notification(Notification::Message("Player launched".to_owned()))
                 .await;
@@ -405,13 +407,27 @@ impl BusinessCore {
                 }
             }
             Err(ref e) => {
-                // If episode is already selected and finished, we want to restart the player
-                if let player_error::ErrorKind::EpisodeAlreadySelected = e.kind()
-                //    TODO: finish this
-                //    && self.player.lock().await
-                {
+                let error_kind = e.kind();
+                let player_state = self.player.lock().await.get_state();
+                if error_kind == player_error::ErrorKind::EpisodeAlreadySelected {
                     let beginning = chrono::Duration::seconds(0);
-                    self.seek(beginning).await.expect("Reset of podcast failed");
+                    match player_state {
+                        // If episode is already selected and finished, we want to reset the player
+                        Mp3PlayerState::Stopped => {
+                            self.send_notification(Notification::Message(
+                                "Resetting podcast".to_owned(),
+                            ))
+                            .await;
+                            self.seek(beginning).await.expect("Reset of podcast failed")
+                        }
+                        _ => {
+                            self.send_notification(Notification::Message(format!(
+                                "Selecting already selected episode while in state {}",
+                                player_state
+                            )))
+                            .await
+                        }
+                    }
                 }
 
                 self.send_notification(Notification::Message(
