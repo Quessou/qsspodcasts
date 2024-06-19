@@ -65,6 +65,19 @@ impl GStreamerMp3Player {
                 let b = async move {
                     let player_cloned = player_cloned.clone();
                     let locked_player = player_cloned.lock().await;
+                    let podcast_progression = locked_player
+                        .get_selected_episode_progression()
+                        .await
+                        .expect(
+                            "Tried to retrieve podcast progression while no podcast is selected",
+                        );
+                    let podcast_duration = locked_player
+                        .get_selected_episode_duration()
+                        .await
+                        .expect("Tried to retrieve podcast duration while no podcast is selected");
+                    if podcast_progression < podcast_duration {
+                        return;
+                    }
                     let hash = locked_player
                         .get_selected_episode()
                         .await
@@ -106,8 +119,9 @@ impl GStreamerMp3Player {
     }
 
     fn reset_state(&mut self) {
-        self.player.stop();
         self.reset_progression();
+        self.player.stop();
+        self.player.set_uri(None);
     }
 }
 
@@ -178,7 +192,7 @@ impl Mp3Player for GStreamerMp3Player {
     }
 
     fn reset_progression(&mut self) {
-        self.player.seek(ClockTime::default());
+        self.player.seek(ClockTime::from_seconds(0));
     }
     fn pause(&mut self) {
         self.player.pause();
@@ -207,7 +221,9 @@ impl Mp3Player for GStreamerMp3Player {
                 };
                 self.player.seek(ClockTime::from_seconds(p));
                 if let Some(PlayState::Paused) = self.play_state {
-                    self.play();
+                    if p == episode_duration {
+                        self.play();
+                    }
                 }
 
                 Ok(())
@@ -273,6 +289,7 @@ impl Mp3Player for GStreamerMp3Player {
             .into();
         let episode_progression = episode_progression.as_secs();
 
+        assert_ne!(episode_duration, 0);
         Some(
             (episode_progression * 100 / episode_duration)
                 .try_into()
