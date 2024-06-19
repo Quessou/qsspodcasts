@@ -26,6 +26,7 @@ pub trait Mp3Player {
     ) -> Result<(), PlayerError>;
     fn pause(&mut self);
     fn play(&mut self);
+    fn reset_progression(&mut self);
     async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
     fn is_paused(&self) -> bool;
 

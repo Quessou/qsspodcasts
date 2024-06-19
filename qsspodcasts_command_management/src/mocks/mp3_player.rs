@@ -3,6 +3,8 @@ use std::sync::{Arc, Weak};
 
 use tokio::sync::RwLock;
 
+use podcast_player::enums::player_state::Mp3PlayerState;
+
 use mockall::mock;
 use podcast_management::data_objects::podcast_episode::PodcastEpisode;
 use podcast_player::duration_wrapper::DurationWrapper;
@@ -18,7 +20,7 @@ mock! {
     impl TraitMp3Player for Mp3Player {   // specification of the trait to mock
         fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
         async fn get_selected_episode(&self) -> Option<Arc<RwLock<PodcastEpisode>>>;
-        async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
+        async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) -> Result<(), PlayerError>;
         fn pause(&mut self);
         fn play(&mut self);
         async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
@@ -27,6 +29,7 @@ mock! {
         async fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
         async fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
         fn register_observer(&mut self, observer: Weak<tokio::sync::Mutex<dyn PlayerObserver + Send + Sync>>);
+        fn get_state(&self) -> Mp3PlayerState;
     }
 }
 unsafe impl Send for MockMp3Player {}

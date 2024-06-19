@@ -249,6 +249,19 @@ impl BusinessCore {
     }
 
     async fn save_current_podcast_progression(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .await
+            .is_none()
+        {
+            return Err(Box::new(PlayerError::new(
+                None,
+                player_error::ErrorKind::NoEpisodeSelected,
+            )));
+        }
         let hash = self
             .player
             .lock()
@@ -382,6 +395,10 @@ impl BusinessCore {
         let path = self.path_provider.podcast_progress_file_path(&hash);
         let duration = progression_read_utils::read_progression_in_file(path).await;
 
+        if self.save_current_podcast_progression().await.is_err() {
+            log::info!("Did not save current podcast progression due to no episode being selected (probably)");
+        }
+
         let r = self.player.lock().await.select_episode(episode).await;
         match r {
             Ok(_) => {
@@ -401,6 +418,7 @@ impl BusinessCore {
                     );
                     let duration: chrono::Duration =
                         chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
+                    self.player.lock().await.reset_progression();
                     self.seek(duration)
                         .await
                         .expect("Seeking resuming position of podcast failed");
@@ -410,7 +428,6 @@ impl BusinessCore {
                 let error_kind = e.kind();
                 let player_state = self.player.lock().await.get_state();
                 if error_kind == player_error::ErrorKind::EpisodeAlreadySelected {
-                    let beginning = chrono::Duration::seconds(0);
                     match player_state {
                         // If episode is already selected and finished, we want to reset the player
                         Mp3PlayerState::Stopped => {
@@ -418,7 +435,7 @@ impl BusinessCore {
                                 "Resetting podcast".to_owned(),
                             ))
                             .await;
-                            self.seek(beginning).await.expect("Reset of podcast failed")
+                            self.player.lock().await.reset_progression();
                         }
                         _ => {
                             self.send_notification(Notification::Message(format!(
@@ -428,12 +445,12 @@ impl BusinessCore {
                             .await
                         }
                     }
+                } else {
+                    self.send_notification(Notification::Message(
+                        "Episode selection failed".to_string(),
+                    ))
+                    .await
                 }
-
-                self.send_notification(Notification::Message(
-                    "Episode selection failed".to_string(),
-                ))
-                .await
             }
         };
         r
