@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use fs_utils::{progression_read_utils, write_utils};
 use log::{error, info};
 use podcast_management::data_objects::hashable::Hashable;
+use podcast_player::enums::player_state::Mp3PlayerState;
 use podcast_player::player_error;
 use podcast_player::traits::PlayerObserver;
 use tokio::sync::Mutex as TokioMutex;
@@ -231,7 +232,8 @@ impl BusinessCore {
                 player_error::ErrorKind::NoEpisodeSelected,
             ));
         }
-        if self.player.lock().await.is_paused() {
+        let player_state = self.player.lock().await.get_state();
+        if player_state == Mp3PlayerState::Stopped || player_state == Mp3PlayerState::Paused {
             self.player.lock().await.play();
             self.send_notification(Notification::Message("Player launched".to_owned()))
                 .await;
@@ -247,6 +249,19 @@ impl BusinessCore {
     }
 
     async fn save_current_podcast_progression(&self) -> Result<(), Box<dyn std::error::Error>> {
+        if self
+            .player
+            .lock()
+            .await
+            .get_selected_episode()
+            .await
+            .is_none()
+        {
+            return Err(Box::new(PlayerError::new(
+                None,
+                player_error::ErrorKind::NoEpisodeSelected,
+            )));
+        }
         let hash = self
             .player
             .lock()
@@ -323,6 +338,26 @@ impl BusinessCore {
         Ok(())
     }
 
+    async fn delete_progression_file(&mut self, hash: &str) -> Result<(), ()> {
+        let progression_file_path = self.path_provider.podcast_progress_file_path(hash);
+        let r = tokio::fs::remove_file(progression_file_path).await;
+        match r {
+            Ok(_) => {}
+            Err(e) => {
+                let error_message = match e.kind() {
+                    io::ErrorKind::NotFound => "Not found",
+                    io::ErrorKind::PermissionDenied => "Permission denied",
+                    _ => "Unhandled error",
+                };
+                log::error!(
+                    "Deletion of progression file failed. Error : {}",
+                    error_message
+                );
+            }
+        };
+        Ok(())
+    }
+
     #[allow(unused_assignments)]
     pub async fn mark_current_podcast_as_finished(&mut self) -> Result<(), PlayerError> {
         let mut hash: Option<String> = None;
@@ -360,6 +395,10 @@ impl BusinessCore {
         let path = self.path_provider.podcast_progress_file_path(&hash);
         let duration = progression_read_utils::read_progression_in_file(path).await;
 
+        if self.save_current_podcast_progression().await.is_err() {
+            log::info!("Did not save current podcast progression due to no episode being selected (probably)");
+        }
+
         let r = self.player.lock().await.select_episode(episode).await;
         match r {
             Ok(_) => {
@@ -379,16 +418,39 @@ impl BusinessCore {
                     );
                     let duration: chrono::Duration =
                         chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
+                    self.player.lock().await.reset_progression();
                     self.seek(duration)
                         .await
                         .expect("Seeking resuming position of podcast failed");
                 }
             }
-            Err(_) => {
-                self.send_notification(Notification::Message(
-                    "Episode selection failed".to_string(),
-                ))
-                .await
+            Err(ref e) => {
+                let error_kind = e.kind();
+                let player_state = self.player.lock().await.get_state();
+                if error_kind == player_error::ErrorKind::EpisodeAlreadySelected {
+                    match player_state {
+                        // If episode is already selected and finished, we want to reset the player
+                        Mp3PlayerState::Stopped => {
+                            self.send_notification(Notification::Message(
+                                "Resetting podcast".to_owned(),
+                            ))
+                            .await;
+                            self.player.lock().await.reset_progression();
+                        }
+                        _ => {
+                            self.send_notification(Notification::Message(format!(
+                                "Selecting already selected episode while in state {}",
+                                player_state
+                            )))
+                            .await
+                        }
+                    }
+                } else {
+                    self.send_notification(Notification::Message(
+                        "Episode selection failed".to_string(),
+                    ))
+                    .await
+                }
             }
         };
         r
@@ -419,6 +481,7 @@ impl PlayerObserver for BusinessCore {
         self.create_mark_as_finished_marker_file(hash)
             .await
             .unwrap();
+        self.delete_progression_file(hash).await.unwrap();
     }
 }
 

@@ -20,13 +20,13 @@ use log::{error, warn};
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
-use crate::player_error::PlayerError;
+use crate::enums::player_state::Mp3PlayerState;
+use crate::player_error::{self, PlayerError};
 use crate::{duration_wrapper::DurationWrapper, traits::PlayerObserver};
 
 use super::mp3_player::Mp3Player;
 
 struct GStreamerPlayerState {
-    // TODO: Make this async-friendly
     pub selected_episode: Arc<RwLock<PodcastEpisode>>,
     pub info: DiscovererInfo,
 }
@@ -34,7 +34,7 @@ struct GStreamerPlayerState {
 pub struct GStreamerMp3Player {
     player_state: Option<Arc<RwLock<GStreamerPlayerState>>>,
     path_provider: Arc<dyn PathProvider + Send + Sync>,
-    is_paused: bool,
+    play_state: Option<PlayState>,
     player: GStreamerInnerPlayer,
     signal_catcher: Pin<Box<PlaySignalAdapter>>,
     observers: Vec<Weak<Mutex<dyn PlayerObserver + Send + Sync>>>,
@@ -52,6 +52,11 @@ impl GStreamerMp3Player {
             .await
             .signal_catcher
             .connect_state_changed(move |_, play_state| {
+                let player_cloned = player_cloned_ptr.clone();
+                let set_state = async move {
+                    player_cloned.lock().await.play_state = Some(play_state);
+                };
+                handle.spawn(set_state);
                 // TODO(mmiko) : Change this so that we can handle different states
                 if play_state != PlayState::Stopped {
                     return;
@@ -93,15 +98,16 @@ impl GStreamerMp3Player {
         GStreamerMp3Player {
             player_state: None,
             path_provider,
-            is_paused: true,
+            play_state: None,
             player,
             signal_catcher: Box::pin(signal_catcher),
             observers: vec![],
         }
     }
 
-    fn reset_progression(&mut self) {
-        self.player.seek(ClockTime::default());
+    fn reset_state(&mut self) {
+        self.player.stop();
+        self.reset_progression();
     }
 }
 
@@ -126,7 +132,10 @@ impl Mp3Player for GStreamerMp3Player {
             Some(selected_episode)
         }
     }
-    async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) {
+    async fn set_selected_episode(
+        &mut self,
+        episode: Option<PodcastEpisode>,
+    ) -> Result<(), PlayerError> {
         if (episode.is_none() && self.player_state.is_none())
             || (self.player_state.is_some()
                 && episode.as_ref().unwrap().hash()
@@ -138,9 +147,13 @@ impl Mp3Player for GStreamerMp3Player {
                         .await
                         .hash())
         {
-            return;
+            return Err(PlayerError::new(
+                None,
+                player_error::ErrorKind::EpisodeAlreadySelected,
+            ));
         }
-        self.reset_progression();
+
+        self.reset_state();
 
         if let Some(episode) = episode {
             let tmp_path = self.compute_episode_path(&episode);
@@ -161,16 +174,18 @@ impl Mp3Player for GStreamerMp3Player {
             self.player_state = None;
             self.player.set_uri(None);
         }
+        Ok(())
     }
 
+    fn reset_progression(&mut self) {
+        self.player.seek(ClockTime::default());
+    }
     fn pause(&mut self) {
         self.player.pause();
-        self.is_paused = true;
     }
 
     fn play(&mut self) {
         self.player.play();
-        self.is_paused = false;
     }
 
     async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
@@ -191,6 +206,10 @@ impl Mp3Player for GStreamerMp3Player {
                     p + (offset as u64)
                 };
                 self.player.seek(ClockTime::from_seconds(p));
+                if let Some(PlayState::Paused) = self.play_state {
+                    self.play();
+                }
+
                 Ok(())
             }
             None => Ok(()),
@@ -198,7 +217,8 @@ impl Mp3Player for GStreamerMp3Player {
     }
 
     fn is_paused(&self) -> bool {
-        self.is_paused
+        let state = self.get_state();
+        state == Mp3PlayerState::Paused || state == Mp3PlayerState::Stopped
     }
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError> {
@@ -268,8 +288,7 @@ impl Mp3Player for GStreamerMp3Player {
                 crate::player_error::ErrorKind::FileNotFound,
             ));
         }
-        self.set_selected_episode(Some(episode.clone())).await;
-        Ok(())
+        self.set_selected_episode(Some(episode.clone())).await
     }
 
     async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
@@ -291,6 +310,14 @@ impl Mp3Player for GStreamerMp3Player {
         }
 
         self.play_file(&path)
+    }
+
+    fn get_state(&self) -> Mp3PlayerState {
+        if self.play_state.is_none() {
+            Mp3PlayerState::Stopped
+        } else {
+            self.play_state.unwrap().into()
+        }
     }
 }
 

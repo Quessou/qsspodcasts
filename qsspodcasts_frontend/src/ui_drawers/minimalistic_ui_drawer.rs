@@ -94,7 +94,10 @@ impl MinimalisticUiDrawer<'_> {
         let (progress, duration, percentage) = match status {
             PlayerStatus::Playing(prog, dur, perc) => (prog, dur, *perc),
             PlayerStatus::Paused(prog, dur, perc) => (prog, dur, *perc),
-            PlayerStatus::Stopped => (&default_duration, &default_duration, 0),
+            PlayerStatus::Stopped(o) => match o {
+                Some((prog, dur, perc)) => (prog, dur, *perc),
+                None => (&default_duration, &default_duration, 0),
+            },
         };
 
         Gauge::default()

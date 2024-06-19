@@ -9,23 +9,30 @@ use path_providing::path_provider::PodcastEpisode;
 use chrono;
 use log::{error, warn};
 
+use crate::enums::player_state::Mp3PlayerState;
 use crate::traits::PlayerObserver;
 use crate::{
     duration_wrapper::DurationWrapper,
     player_error::{ErrorKind as PlayerErrorKind, PlayerError},
 };
+
 #[async_trait::async_trait]
 pub trait Mp3Player {
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf;
     async fn get_selected_episode(&self) -> Option<Arc<RwLock<PodcastEpisode>>>;
-    async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>);
+    async fn set_selected_episode(
+        &mut self,
+        episode: Option<PodcastEpisode>,
+    ) -> Result<(), PlayerError>;
     fn pause(&mut self);
     fn play(&mut self);
+    fn reset_progression(&mut self);
     async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
     fn register_observer(&mut self, observer: Weak<Mutex<dyn PlayerObserver + Send + Sync>>);
+    fn get_state(&self) -> Mp3PlayerState;
 
     async fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
     async fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
@@ -59,8 +66,7 @@ pub trait Mp3Player {
             warn!("Cannot select an episode which has not been downloaded first");
             return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
-        self.set_selected_episode(Some(episode.clone())).await;
-        Ok(())
+        self.set_selected_episode(Some(episode.clone())).await
     }
 
     async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
