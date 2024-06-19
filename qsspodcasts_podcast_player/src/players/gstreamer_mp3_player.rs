@@ -104,6 +104,11 @@ impl GStreamerMp3Player {
             observers: vec![],
         }
     }
+
+    fn reset_state(&mut self) {
+        self.player.stop();
+        self.reset_progression();
+    }
 }
 
 #[async_trait::async_trait]
@@ -147,8 +152,8 @@ impl Mp3Player for GStreamerMp3Player {
                 player_error::ErrorKind::EpisodeAlreadySelected,
             ));
         }
-        self.player.stop();
-        self.reset_progression();
+
+        self.reset_state();
 
         if let Some(episode) = episode {
             let tmp_path = self.compute_episode_path(&episode);
@@ -207,7 +212,7 @@ impl Mp3Player for GStreamerMp3Player {
 
                 Ok(())
             }
-            None => Ok(()), // TODO(mmiko) : Check if we enter here when the player is stopped
+            None => Ok(()),
         }
     }
 

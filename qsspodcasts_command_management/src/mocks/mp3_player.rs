@@ -23,6 +23,7 @@ mock! {
         async fn set_selected_episode(&mut self, episode: Option<PodcastEpisode>) -> Result<(), PlayerError>;
         fn pause(&mut self);
         fn play(&mut self);
+        fn reset_progression(&mut self);
         async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
         fn is_paused(&self) -> bool;
         fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;

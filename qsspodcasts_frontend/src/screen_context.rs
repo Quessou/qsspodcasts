@@ -40,11 +40,10 @@ pub struct ScreenContext {
 
 impl ScreenContext {
     pub fn build(podcasts_state_cache: PodcastStateCache) -> Self {
-        let ctxt = Self {
+        Self {
             podcasts_state_cache,
             ..Default::default()
-        };
-        ctxt
+        }
     }
 
     pub fn get_output_list_length(&self) -> Option<usize> {
