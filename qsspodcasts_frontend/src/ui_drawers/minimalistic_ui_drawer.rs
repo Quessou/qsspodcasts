@@ -64,6 +64,7 @@ impl MinimalisticUiDrawer<'_> {
             .constraints(
                 [
                     Constraint::Length(3),
+                    Constraint::Length(1),
                     Constraint::Length(3),
                     Constraint::Min(1),
                     Constraint::Length(6),
@@ -85,6 +86,17 @@ impl MinimalisticUiDrawer<'_> {
                     .borders(Borders::ALL)
                     .title(vec![Span::from("Command")]),
             )
+    }
+
+    fn build_podcast_title_label(context: &ScreenContext) -> Paragraph {
+        let thing_to_display = context
+            .current_podcast_title
+            .as_deref()
+            .unwrap_or("No podcast selected");
+        Paragraph::new(thing_to_display).style(match context.current_podcast_title {
+            None => Style::default().fg(Color::Magenta),
+            _ => Style::default().fg(Color::LightCyan),
+        })
     }
 
     fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
@@ -428,13 +440,17 @@ impl MinimalisticUiDrawer<'_> {
         let input = MinimalisticUiDrawer::build_input_field(context);
         f.render_widget(input, chunks[0]);
 
+        // TODO: Add podcast title here
+        let podcast_title_widget = MinimalisticUiDrawer::build_podcast_title_label(context);
+        f.render_widget(podcast_title_widget, chunks[1]);
+
         let podcast_progress = MinimalisticUiDrawer::build_podcast_progress_bar(context);
 
         if chunks[1].width > MINIMAL_WIDTH {
-            f.render_widget(podcast_progress, chunks[1]);
+            f.render_widget(podcast_progress, chunks[2]);
         }
 
-        let output_layout = MinimalisticUiDrawer::build_output_layout(context, &chunks[2]);
+        let output_layout = MinimalisticUiDrawer::build_output_layout(context, &chunks[3]);
 
         if context.last_command_output == OutputType::RawString("".to_string()) {
             let output_paragraph = MinimalisticUiDrawer::build_output_field_paragraph(context);
@@ -461,7 +477,7 @@ impl MinimalisticUiDrawer<'_> {
         let list_state = context.list_output_state.borrow();
         if list_state.is_some() {
             'display_progress_bar: {
-                let progress_bar_height = chunks[2].height - 2;
+                let progress_bar_height = chunks[3].height - 2;
                 let selected_index = list_state
                     .as_ref()
                     .unwrap()
@@ -487,7 +503,7 @@ impl MinimalisticUiDrawer<'_> {
         }
 
         let notifications_layout = MinimalisticUiDrawer::build_notifications_field(context);
-        f.render_widget(notifications_layout, chunks[3]);
+        f.render_widget(notifications_layout, chunks[4]);
 
         if context.current_action == ScreenAction::ScrollingModalWindow {
             let block = Block::default().borders(Borders::ALL);
