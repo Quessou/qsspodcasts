@@ -398,6 +398,7 @@ impl BusinessCore {
         if self.save_current_podcast_progression().await.is_err() {
             log::info!("Did not save current podcast progression due to no episode being selected (probably)");
         }
+        self.player.lock().await.reset_progression();
 
         let r = self.player.lock().await.select_episode(episode).await;
         match r {
@@ -418,15 +419,6 @@ impl BusinessCore {
                     );
                     let duration: chrono::Duration =
                         chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
-                    self.player.lock().await.reset_progression();
-                    /*
-                    let progression = self
-                        .player
-                        .lock()
-                        .await
-                        .get_selected_episode_progression()
-                        .await;
-                        */
                     self.player
                         .lock()
                         .await

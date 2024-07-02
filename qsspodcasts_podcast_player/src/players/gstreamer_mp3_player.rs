@@ -4,6 +4,7 @@ use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
 use chrono::TimeDelta;
+//use gstreamer_play::gst::tags::Duration;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
@@ -119,10 +120,10 @@ impl GStreamerMp3Player {
         }
     }
 
-    fn reset_state(&mut self) {
-        self.reset_progression();
+    async fn reset_state(&mut self) {
+        self.player.seek(ClockTime::from_seconds(0));
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
         self.player.stop();
-        //self.player.set_uri(None);
     }
 }
 
@@ -168,7 +169,7 @@ impl Mp3Player for GStreamerMp3Player {
             ));
         }
 
-        self.reset_state();
+        self.reset_state().await;
 
         if let Some(episode) = episode {
             let tmp_path = self.compute_episode_path(&episode);
