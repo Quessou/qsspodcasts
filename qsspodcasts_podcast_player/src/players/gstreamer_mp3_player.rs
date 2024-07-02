@@ -4,7 +4,6 @@ use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
 use chrono::TimeDelta;
-//use gstreamer_play::gst::tags::Duration;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
@@ -306,18 +305,6 @@ impl Mp3Player for GStreamerMp3Player {
                 .unwrap(),
         )
     }
-
-    /*
-    async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
-        if !self.compute_episode_path(episode).exists() {
-            warn!("Cannot select an episode which has not been downloaded first");
-            return Err(PlayerError::new(
-                None,
-                crate::player_error::ErrorKind::FileNotFound,
-            ));
-        }
-        self.set_selected_episode(Some(episode.clone())).await
-    }*/
 
     async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {
         let selected_episode = self.get_selected_episode().await;
