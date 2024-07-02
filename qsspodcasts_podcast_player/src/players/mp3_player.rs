@@ -27,7 +27,8 @@ pub trait Mp3Player {
     fn pause(&mut self);
     fn play(&mut self);
     fn reset_progression(&mut self);
-    async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
+    async fn relative_seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
+    async fn absolute_seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError>;
     fn is_paused(&self) -> bool;
 
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
@@ -66,6 +67,7 @@ pub trait Mp3Player {
             warn!("Cannot select an episode which has not been downloaded first");
             return Err(PlayerError::new(None, PlayerErrorKind::FileNotFound));
         }
+        self.reset_progression();
         self.set_selected_episode(Some(episode.clone())).await
     }
 

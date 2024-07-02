@@ -3,6 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
+use chrono::TimeDelta;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
@@ -65,6 +66,19 @@ impl GStreamerMp3Player {
                 let b = async move {
                     let player_cloned = player_cloned.clone();
                     let locked_player = player_cloned.lock().await;
+                    let podcast_progression = locked_player
+                        .get_selected_episode_progression()
+                        .await
+                        .expect(
+                            "Tried to retrieve podcast progression while no podcast is selected",
+                        );
+                    let podcast_duration = locked_player
+                        .get_selected_episode_duration()
+                        .await
+                        .expect("Tried to retrieve podcast duration while no podcast is selected");
+                    if podcast_progression < podcast_duration {
+                        return;
+                    }
                     let hash = locked_player
                         .get_selected_episode()
                         .await
@@ -105,9 +119,10 @@ impl GStreamerMp3Player {
         }
     }
 
-    fn reset_state(&mut self) {
+    async fn reset_state(&mut self) {
+        self.player.seek(ClockTime::from_seconds(0));
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
         self.player.stop();
-        self.reset_progression();
     }
 }
 
@@ -153,7 +168,7 @@ impl Mp3Player for GStreamerMp3Player {
             ));
         }
 
-        self.reset_state();
+        self.reset_state().await;
 
         if let Some(episode) = episode {
             let tmp_path = self.compute_episode_path(&episode);
@@ -178,7 +193,7 @@ impl Mp3Player for GStreamerMp3Player {
     }
 
     fn reset_progression(&mut self) {
-        self.player.seek(ClockTime::default());
+        self.player.seek(ClockTime::from_seconds(0));
     }
     fn pause(&mut self) {
         self.player.pause();
@@ -187,32 +202,42 @@ impl Mp3Player for GStreamerMp3Player {
     fn play(&mut self) {
         self.player.play();
     }
+    async fn absolute_seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
+        let offset = ClockTime::from_seconds(duration.num_seconds() as u64);
+        self.player.seek(offset);
+        Ok(())
+    }
 
-    async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
+    async fn relative_seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
         match self.player.position() {
             Some(p) => {
-                let p = p.seconds();
+                let p = p.seconds() as i64;
                 let offset = duration.num_seconds();
                 let episode_duration = self.get_selected_episode_duration().await;
 
-                let episode_duration = episode_duration.unwrap().inner_ref().as_secs();
-                let p: u64 = if offset + (p as i64) < 0 {
+                let episode_duration = episode_duration.unwrap().inner_ref().as_secs() as i64;
+                let p: i64 = if offset + (p as i64) < 0 {
                     0
-                } else if offset > 0 && (offset as u64) + p > episode_duration {
+                } else if offset > 0 && (offset as i64) + p > episode_duration {
                     episode_duration
                 } else if offset < 0 {
-                    p - ((-offset) as u64)
+                    p - (-offset)
                 } else {
-                    p + (offset as u64)
+                    p + (offset)
                 };
-                self.player.seek(ClockTime::from_seconds(p));
+                let r = self.absolute_seek(chrono::Duration::seconds(p)).await;
                 if let Some(PlayState::Paused) = self.play_state {
-                    self.play();
+                    if p == episode_duration {
+                        self.play();
+                    }
                 }
 
+                r
+            }
+            None => {
+                log::error!("Trying to seek even though the player returned no position");
                 Ok(())
             }
-            None => Ok(()),
         }
     }
 
@@ -273,22 +298,12 @@ impl Mp3Player for GStreamerMp3Player {
             .into();
         let episode_progression = episode_progression.as_secs();
 
+        assert_ne!(episode_duration, 0);
         Some(
             (episode_progression * 100 / episode_duration)
                 .try_into()
                 .unwrap(),
         )
-    }
-
-    async fn select_episode(&mut self, episode: &PodcastEpisode) -> Result<(), PlayerError> {
-        if !self.compute_episode_path(episode).exists() {
-            warn!("Cannot select an episode which has not been downloaded first");
-            return Err(PlayerError::new(
-                None,
-                crate::player_error::ErrorKind::FileNotFound,
-            ));
-        }
-        self.set_selected_episode(Some(episode.clone())).await
     }
 
     async fn play_selected_episode(&mut self) -> Result<(), PlayerError> {

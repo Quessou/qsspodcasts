@@ -100,6 +100,8 @@ impl MinimalisticUiDrawer<'_> {
             },
         };
 
+        let percentage = percentage.clamp(0, 100);
+
         Gauge::default()
             .block(Block::default().title("").borders(Borders::ALL))
             .gauge_style(Style::default().fg(Color::LightYellow))

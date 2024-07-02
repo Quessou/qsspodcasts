@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-#[derive(Default)]
+#[derive(Default, PartialEq, PartialOrd)]
 pub struct DurationWrapper {
     duration: Duration,
 }
