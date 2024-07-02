@@ -257,6 +257,20 @@ impl CommandExecutor {
             )),
         }
     }
+    async fn handle_latest_podcasts_command(&mut self) -> Result<OutputType, CommandError> {
+        let tmp_core = self.core.lock().await;
+        let library = tmp_core.podcast_library.lock().await;
+
+        let all_episodes = library.podcasts.iter().flat_map(|p| &p.episodes);
+        let latest_episodes = all_episodes
+            .filter(|e| e.was_published_recently())
+            .cloned()
+            .collect();
+
+        drop(library);
+        drop(tmp_core);
+        Ok(OutputType::Episodes(latest_episodes))
+    }
 
     fn handle_help_command(&mut self, command: Option<String>) -> Result<OutputType, CommandError> {
         let helps = match command {
@@ -300,6 +314,7 @@ impl CommandExecutor {
             Command::Advance(duration) => self.advance_in_podcast(duration.0).await?,
             Command::GoBack(duration) => self.go_back_in_podcast(duration.0).await?,
             Command::MarkAsFinished => self.handle_mark_as_finished_command().await?,
+            Command::LatestPodcasts => self.handle_latest_podcasts_command().await?,
             _ => {
                 return Err(CommandError::new(
                     None,
@@ -320,6 +335,7 @@ mod tests {
     use super::*;
     use crate::mocks::mp3_player::MockMp3Player;
 
+    use chrono::DateTime;
     use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::player_error::{ErrorKind, PlayerError};
     use podcast_player::players::mp3_player::Mp3Player as TraitMp3Player;

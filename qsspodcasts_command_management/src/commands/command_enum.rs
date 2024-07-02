@@ -43,4 +43,5 @@ pub enum Command {
     Advance(CommandDuration),
     GoBack(CommandDuration),
     MarkAsFinished,
+    LatestPodcasts,
 }
