@@ -213,7 +213,7 @@ impl BusinessCore {
     }
 
     pub async fn seek(&mut self, duration: chrono::Duration) -> Result<(), PlayerError> {
-        self.player.lock().await.seek(duration).await
+        self.player.lock().await.relative_seek(duration).await
     }
 
     pub async fn play(&mut self) -> Result<(), PlayerError> {
@@ -419,7 +419,18 @@ impl BusinessCore {
                     let duration: chrono::Duration =
                         chrono::Duration::seconds(duration.unwrap().as_secs() as i64);
                     self.player.lock().await.reset_progression();
-                    self.seek(duration)
+                    /*
+                    let progression = self
+                        .player
+                        .lock()
+                        .await
+                        .get_selected_episode_progression()
+                        .await;
+                        */
+                    self.player
+                        .lock()
+                        .await
+                        .absolute_seek(duration)
                         .await
                         .expect("Seeking resuming position of podcast failed");
                 }
