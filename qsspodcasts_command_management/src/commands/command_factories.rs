@@ -152,6 +152,12 @@ pub fn build_mark_as_finished_command(_parameters: Vec<String>) -> Result<Comman
     Ok(Command::MarkAsFinished)
 }
 
+pub fn build_get_latest_podcasts_command(
+    _parameters: Vec<String>,
+) -> Result<Command, CommandError> {
+    Ok(Command::LatestPodcasts)
+}
+
 pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
     factory_hashmap.insert(Command::Play(None).to_string(), build_play_command);
@@ -189,6 +195,10 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     factory_hashmap.insert(
         Command::MarkAsFinished.to_string(),
         build_mark_as_finished_command,
+    );
+    factory_hashmap.insert(
+        Command::LatestPodcasts.to_string(),
+        build_get_latest_podcasts_command,
     );
     factory_hashmap
 }

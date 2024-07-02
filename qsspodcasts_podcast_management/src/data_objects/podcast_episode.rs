@@ -1,4 +1,5 @@
 use chrono::DateTime;
+use chrono::Days;
 use chrono::FixedOffset;
 use html2text;
 use rss::Guid;
@@ -100,6 +101,17 @@ impl PodcastEpisode {
         file_name.push_str(&self.hash());
         file_name
     }
+
+    pub fn was_published_recently(&self) -> bool {
+        let todays_date = chrono::Local::now().date_naive();
+        let yesterdays_date = chrono::Local::now()
+            //.naive_local()
+            .date_naive()
+            .checked_sub_days(Days::new(1))
+            .expect("Yesterday is an invalid date for some reason ??");
+        let relevant_dates = [todays_date, yesterdays_date];
+        relevant_dates.contains(&self.pub_date.date_naive())
+    }
 }
 
 impl Default for PodcastEpisode {
@@ -128,5 +140,38 @@ impl Hashable for PodcastEpisode {
         let d: [u8; 3] = TryFrom::try_from(&hasher.finalize()[17..]).unwrap();
         let hash: String = hex::encode(d);
         hash
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    use test_case::test_case;
+
+    pub fn build_episode_for_date_tests(date: chrono::DateTime<FixedOffset>) -> PodcastEpisode {
+        PodcastEpisode::new(
+            "",
+            "",
+            "",
+            "",
+            &vec![],
+            &rss::Guid::default(),
+            &date.to_rfc2822(),
+            &rss::Source::default(),
+            "",
+            "",
+            &None,
+        )
+    }
+
+    #[test_case(chrono::Local::now() => true; "Ok if the podcast was published today")]
+    #[test_case(chrono::Local::now().checked_sub_days(Days::new(1)).unwrap() => true; "Ok if the podcast was published yesterday")]
+    #[test_case(chrono::Local::now().checked_sub_days(Days::new(7)).unwrap() => false; "NOK if the podcast was published one week ago")]
+    pub fn test_match_episode_publication_date(date: DateTime<chrono::Local>) -> bool {
+        let date = date.with_timezone(date.offset());
+        let episode = build_episode_for_date_tests(date);
+        episode.was_published_recently()
     }
 }

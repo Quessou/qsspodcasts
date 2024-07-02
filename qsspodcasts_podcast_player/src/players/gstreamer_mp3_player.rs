@@ -3,7 +3,6 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{path::PathBuf, sync::Weak};
 
-use chrono::TimeDelta;
 use gstreamer_play::PlayState;
 use gstreamer_play::{
     self,
@@ -17,7 +16,7 @@ use tokio::task::spawn;
 
 use gstreamer_pbutils::{Discoverer, DiscovererInfo};
 
-use log::{error, warn};
+use log::error;
 use path_providing::path_provider::PathProvider;
 use path_providing::path_provider::PodcastEpisode;
 
@@ -216,9 +215,9 @@ impl Mp3Player for GStreamerMp3Player {
                 let episode_duration = self.get_selected_episode_duration().await;
 
                 let episode_duration = episode_duration.unwrap().inner_ref().as_secs() as i64;
-                let p: i64 = if offset + (p as i64) < 0 {
+                let p: i64 = if offset + p < 0 {
                     0
-                } else if offset > 0 && (offset as i64) + p > episode_duration {
+                } else if offset > 0 && offset + p > episode_duration {
                     episode_duration
                 } else if offset < 0 {
                     p - (-offset)
