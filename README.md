@@ -7,8 +7,6 @@ This will open the tui interface, where you can enter commands to register RSS f
 
 # Missing features
 Right now the player misses a few features :
-* Resume a podcast after stopping it
-* Mark a podcast as listened
 * Some searching feature
 * Volume management
 * Integration with GNOME/KDE

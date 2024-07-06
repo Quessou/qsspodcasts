@@ -407,6 +407,10 @@ impl BusinessCore {
                     "Episode selection successful".to_string(),
                 ))
                 .await;
+                self.send_notification(Notification::Event(EventType::PodcastLaunched(
+                    episode.title.clone(),
+                )))
+                .await;
                 if duration.is_some() {
                     assert!(
                         self.player

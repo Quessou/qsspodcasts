@@ -36,6 +36,7 @@ pub struct ScreenContext {
     pub(crate) interactable_modal_context: InteractableModalWindowContext,
     pub(crate) read_only_modal_context: ReadonlyModalContext,
     pub(crate) podcasts_state_cache: PodcastStateCache,
+    pub(crate) current_podcast_title: Option<String>,
 }
 
 impl ScreenContext {
@@ -102,6 +103,7 @@ impl Default for ScreenContext {
             interactable_modal_context: InteractableModalWindowContext::default(),
             read_only_modal_context: ReadonlyModalContext::default(),
             podcasts_state_cache: PodcastStateCache::default(),
+            current_podcast_title: None,
         }
     }
 }

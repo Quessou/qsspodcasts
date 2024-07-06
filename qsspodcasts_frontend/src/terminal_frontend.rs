@@ -3,7 +3,7 @@ use std::io::stdout;
 use std::sync::Arc;
 use std::{error::Error, time::Duration};
 
-use business_core::event_type::EventType::PodcastFinished;
+use business_core::event_type::EventType;
 use command_management::commands::command_enum::Command;
 use command_management::output::output_type::OutputType;
 use crossterm::event::KeyEvent;
@@ -452,26 +452,7 @@ impl<D: UiDrawer> Frontend<D> {
             }
 
             if let Ok(n) = self.notification_receiver.try_receive() {
-                #[allow(unreachable_patterns)]
-                match n {
-                    Notification::Message(m) => {
-                        self.context.message_notifications_buffer.push_front(m);
-                        // TODO : Put the 4 in a constant variable called "notification_window_height"
-                        self.context.message_notifications_buffer.truncate(4);
-                    }
-                    Notification::Event(e) => match e {
-                        PodcastFinished(hash) => {
-                            self.context
-                                .podcasts_state_cache
-                                .set_podcast_state(&hash, &PodcastState::Finished);
-                            // TODO: Add a condition to invalidate cache
-                            self.context.must_invalidate_cache.set(true);
-                        }
-                        _ => {
-                            error!("Received unhandled event {:?}", e);
-                        }
-                    },
-                }
+                self.handle_business_notification(n);
             }
 
             if self.command_sender.is_closed() {
@@ -491,5 +472,32 @@ impl<D: UiDrawer> Frontend<D> {
         disable_raw_mode()?;
         execute!(self.terminal.backend_mut(), LeaveAlternateScreen)?;
         Ok(())
+    }
+
+    fn handle_business_notification(&mut self, notification: Notification) {
+        use EventType::*;
+        #[allow(unreachable_patterns)]
+        match notification {
+            Notification::Message(m) => {
+                self.context.message_notifications_buffer.push_front(m);
+                // TODO : Put the 4 in a constant variable called "notification_window_height"
+                self.context.message_notifications_buffer.truncate(4);
+            }
+            Notification::Event(e) => match e {
+                PodcastFinished(hash) => {
+                    self.context
+                        .podcasts_state_cache
+                        .set_podcast_state(&hash, &PodcastState::Finished);
+                    // TODO: Add a condition to invalidate cache
+                    self.context.must_invalidate_cache.set(true);
+                }
+                business_core::event_type::EventType::PodcastLaunched(title) => {
+                    self.context.current_podcast_title = Some(title)
+                }
+                _ => {
+                    error!("Received unhandled event {:?}", e);
+                }
+            },
+        }
     }
 }
