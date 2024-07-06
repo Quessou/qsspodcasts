@@ -35,8 +35,6 @@ pub enum Command {
     ListEpisodes(Option<String>),
     Search,
     See,
-    VolumeUp,
-    VolumeDown,
     AddRss(CommandUrl),
     DeleteRss(String),
     Select(String),
@@ -44,4 +42,7 @@ pub enum Command {
     GoBack(CommandDuration),
     MarkAsFinished,
     LatestPodcasts,
+    VolumeUp(u32),
+    VolumeDown(u32),
+    SetVolume(u32),
 }

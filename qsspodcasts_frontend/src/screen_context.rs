@@ -37,6 +37,7 @@ pub struct ScreenContext {
     pub(crate) read_only_modal_context: ReadonlyModalContext,
     pub(crate) podcasts_state_cache: PodcastStateCache,
     pub(crate) current_podcast_title: Option<String>,
+    pub(crate) volume: u32,
 }
 
 impl ScreenContext {
@@ -104,6 +105,7 @@ impl Default for ScreenContext {
             read_only_modal_context: ReadonlyModalContext::default(),
             podcasts_state_cache: PodcastStateCache::default(),
             current_podcast_title: None,
+            volume: 0,
         }
     }
 }

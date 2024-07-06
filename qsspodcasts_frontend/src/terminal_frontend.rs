@@ -408,6 +408,7 @@ impl<D: UiDrawer> Frontend<D> {
         };
 
         self.context.player_status = player_status;
+        self.context.volume = player_exposer.get_volume().await;
         debug!("Screen context updated");
     }
 

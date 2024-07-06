@@ -50,4 +50,7 @@ impl Mp3PlayerExposer {
     pub async fn get_state(&self) -> Mp3PlayerState {
         self.mp3_player.lock().await.get_state()
     }
+    pub async fn get_volume(&self) -> u32 {
+        self.mp3_player.lock().await.get_volume()
+    }
 }
