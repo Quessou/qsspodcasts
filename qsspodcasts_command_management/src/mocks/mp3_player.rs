@@ -32,6 +32,9 @@ mock! {
         async fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;
         fn register_observer(&mut self, observer: Weak<tokio::sync::Mutex<dyn PlayerObserver + Send + Sync>>);
         fn get_state(&self) -> Mp3PlayerState;
+        fn set_volume(&mut self, volume: u32) -> Result<(), PlayerError>;
+        fn get_volume(&self) -> u32;
+        fn add_volume_offset(&mut self, volume: i32) -> Result<(), PlayerError>;
     }
 }
 unsafe impl Send for MockMp3Player {}
