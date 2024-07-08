@@ -34,6 +34,9 @@ pub trait Mp3Player {
     fn play_file(&mut self, path: &str) -> Result<(), PlayerError>;
     fn register_observer(&mut self, observer: Weak<Mutex<dyn PlayerObserver + Send + Sync>>);
     fn get_state(&self) -> Mp3PlayerState;
+    fn set_volume(&mut self, volume: u32) -> Result<(), PlayerError>;
+    fn get_volume(&self) -> u32;
+    fn add_volume_offset(&mut self, volume: i32) -> Result<(), PlayerError>;
 
     async fn get_selected_episode_duration(&self) -> Option<DurationWrapper>;
     async fn get_selected_episode_progression(&self) -> Option<DurationWrapper>;

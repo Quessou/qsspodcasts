@@ -158,6 +158,37 @@ pub fn build_get_latest_podcasts_command(
     Ok(Command::LatestPodcasts)
 }
 
+pub fn build_volume_up_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("volume_up"));
+    }
+    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::VolumeUp(volume_offset.unwrap()))
+}
+pub fn build_volume_down_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("volume_down"));
+    }
+    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::VolumeDown(volume_offset.unwrap()))
+}
+pub fn build_set_volume_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("set_volume"));
+    }
+    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::SetVolume(volume_offset.unwrap()))
+}
+
 pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
     factory_hashmap.insert(Command::Play(None).to_string(), build_play_command);
@@ -200,6 +231,12 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
         Command::LatestPodcasts.to_string(),
         build_get_latest_podcasts_command,
     );
+    factory_hashmap.insert(Command::VolumeUp(0).to_string(), build_volume_up_command);
+    factory_hashmap.insert(
+        Command::VolumeDown(0).to_string(),
+        build_volume_down_command,
+    );
+    factory_hashmap.insert(Command::SetVolume(0).to_string(), build_set_volume_command);
     factory_hashmap
 }
 

@@ -62,7 +62,7 @@ impl GStreamerMp3Player {
                     return;
                 }
                 let player_cloned = player_cloned_ptr.clone();
-                let b = async move {
+                let notify_all_observers = async move {
                     let player_cloned = player_cloned.clone();
                     let locked_player = player_cloned.lock().await;
                     let podcast_progression = locked_player
@@ -86,6 +86,7 @@ impl GStreamerMp3Player {
                         .await
                         .hash();
                     let observers = &locked_player.observers;
+
                     observers.iter().for_each(move |o| {
                         let hash = hash.clone();
                         let observer = o.upgrade();
@@ -98,8 +99,33 @@ impl GStreamerMp3Player {
                     });
                 };
 
-                handle.spawn(b);
+                handle.spawn(notify_all_observers);
             });
+        /*
+        player
+            .lock()
+            .await
+            .signal_catcher
+            .connect_volume_changed(move |_, new_volume: f64| {
+                let player_cloned = player_cloned_ptr_2.clone();
+                let notify_volume_changed = async move {
+                    let player_locked = player_cloned.lock().await;
+                    let new_volume: u32 = (new_volume * 100.) as u32;
+                    let observers = &player_locked.observers;
+
+                    observers.iter().for_each(move |o| {
+                        let observer = o.upgrade();
+                        let notify_observer = async move {
+                            let observer_unwrapped = observer.unwrap();
+                            let mut observer_locked = observer_unwrapped.lock().await;
+                            observer_locked.on_volume_changed(new_volume).await;
+                        };
+                        spawn(notify_observer);
+                    });
+                };
+                handle_2.spawn(notify_volume_changed);
+            });
+            */
 
         player
     }
@@ -332,6 +358,22 @@ impl Mp3Player for GStreamerMp3Player {
         } else {
             self.play_state.unwrap().into()
         }
+    }
+    fn set_volume(&mut self, volume: u32) -> Result<(), PlayerError> {
+        let volume_percentage: f64 = f64::from(volume) / 100.0;
+        let volume_percentage = volume_percentage.clamp(0.0, 1.0);
+        self.player.set_volume(volume_percentage);
+        Ok(())
+    }
+    fn add_volume_offset(&mut self, volume: i32) -> Result<(), PlayerError> {
+        let volume_percentage_offset: f64 = f64::from(volume) / 100.0;
+        let volume_percentage = self.player.volume() + volume_percentage_offset;
+        let volume_percentage = volume_percentage.clamp(0.0, 1.0);
+        self.player.set_volume(volume_percentage);
+        Ok(())
+    }
+    fn get_volume(&self) -> u32 {
+        (self.player.volume() * 100.0) as u32
     }
 }
 

@@ -293,6 +293,25 @@ impl CommandExecutor {
         Ok(OutputType::CommandHelps(helps))
     }
 
+    async fn handle_set_volume_command(
+        &mut self,
+        new_volume: u32,
+    ) -> Result<OutputType, CommandError> {
+        self.core.lock().await.set_volume(new_volume).await;
+        Ok(OutputType::None)
+    }
+    async fn handle_volume_offset_command(
+        &mut self,
+        volume_offset: i32,
+    ) -> Result<OutputType, CommandError> {
+        self.core
+            .lock()
+            .await
+            .add_volume_offset(volume_offset)
+            .await;
+        Ok(OutputType::None)
+    }
+
     pub async fn execute_command(&mut self, command: Command) -> Result<OutputType, CommandError> {
         let command_output = match command {
             Command::Pause => self.handle_pause(command).await?,
@@ -315,6 +334,11 @@ impl CommandExecutor {
             Command::GoBack(duration) => self.go_back_in_podcast(duration.0).await?,
             Command::MarkAsFinished => self.handle_mark_as_finished_command().await?,
             Command::LatestPodcasts => self.handle_latest_podcasts_command().await?,
+            Command::VolumeUp(offset) => self.handle_volume_offset_command(offset as i32).await?,
+            Command::VolumeDown(offset) => {
+                self.handle_volume_offset_command(-(offset as i32)).await?
+            }
+            Command::SetVolume(new_volume) => self.handle_set_volume_command(new_volume).await?,
             _ => {
                 return Err(CommandError::new(
                     None,

@@ -480,6 +480,12 @@ impl BusinessCore {
                 .expect("Cleaning failed");
         }
     }
+    pub async fn set_volume(&mut self, new_volume: u32) -> Result<(), PlayerError> {
+        self.player.lock().await.set_volume(new_volume)
+    }
+    pub async fn add_volume_offset(&mut self, volume_offset: i32) -> Result<(), PlayerError> {
+        self.player.lock().await.add_volume_offset(volume_offset)
+    }
 }
 
 #[async_trait]
