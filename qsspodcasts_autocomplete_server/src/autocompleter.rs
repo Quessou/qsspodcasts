@@ -37,16 +37,21 @@ impl Autocompleter {
 
     pub fn autocomplete_command(&self, to_be_completed: &str) -> Vec<String> {
         assert!(!to_be_completed.contains(' '));
+        let all_commands = self.commands.iter().map(|c| c.command.to_string());
 
-        self.commands
-            .iter()
-            .map(|c| c.command.to_string())
+        if to_be_completed.is_empty() {
+            return all_commands.collect();
+        }
+        all_commands
             .filter(|c| c.starts_with(to_be_completed))
             .collect()
     }
 
     pub fn autocomplete_hash(&self, to_be_completed: &str) -> Vec<String> {
         assert!(!to_be_completed.contains(' '));
+        if to_be_completed.is_empty() {
+            return self.hashes.clone();
+        }
         self.hashes
             .iter()
             .filter(|h| h.starts_with(to_be_completed))
@@ -57,9 +62,11 @@ impl Autocompleter {
     pub fn autocomplete(&self, line_to_be_autocompleted: &str) -> AutocompletionResponse {
         let to_be_autocompleted = line_to_be_autocompleted.trim();
 
+        // TODO: remove this ?
+        /*
         if to_be_autocompleted.is_empty() {
             return AutocompletionResponse::default();
-        }
+        }*/
 
         let completed_command_part = inner::extract_completed_command_part(to_be_autocompleted);
         let to_be_autocompleted = to_be_autocompleted.split(' ').last().unwrap();

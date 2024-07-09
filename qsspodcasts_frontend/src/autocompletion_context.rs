@@ -43,13 +43,16 @@ impl AutocompletionContext {
     pub fn get_displayed_input(&self) -> Line {
         let empty_string = String::default();
         let current_choice = self.current_choice.unwrap_or(0);
-        let autocompletion_text = self
+        let mut autocompletion_text: &str = self
             .autocompletion_choices
             .get(current_choice)
-            .unwrap_or(&empty_string)
-            .split(&self.current_input)
-            .nth(1)
-            .unwrap_or("");
+            .unwrap_or(&empty_string);
+        if !self.current_input.is_empty() {
+            autocompletion_text = autocompletion_text
+                .split(&self.current_input)
+                .nth(1)
+                .unwrap_or(&empty_string);
+        }
         Line::from(vec![
             Span::from(self.current_input.clone()),
             Span::styled(
@@ -120,6 +123,7 @@ mod tests {
     use test_case::test_case;
 
     #[test_case("l".to_owned(), vec!["list_podcasts".to_owned()], 0 => ("l".to_owned(), "ist_podcasts".to_owned()))]
+    #[test_case("".to_owned(), vec!["list_podcasts".to_owned()], 0 => ("".to_owned(), "list_podcasts".to_owned()))]
     fn test_displayed_input(
         current_input: String,
         autocompletion_choices: Vec<String>,
@@ -148,5 +152,26 @@ mod tests {
         };
         ctxt.narrow_choices();
         ctxt.autocompletion_choices
+    }
+
+    #[test_case("list_".to_owned(), vec!["list_podcasts".to_owned(), "list_episodes".to_owned()] => (None, vec![]) /* What do we return here ? */)]
+    fn test_context_state_after_ruling_out_all_choices(
+        current_input: String,
+        choices: Vec<String>,
+    ) -> (Option<usize>, Vec<String>) {
+        let mut current_input = current_input;
+        let mut ctxt = AutocompletionContext {
+            current_input: current_input.clone(),
+            autocompletion_choices: choices,
+            current_choice: Some(0),
+            autocompletion_states: vec![],
+        };
+
+        ctxt.narrow_choices();
+        current_input.push_str("jszjfi");
+        ctxt.current_input = current_input;
+        ctxt.narrow_choices();
+
+        (ctxt.current_choice, ctxt.autocompletion_choices)
     }
 }
