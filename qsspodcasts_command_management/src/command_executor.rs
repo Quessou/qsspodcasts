@@ -297,18 +297,34 @@ impl CommandExecutor {
         &mut self,
         new_volume: u32,
     ) -> Result<OutputType, CommandError> {
-        self.core.lock().await.set_volume(new_volume).await;
+        if let Err(e) = self.core.lock().await.set_volume(new_volume).await {
+            return Err(CommandError::new(
+                Some(Box::new(e)),
+                CommandErrorKind::ExecutionFailed,
+                Some("set_volume".to_owned()),
+                Some("Volume changing failed".to_owned()),
+            ));
+        }
         Ok(OutputType::None)
     }
     async fn handle_volume_offset_command(
         &mut self,
         volume_offset: i32,
     ) -> Result<OutputType, CommandError> {
-        self.core
+        if let Err(e) = self
+            .core
             .lock()
             .await
             .add_volume_offset(volume_offset)
-            .await;
+            .await
+        {
+            return Err(CommandError::new(
+                Some(Box::new(e)),
+                CommandErrorKind::ExecutionFailed,
+                Some("volume_offset".to_owned()),
+                Some("Volume changing failed".to_owned()),
+            ));
+        }
         Ok(OutputType::None)
     }
 

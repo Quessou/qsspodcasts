@@ -10,6 +10,7 @@ pub fn command_to_parameter(c: &Command) -> Option<CommandParameterType> {
     match c {
         Command::Help(_) => Some(CommandParameterType::CommandName),
         Command::AddRss(_) => Some(CommandParameterType::Url),
+        Command::DeleteRss(_) => Some(CommandParameterType::Hash),
         Command::Select(_) => Some(CommandParameterType::Hash),
         Command::Play(_) => Some(CommandParameterType::Hash),
         Command::ListEpisodes(_) => Some(CommandParameterType::Hash),

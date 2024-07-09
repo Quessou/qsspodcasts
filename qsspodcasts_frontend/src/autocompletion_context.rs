@@ -35,6 +35,8 @@ impl AutocompletionContext {
         self.autocompletion_choices = choices;
         if !self.autocompletion_choices.is_empty() {
             self.current_choice = Some(0);
+        } else {
+            self.current_choice = None;
         }
     }
 
@@ -93,6 +95,8 @@ impl AutocompletionContext {
             .retain(|c: &String| c.starts_with(&self.current_input));
         if !self.autocompletion_choices.is_empty() {
             self.current_choice = Some(0);
+        } else {
+            self.current_choice = None;
         }
     }
 
