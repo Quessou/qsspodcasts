@@ -60,6 +60,12 @@ impl Autocompleter {
     }
 
     pub fn autocomplete(&self, line_to_be_autocompleted: &str) -> AutocompletionResponse {
+        let mut prev = ' ';
+        line_to_be_autocompleted.to_owned().retain(|ch| {
+            let result = ch != ' ' || prev != ' ';
+            prev = ch;
+            result
+        });
         let to_be_autocompleted = line_to_be_autocompleted.trim();
 
         // TODO: remove this ?
@@ -87,7 +93,19 @@ impl Autocompleter {
                 }
                 match command.unwrap().parameter_type.as_ref().unwrap() {
                     CommandParameterType::Hash => {
-                        self.autocomplete_hash(to_be_autocompleted.split(' ').last().unwrap())
+                        let split_to_be_autocompleted_command =
+                            to_be_autocompleted.split(' ').collect::<Vec<&str>>();
+                        match split_to_be_autocompleted_command.len() {
+                            0 => unreachable!(),
+                            1 => self.autocomplete_hash(""),
+                            _ => self.autocomplete_hash(
+                                split_to_be_autocompleted_command.last().unwrap(),
+                            ),
+                        }
+                        /*
+                        let hash_to_be_completed = to_be_autocompleted.split(' ').last().unwrap();
+                        self.autocomplete_hash(hash_to_be_completed)
+                        */
                     }
                     CommandParameterType::CommandName => {
                         self.autocomplete_command(to_be_autocompleted)

@@ -72,6 +72,8 @@ impl AutocompletionContext {
         self.current_choice.is_none()
     }
 
+    // TODO : Delete me
+    #[allow(unused)]
     pub fn is_autocompletion_request_possible(&self) -> bool {
         !self.current_input.is_empty()
     }
