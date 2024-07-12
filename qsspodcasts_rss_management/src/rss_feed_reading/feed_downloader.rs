@@ -5,12 +5,13 @@ use crate::channel_tuple::ChannelTuple;
 use super::utils::get_feed;
 
 pub struct FeedDownloader {}
-
+/*
 impl FeedDownloader {
     pub async fn download_feed<'a>(&'a self, url: &'a str) -> Result<ChannelTuple, Box<dyn Error>> {
         get_feed(url).await
     }
 }
+*/
 
 #[cfg(test)]
 mod tests {
@@ -20,3 +21,6 @@ mod tests {
         Ok(())
     }
 }
+
+unsafe impl Send for FeedDownloader {}
+unsafe impl Sync for FeedDownloader {}
