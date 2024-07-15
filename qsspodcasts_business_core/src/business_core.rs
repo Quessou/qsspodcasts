@@ -168,9 +168,7 @@ impl BusinessCore {
         let channels = self.rss_provider.get_all_feeds().await;
         let mut podcasts: Vec<Podcast> = vec![];
         for channel in &channels.0 {
-            /*
-            tokio::task::spawn(
-                async move {});*/
+            // TODO(mmiko) : Parallelize this
             podcasts.push(self.podcast_builder.build(&channel.1))
         }
         self.podcast_library.lock().await.push(podcasts);
