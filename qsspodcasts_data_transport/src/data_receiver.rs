@@ -25,7 +25,9 @@ impl<T> DataReceiver<T> {
         match self.receiver.try_recv() {
             Ok(d) => Ok(d),
             Err(e) => {
-                error!("{}", e);
+                if let TryRecvError::Disconnected = e {
+                    error!("{}", e);
+                }
                 Err(e)
             }
         }

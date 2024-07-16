@@ -104,7 +104,7 @@ impl BusinessCore {
     }
 
     pub async fn add_url(&mut self, url: &str) -> Result<(), IoError> {
-        if let Err(e) = self.rss_provider.add_url(url) {
+        if let Err(e) = self.rss_provider.add_url(url).await {
             self.send_notification(Notification::Message(
                 "Writing of URL failed (already added ?)".to_string(),
             ))
@@ -168,6 +168,7 @@ impl BusinessCore {
         let channels = self.rss_provider.get_all_feeds().await;
         let mut podcasts: Vec<Podcast> = vec![];
         for channel in &channels.0 {
+            // TODO(mmiko) : Parallelize this
             podcasts.push(self.podcast_builder.build(&channel.1))
         }
         self.podcast_library.lock().await.push(podcasts);
