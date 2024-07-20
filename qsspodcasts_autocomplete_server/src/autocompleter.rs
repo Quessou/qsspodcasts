@@ -113,22 +113,24 @@ impl Autocompleter {
                     CommandParameterType::Hash => {
                         let split_to_be_autocompleted_command =
                             to_be_autocompleted.split(' ').collect::<Vec<&str>>();
-                        match split_to_be_autocompleted_command.len() {
+                        let mut possibles_hashes = match split_to_be_autocompleted_command.len() {
                             0 => unreachable!(),
                             1 => self.autocomplete_hash(""),
                             _ => self.autocomplete_hash(
                                 split_to_be_autocompleted_command.last().unwrap(),
                             ),
-                        }
-                        /*
-                        let hash_to_be_completed = to_be_autocompleted.split(' ').last().unwrap();
-                        self.autocomplete_hash(hash_to_be_completed)
-                        */
+                        };
+                        possibles_hashes.iter_mut().for_each(|hash| {
+                            hash.insert(0, ' ');
+                            hash.insert_str(0, split_to_be_autocompleted_command[0])
+                        });
+                        possibles_hashes
                     }
                     CommandParameterType::CommandName => {
                         self.autocomplete_command(to_be_autocompleted)
                     }
-                    _ => unreachable!(),
+                    _ => unreachable!(), // TODO : We may have to do something a bit smarter here
+                                         // since someone can troll and just write shit
                 }
             } else {
                 vec![]
