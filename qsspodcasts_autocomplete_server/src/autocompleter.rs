@@ -5,8 +5,9 @@ use command_management::autocompletion::command_parameter_type::CommandParameter
 mod inner {
     pub fn extract_completed_command_part(command: &str) -> String {
         let mut completed_command = command.split(' ').filter(|s| !s.is_empty());
+        let _tutu: Vec<&str> = completed_command.clone().collect();
 
-        let _ = completed_command.next_back();
+        let _toto = completed_command.next_back();
         completed_command
             .fold(String::default(), |mut i, s| {
                 i.push(' ');
@@ -83,6 +84,7 @@ impl Autocompleter {
             .collect()
     }
 
+    // TODO: Refactor this method
     pub fn autocomplete(&self, line_to_be_autocompleted: &str) -> AutocompletionResponse {
         let mut prev = ' ';
         line_to_be_autocompleted.to_owned().retain(|ch| {
@@ -90,7 +92,7 @@ impl Autocompleter {
             prev = ch;
             result
         });
-        let to_be_autocompleted = line_to_be_autocompleted.trim();
+        let to_be_autocompleted = line_to_be_autocompleted;
 
         let completed_command_part = inner::extract_completed_command_part(to_be_autocompleted);
         let to_be_autocompleted = to_be_autocompleted.split(' ').last().unwrap();
@@ -113,24 +115,41 @@ impl Autocompleter {
                     CommandParameterType::Hash => {
                         let split_to_be_autocompleted_command =
                             to_be_autocompleted.split(' ').collect::<Vec<&str>>();
-                        let mut possibles_hashes = match split_to_be_autocompleted_command.len() {
+                        let mut possibles_outcomes = match split_to_be_autocompleted_command.len() {
                             0 => unreachable!(),
                             1 => self.autocomplete_hash(""),
                             _ => self.autocomplete_hash(
                                 split_to_be_autocompleted_command.last().unwrap(),
                             ),
                         };
-                        possibles_hashes.iter_mut().for_each(|hash| {
-                            hash.insert(0, ' ');
+                        possibles_outcomes.iter_mut().for_each(|hash| {
                             hash.insert_str(0, split_to_be_autocompleted_command[0])
                         });
-                        possibles_hashes
+                        possibles_outcomes
                     }
                     CommandParameterType::CommandName => {
-                        self.autocomplete_command(to_be_autocompleted)
+                        // TODO: Here we have to handle something for "help" command
+                        let split_to_be_autocompleted_command =
+                            to_be_autocompleted.split(' ').collect::<Vec<&str>>();
+                        let mut possible_outcomes = match split_to_be_autocompleted_command.len() {
+                            0 => unreachable!(),
+                            1 => self.autocomplete_command(
+                                split_to_be_autocompleted_command.last().unwrap(),
+                            ),
+                            //TODO
+                            _ => self.autocomplete_command(
+                                split_to_be_autocompleted_command.last().unwrap(),
+                            ),
+                        };
+                        possible_outcomes.iter_mut().for_each(|command| {
+                            command.insert_str(0, split_to_be_autocompleted_command[0])
+                        });
+                        possible_outcomes
                     }
                     _ => unreachable!(), // TODO : We may have to do something a bit smarter here
                                          // since someone can troll and just write shit
+                                         // This crashes when doing autocompletion on "advance" for
+                                         // instance
                 }
             } else {
                 vec![]
@@ -161,7 +180,7 @@ mod tests {
     #[test_case("help li" => "help".to_owned(); "Rather regular case" )]
     #[test_case("help  li" => "help".to_owned(); "Edge case with several spaces in the string" )]
     #[test_case("help toto ha" => "help toto".to_owned(); "Case with several words" )]
-    #[test_case("help  " => "".to_owned(); "Edge case with only spaces at the end of the string" )]
+    #[test_case("help  " => "help".to_owned(); "Edge case with only spaces at the end of the string" )]
     fn test_extract_completed_command_part(to_be_completed: &str) -> String {
         inner::extract_completed_command_part(to_be_completed)
     }
