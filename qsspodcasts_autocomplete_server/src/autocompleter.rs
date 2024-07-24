@@ -16,6 +16,28 @@ mod inner {
             .trim()
             .to_owned()
     }
+
+    pub fn extract_to_be_completed(command: &str) -> String {
+        if command.ends_with(" ") {
+            return "".to_owned();
+        }
+        unduplicate_spaces(command)
+            .split_whitespace()
+            .last()
+            .unwrap_or("")
+            .to_owned()
+    }
+
+    pub fn unduplicate_spaces(line: &str) -> String {
+        let mut prev: char = 0 as char;
+        let mut output = line.to_owned();
+        output.retain(|ch| {
+            let result = ch != ' ' || prev != ' ';
+            prev = ch;
+            result
+        });
+        output
+    }
 }
 
 pub struct Autocompleter {
@@ -47,6 +69,8 @@ impl Autocompleter {
             .collect()
     }
 
+    /// Input :
+    ///     - A hash to complete
     pub fn autocomplete_hash(&self, to_be_completed: &str) -> Vec<String> {
         assert!(!to_be_completed.contains(' '));
         if to_be_completed.is_empty() {
@@ -67,12 +91,6 @@ impl Autocompleter {
             result
         });
         let to_be_autocompleted = line_to_be_autocompleted.trim();
-
-        // TODO: remove this ?
-        /*
-        if to_be_autocompleted.is_empty() {
-            return AutocompletionResponse::default();
-        }*/
 
         let completed_command_part = inner::extract_completed_command_part(to_be_autocompleted);
         let to_be_autocompleted = to_be_autocompleted.split(' ').last().unwrap();
@@ -179,5 +197,42 @@ mod tests {
         let hash_to_be_completed = String::from("4");
         let autocomplete_choices = autocompleter.autocomplete_hash(&hash_to_be_completed);
         assert_eq!(autocomplete_choices.len(), 2);
+    }
+
+    #[test_case("" => "".to_owned(); "Empty string")]
+    #[test_case(" " => " ".to_owned(); "One space in string")]
+    #[test_case("    " => " ".to_owned(); "Several spaces in string")]
+    #[test_case("toto tata" => "toto tata".to_owned(); "Nothing to do")]
+    #[test_case("toto  tata" => "toto tata".to_owned(); "One space to remove")]
+    #[test_case("toto tata  " => "toto tata ".to_owned(); "Space to remove at the end")]
+    #[test_case("  toto tata" => " toto tata".to_owned(); "Space to remove at beginning")]
+    #[test_case("  toto tata  " => " toto tata ".to_owned(); "Space to remove at beginning and at the end")]
+    #[test_case("  toto  tata  " => " toto tata ".to_owned(); "Space to remove everywhere lol")]
+    fn test_unduplicate_spaces(s: &str) -> String {
+        super::inner::unduplicate_spaces(s)
+    }
+
+    #[test_case("toto tata" => "tata".to_owned(); "Return last word")]
+    #[test_case("toto tata " => "".to_owned(); "Return empty string if line ends with a white space")]
+    #[test_case("toto tata   " => "".to_owned(); "Return empty string if line ends with several white spaces")]
+    #[test_case("toto   tata" => "tata".to_owned(); "Return last word if line has several white spaces bulked together")]
+    #[test_case("toto" => "toto".to_owned(); "Return only word if there's no space")]
+    #[test_case("" => "".to_owned(); "Return empty string if empty")]
+    #[test_case(" " => "".to_owned(); "Return empty string if only one space")]
+    #[test_case("    " => "".to_owned(); "Return empty string if only several spaces")]
+    fn test_extract_to_be_completed(s: &str) -> String {
+        super::inner::extract_to_be_completed(s)
+    }
+
+    #[test_case("toto tata" => "toto ".to_owned(); "Basic case")]
+    #[test_case("" => "".to_owned(); "Empty string")]
+    #[test_case("  " => "  ".to_owned(); "Whitespaces only string")]
+    #[test_case("  t" => "  ".to_owned(); "Starting to type something")]
+    #[test_case("  toto " => "  toto ".to_owned(); "Starting spaces and complete word")]
+    #[test_case("  toto" => "  ".to_owned(); "Only starting spaces")]
+    #[test_case("  toto tata" => "  toto ".to_owned(); "White spaces, word and white space")]
+    #[test_case("  toto  tata" => "  toto  ".to_owned(); "White spaces, word and white spaces")]
+    fn test_extract_completed_command(s: &str) -> String {
+        super::inner::extract_completed_command_part(s)
     }
 }
