@@ -1,6 +1,7 @@
 use crate::AutocompletionResponse;
 use command_management::autocompletion::autocompletion_command_data::AutocompletionCommandData;
 use command_management::autocompletion::command_parameter_type::CommandParameterType;
+use log;
 
 mod inner {
     pub fn extract_completed_command_part(command: &str) -> String {
@@ -132,10 +133,10 @@ impl Autocompleter {
                             .for_each(|command| command.insert_str(0, &completed_command_part));
                         possible_outcomes
                     }
-                    _ => unreachable!(), // TODO : We may have to do something a bit smarter here
-                                         // since someone can troll and just write shit
-                                         // This crashes when doing autocompletion on "advance" for
-                                         // instance
+                    _ => {
+                        log::warn!("Tried to autocomplete something that is not completable");
+                        vec![]
+                    }
                 }
             } else {
                 vec![]
