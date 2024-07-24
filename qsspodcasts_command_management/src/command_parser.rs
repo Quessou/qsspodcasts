@@ -25,7 +25,8 @@ impl CommandParser {
     /// * Create an error type for parsing
     /// * Add management of parameters
     pub fn parse_command(&self, command: &str) -> Result<Command, CommandError> {
-        let mut command_components = command.split(' ');
+        let command = command.trim();
+        let mut command_components = command.split_whitespace();
         let verb = command_components.next().unwrap();
         let parameters: Vec<String> = command_components.map(|s| s.to_string()).collect();
 

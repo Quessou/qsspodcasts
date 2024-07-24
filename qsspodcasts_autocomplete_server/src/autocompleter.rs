@@ -118,11 +118,11 @@ impl Autocompleter {
                     .unwrap()
                 {
                     CommandParameterType::Hash => {
-                        let mut possibles_outcomes = self.autocomplete_hash(&to_be_completed);
-                        possibles_outcomes
+                        let mut possible_outcomes = self.autocomplete_hash(&to_be_completed);
+                        possible_outcomes
                             .iter_mut()
                             .for_each(|hash| hash.insert_str(0, &completed_command_part));
-                        possibles_outcomes
+                        possible_outcomes
                     }
                     CommandParameterType::CommandName => {
                         // TODO: Here we have to handle something for "help" command
