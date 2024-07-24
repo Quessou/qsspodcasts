@@ -4,32 +4,25 @@ use command_management::autocompletion::command_parameter_type::CommandParameter
 
 mod inner {
     pub fn extract_completed_command_part(command: &str) -> String {
-        let mut completed_command = command.split(' ').filter(|s| !s.is_empty());
-        let _tutu: Vec<&str> = completed_command.clone().collect();
-
-        let _toto = completed_command.next_back();
-        completed_command
-            .fold(String::default(), |mut i, s| {
-                i.push(' ');
-                i.push_str(s);
-                i
-            })
-            .trim()
-            .to_owned()
+        let last_space = command.rfind(' ');
+        match last_space {
+            Some(index) => command[0..index + 1].to_owned(),
+            None => "".to_owned(),
+        }
     }
 
     pub fn extract_to_be_completed(command: &str) -> String {
         if command.ends_with(" ") {
             return "".to_owned();
         }
-        unduplicate_spaces(command)
+        deduplicate_spaces(command)
             .split_whitespace()
             .last()
             .unwrap_or("")
             .to_owned()
     }
 
-    pub fn unduplicate_spaces(line: &str) -> String {
+    pub fn deduplicate_spaces(line: &str) -> String {
         let mut prev: char = 0 as char;
         let mut output = line.to_owned();
         output.retain(|ch| {
@@ -38,6 +31,15 @@ mod inner {
             result
         });
         output
+    }
+
+    pub fn is_command_typed(command: &str) -> bool {
+        let first_non_whitespace_index = command.find(|c: char| !c.is_whitespace());
+        if first_non_whitespace_index.is_none() {
+            return false;
+        }
+        let first_non_whitespace_index = first_non_whitespace_index.unwrap();
+        command[first_non_whitespace_index..].contains(|c: char| c.is_whitespace())
     }
 }
 
@@ -84,66 +86,50 @@ impl Autocompleter {
             .collect()
     }
 
-    // TODO: Refactor this method
     pub fn autocomplete(&self, line_to_be_autocompleted: &str) -> AutocompletionResponse {
-        let mut prev = ' ';
-        line_to_be_autocompleted.to_owned().retain(|ch| {
-            let result = ch != ' ' || prev != ' ';
-            prev = ch;
-            result
-        });
-        let to_be_autocompleted = line_to_be_autocompleted;
+        let completed_command_part =
+            inner::extract_completed_command_part(line_to_be_autocompleted);
+        let to_be_completed = inner::extract_to_be_completed(line_to_be_autocompleted);
 
-        let completed_command_part = inner::extract_completed_command_part(to_be_autocompleted);
-        let to_be_autocompleted = to_be_autocompleted.split(' ').last().unwrap();
-
-        let autocompletion_options = if !line_to_be_autocompleted.contains(' ') {
-            self.autocomplete_command(to_be_autocompleted)
+        let autocompletion_options = if !inner::is_command_typed(line_to_be_autocompleted) {
+            let mut possible_outcomes = self.autocomplete_command(&to_be_completed);
+            // TODO: Optimize to remove the calls to insert_str
+            possible_outcomes
+                .iter_mut()
+                .for_each(|hash| hash.insert_str(0, &completed_command_part));
+            possible_outcomes
         } else {
-            let typed_command = line_to_be_autocompleted.split(' ').next().unwrap();
-            let command = self
+            let command_with_dedup_spaces = inner::deduplicate_spaces(line_to_be_autocompleted);
+            let typed_command = command_with_dedup_spaces.trim().split(' ').next().unwrap();
+            let command_completion_data = self
                 .commands
                 .iter()
                 .find(|c| c.command.to_string() == typed_command);
 
-            if let Some(parameter_type) = command {
+            if let Some(parameter_type) = command_completion_data {
                 let parameter_type = &parameter_type.parameter_type;
                 if parameter_type.is_none() {
                     return AutocompletionResponse::default();
                 }
-                match command.unwrap().parameter_type.as_ref().unwrap() {
+                match command_completion_data
+                    .unwrap()
+                    .parameter_type
+                    .as_ref()
+                    .unwrap()
+                {
                     CommandParameterType::Hash => {
-                        let split_to_be_autocompleted_command =
-                            to_be_autocompleted.split(' ').collect::<Vec<&str>>();
-                        let mut possibles_outcomes = match split_to_be_autocompleted_command.len() {
-                            0 => unreachable!(),
-                            1 => self.autocomplete_hash(""),
-                            _ => self.autocomplete_hash(
-                                split_to_be_autocompleted_command.last().unwrap(),
-                            ),
-                        };
-                        possibles_outcomes.iter_mut().for_each(|hash| {
-                            hash.insert_str(0, split_to_be_autocompleted_command[0])
-                        });
+                        let mut possibles_outcomes = self.autocomplete_hash(&to_be_completed);
+                        possibles_outcomes
+                            .iter_mut()
+                            .for_each(|hash| hash.insert_str(0, &completed_command_part));
                         possibles_outcomes
                     }
                     CommandParameterType::CommandName => {
                         // TODO: Here we have to handle something for "help" command
-                        let split_to_be_autocompleted_command =
-                            to_be_autocompleted.split(' ').collect::<Vec<&str>>();
-                        let mut possible_outcomes = match split_to_be_autocompleted_command.len() {
-                            0 => unreachable!(),
-                            1 => self.autocomplete_command(
-                                split_to_be_autocompleted_command.last().unwrap(),
-                            ),
-                            //TODO
-                            _ => self.autocomplete_command(
-                                split_to_be_autocompleted_command.last().unwrap(),
-                            ),
-                        };
-                        possible_outcomes.iter_mut().for_each(|command| {
-                            command.insert_str(0, split_to_be_autocompleted_command[0])
-                        });
+                        let mut possible_outcomes = self.autocomplete_command(&to_be_completed);
+                        possible_outcomes
+                            .iter_mut()
+                            .for_each(|command| command.insert_str(0, &completed_command_part));
                         possible_outcomes
                     }
                     _ => unreachable!(), // TODO : We may have to do something a bit smarter here
@@ -157,15 +143,7 @@ impl Autocompleter {
         };
 
         AutocompletionResponse {
-            autocompletion_options: autocompletion_options
-                .iter()
-                .map(|o| {
-                    let mut result = completed_command_part.clone();
-                    result.push(' ');
-                    result.push_str(o);
-                    result.trim().to_owned()
-                })
-                .collect(),
+            autocompletion_options,
         }
     }
 }
@@ -176,14 +154,6 @@ mod tests {
 
     use super::*;
     use command_management::commands::command_enum::Command;
-
-    #[test_case("help li" => "help".to_owned(); "Rather regular case" )]
-    #[test_case("help  li" => "help".to_owned(); "Edge case with several spaces in the string" )]
-    #[test_case("help toto ha" => "help toto".to_owned(); "Case with several words" )]
-    #[test_case("help  " => "help".to_owned(); "Edge case with only spaces at the end of the string" )]
-    fn test_extract_completed_command_part(to_be_completed: &str) -> String {
-        inner::extract_completed_command_part(to_be_completed)
-    }
 
     #[test]
     fn test_autocomplete_command() {
@@ -229,8 +199,8 @@ mod tests {
     #[test_case("  toto tata" => " toto tata".to_owned(); "Space to remove at beginning")]
     #[test_case("  toto tata  " => " toto tata ".to_owned(); "Space to remove at beginning and at the end")]
     #[test_case("  toto  tata  " => " toto tata ".to_owned(); "Space to remove everywhere lol")]
-    fn test_unduplicate_spaces(s: &str) -> String {
-        super::inner::unduplicate_spaces(s)
+    fn test_deduplicate_spaces(s: &str) -> String {
+        super::inner::deduplicate_spaces(s)
     }
 
     #[test_case("toto tata" => "tata".to_owned(); "Return last word")]
@@ -246,6 +216,8 @@ mod tests {
     }
 
     #[test_case("toto tata" => "toto ".to_owned(); "Basic case")]
+    #[test_case("toto" => "".to_owned(); "No space (thus the completed command is empty)")]
+    #[test_case("  toto" => "  ".to_owned(); "Spaces and a word")]
     #[test_case("" => "".to_owned(); "Empty string")]
     #[test_case("  " => "  ".to_owned(); "Whitespaces only string")]
     #[test_case("  t" => "  ".to_owned(); "Starting to type something")]
@@ -255,5 +227,16 @@ mod tests {
     #[test_case("  toto  tata" => "  toto  ".to_owned(); "White spaces, word and white spaces")]
     fn test_extract_completed_command(s: &str) -> String {
         super::inner::extract_completed_command_part(s)
+    }
+
+    #[test_case("" => false; "empty string")]
+    #[test_case("  " => false; "only spaces")]
+    #[test_case("toto" => false; "Missing space at the end")]
+    #[test_case(" toto" => false; "Space before and missing space after word")]
+    #[test_case("  toto" => false; "Spaces before and missing space after word")]
+    #[test_case("  toto " => true; "Basic case ok")]
+    #[test_case("  toto  " => true; "Basic case with multiple spaces at the end")]
+    fn test_is_command_typed(s: &str) -> bool {
+        super::inner::is_command_typed(s)
     }
 }
