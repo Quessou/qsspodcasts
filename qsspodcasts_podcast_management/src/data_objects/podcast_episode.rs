@@ -39,7 +39,7 @@ impl PodcastEpisode {
         url: &str,
         download_path: &Option<String>,
     ) -> PodcastEpisode {
-        let description = html2text::from_read(description.as_bytes(), usize::max_value());
+        let description = html2text::from_read(description.as_bytes(), usize::MAX);
         PodcastEpisode {
             title: title.to_string(),
             link: link.to_string(),

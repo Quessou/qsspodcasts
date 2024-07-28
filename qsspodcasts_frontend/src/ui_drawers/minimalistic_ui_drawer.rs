@@ -76,8 +76,8 @@ impl MinimalisticUiDrawer<'_> {
     }
 
     fn build_title_and_volume_line_layout(
-        context: &ScreenContext,
-        main_layout: &Vec<Rect>,
+        _context: &ScreenContext,
+        main_layout: &[Rect],
     ) -> Vec<Rect> {
         Layout::default()
             .direction(Direction::Horizontal)

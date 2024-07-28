@@ -26,7 +26,7 @@ impl Podcast {
         image: Option<Image>,
         episodes: Vec<PodcastEpisode>,
     ) -> Podcast {
-        let description = html2text::from_read(description.as_bytes(), usize::max_value());
+        let description = html2text::from_read(description.as_bytes(), usize::MAX);
         Podcast {
             title: title.to_string(),
             link: link.to_string(),
