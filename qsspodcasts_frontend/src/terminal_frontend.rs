@@ -128,10 +128,7 @@ impl<D: UiDrawer> Frontend<D> {
                 }
                 KeyCode::Tab => {
                     let autocompletion_ctxt = &mut self.context.autocompletion_context;
-                    if
-                    /*autocompletion_ctxt.is_autocompletion_request_possible()
-                    &&*/
-                    autocompletion_ctxt.is_autocompletion_request_required() {
+                    if autocompletion_ctxt.is_autocompletion_request_required() {
                         self.autocompletion_request_sender
                             .send(AutocompleterMessageType::AutocompletionRequest(
                                 autocompletion_ctxt.current_input.clone(),

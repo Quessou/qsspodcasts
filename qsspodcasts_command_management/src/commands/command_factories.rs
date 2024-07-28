@@ -162,7 +162,7 @@ pub fn build_volume_up_command(parameters: Vec<String>) -> Result<Command, Comma
     if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("volume_up"));
     }
-    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    let volume_offset = parameters[0].parse::<u32>();
     if volume_offset.is_err() {
         return Err(build_parsing_failed_error("volume_up", "Not an integer"));
     }
@@ -172,7 +172,7 @@ pub fn build_volume_down_command(parameters: Vec<String>) -> Result<Command, Com
     if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("volume_down"));
     }
-    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    let volume_offset = parameters[0].parse::<u32>();
     if volume_offset.is_err() {
         return Err(build_parsing_failed_error("volume_up", "Not an integer"));
     }
@@ -182,7 +182,7 @@ pub fn build_set_volume_command(parameters: Vec<String>) -> Result<Command, Comm
     if parameters.len() != 1 {
         return Err(build_bad_parameter_count_error("set_volume"));
     }
-    let volume_offset = u32::from_str_radix(&parameters[0], 10);
+    let volume_offset = parameters[0].parse::<u32>();
     if volume_offset.is_err() {
         return Err(build_parsing_failed_error("volume_up", "Not an integer"));
     }

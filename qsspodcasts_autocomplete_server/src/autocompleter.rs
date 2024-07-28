@@ -1,7 +1,6 @@
 use crate::AutocompletionResponse;
 use command_management::autocompletion::autocompletion_command_data::AutocompletionCommandData;
 use command_management::autocompletion::command_parameter_type::CommandParameterType;
-use log;
 
 mod inner {
     pub fn extract_completed_command_part(command: &str) -> String {
@@ -13,7 +12,7 @@ mod inner {
     }
 
     pub fn extract_to_be_completed(command: &str) -> String {
-        if command.ends_with(" ") {
+        if command.ends_with(' ') {
             return "".to_owned();
         }
         deduplicate_spaces(command)

@@ -375,7 +375,6 @@ mod tests {
     use super::*;
     use crate::mocks::mp3_player::MockMp3Player;
 
-    use chrono::DateTime;
     use path_providing::dummy_path_provider::DummyPathProvider;
     use podcast_player::player_error::{ErrorKind, PlayerError};
     use podcast_player::players::mp3_player::Mp3Player as TraitMp3Player;
