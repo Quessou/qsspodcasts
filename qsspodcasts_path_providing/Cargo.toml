@@ -14,7 +14,7 @@ repository.workspace = true
 
 [dependencies]
 home = "0.5.3"
-podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }
+podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.2.0" }
 
 [dev-dependencies]
 mockall = "0.11.2"
