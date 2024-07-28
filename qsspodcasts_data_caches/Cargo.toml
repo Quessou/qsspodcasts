@@ -1,5 +1,6 @@
 [package]
 name = "qsspodcasts_data_caches"
+description = "Data caches for QSSPodcasts. You probably don't need it"
 version.workspace = true
 authors.workspace = true
 rust-version.workspace = true
