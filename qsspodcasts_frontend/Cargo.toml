@@ -16,17 +16,17 @@ repository.workspace = true
 tui = { package = "ratatui", version = "0.22.0", features = ["crossterm"], default-features = false }
 crossterm = "0.19"
 tokio = { version = "1.32.0", features = ["full"] }
-command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management" , version = "0.1.0"}
-podcast_player = { package = "qsspodcasts_podcast_player", path = "../qsspodcasts_podcast_player" , version = "0.1.0" }
-podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }
-business_core = {package = "qsspodcasts_business_core", path = "../qsspodcasts_business_core" , version = "0.1.0"}
+command_management = { package = "qsspodcasts_command_management", path = "../qsspodcasts_command_management" , version = "0.2.0"}
+podcast_player = { package = "qsspodcasts_podcast_player", path = "../qsspodcasts_podcast_player" , version = "0.2.0" }
+podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.2.0" }
+business_core = {package = "qsspodcasts_business_core", path = "../qsspodcasts_business_core" , version = "0.2.0"}
 log = "0.4.17"
 simple_logger = "2.1.0"
-str_to_lines = {package = "qsspodcasts_str_to_lines", path = "../qsspodcasts_str_to_lines" , version = "0.1.0"}
-data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.1.0"}
-autocomplete_server = {package = "qsspodcasts_autocomplete_server", path = "../qsspodcasts_autocomplete_server", version = "0.1.0"}
-data_caches = {package = "qsspodcasts_data_caches", path = "../qsspodcasts_data_caches", version = "0.1.0"}
-path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.1.0" }
+str_to_lines = {package = "qsspodcasts_str_to_lines", path = "../qsspodcasts_str_to_lines" , version = "0.2.0"}
+data_transport = { package = "qsspodcasts_data_transport",path = "../qsspodcasts_data_transport" , version = "0.2.0"}
+autocomplete_server = {package = "qsspodcasts_autocomplete_server", path = "../qsspodcasts_autocomplete_server", version = "0.2.0"}
+data_caches = {package = "qsspodcasts_data_caches", path = "../qsspodcasts_data_caches", version = "0.2.0"}
+path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.2.0" }
 
 [dev-dependencies]
 test-case = "3.0.0"

@@ -17,8 +17,8 @@ reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1.32.0", features = ["full"] }
 rss = "2.0.0"
 log = "0.4.17"
-fs_utils= { package = "qsspodcasts_fs_utils",path = "../qsspodcasts_fs_utils", version = "0.1.0" }
-path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.1.0" }
+fs_utils= { package = "qsspodcasts_fs_utils",path = "../qsspodcasts_fs_utils", version = "0.2.0" }
+path_providing= { package = "qsspodcasts_path_providing",path = "../qsspodcasts_path_providing", version = "0.2.0" }
 
 [dev-dependencies]
 tokio-test = "0.4.2"
