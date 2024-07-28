@@ -8,6 +8,12 @@ pub trait PathProvider {
     fn download_dir_path(&self) -> PathBuf;
     fn rss_feed_list_file_name(&self) -> &'static str;
     fn download_dir_name(&self) -> &'static str;
+    fn podcast_progresses_dir_name(&self) -> &'static str;
+    fn podcast_progresses_dir_path(&self) -> PathBuf;
+    fn podcast_progress_file_path(&self, hash: &str) -> PathBuf;
+    fn finished_podcasts_dir_name(&self) -> &'static str;
+    fn finished_podcasts_dir_path(&self) -> PathBuf;
+    fn compute_finished_podcast_file_path(&self, hash: &str) -> PathBuf;
 
     fn compute_episode_path(&self, episode: &PodcastEpisode) -> PathBuf {
         let mut download_dir: PathBuf = self.download_dir_path();

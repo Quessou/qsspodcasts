@@ -15,12 +15,13 @@ members = [
 	"qsspodcasts_str_to_lines",
 	"qsspodcasts_data_transport",
 	"qsspodcasts_autocomplete_server",
-    "qsspodcasts_command_management"
+    "qsspodcasts_command_management",
+    "qsspodcasts_data_caches"
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Maxime Mikotajewski <maximemikotajewski@gmail.com>"]
 rust-version = "1.70.0"
 edition = "2021"

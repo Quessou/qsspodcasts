@@ -1,7 +1,7 @@
 use std::fmt::Display;
 use std::time::Duration;
 
-#[derive(Default)]
+#[derive(Default, PartialEq, PartialOrd)]
 pub struct DurationWrapper {
     duration: Duration,
 }
@@ -9,6 +9,9 @@ pub struct DurationWrapper {
 impl DurationWrapper {
     pub fn new(duration: Duration) -> DurationWrapper {
         DurationWrapper { duration }
+    }
+    pub fn inner_ref(&self) -> &Duration {
+        &self.duration
     }
 }
 

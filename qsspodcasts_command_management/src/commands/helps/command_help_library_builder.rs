@@ -42,12 +42,37 @@ pub fn get_command_help_library() -> CommandHelpLibrary {
                                                                                         - A number of seconds (e.g. : 40)
                                                                                         - Numbers separated by colons (e.g. : 2:30)
                                                                                         - A duration specified in an idomatic way (e.g. : 1h01m20s)"))),
-    (Command::Advance(CommandDuration::default()).to_string(), CommandHelpRegister::new("advance", "go_back <DURATION>", "Goes back into the podcast of the given duration",
+    (Command::GoBack(CommandDuration::default()).to_string(), CommandHelpRegister::new("go_back", "go_back <DURATION>", "Goes back into the podcast of the given duration",
                                                                                         Some("Goes back in the podcast of the duration given in parameter.
                                                                                         The duration can be expressed a lot of ways, including :
                                                                                         - A number of seconds (e.g. : 40)
                                                                                         - Numbers separated by colons (e.g. : 2:30)
-                                                                                        - A duration specified in an idomatic way (e.g. : 1h01m20s)")))]
+                                                                                        - A duration specified in an idomatic way (e.g. : 1h01m20s)"))),
+    (Command::MarkAsFinished.to_string(),
+     CommandHelpRegister::new("mark_as_finished", "mark_as_finished",
+     "Marks current podcast as finished",
+    Some("Marks the podcast currently selected as finished.")
+    )),
+    (Command::LatestPodcasts.to_string(),
+     CommandHelpRegister::new("latest_podcasts", "latest_podcasts",
+     "Displays podcasts that released today or yesterday",
+     None
+    )),
+    (Command::VolumeUp(0).to_string(),
+     CommandHelpRegister::new("volume_up", "volume_up <INTEGER>",
+     "Sets the volume up of <INTEGER> percents",
+     None
+    )),
+    (Command::VolumeDown(0).to_string(),
+     CommandHelpRegister::new("volume_down", "volume_down <INTEGER>",
+     "Sets the volume down of <INTEGER> percents",
+     None
+    )),
+    (Command::SetVolume(0).to_string(),
+     CommandHelpRegister::new("set_volume", "set_volume <INTEGER>",
+     "Sets the volume to <INTEGER> percents of the max volume",
+     None
+    ))],
 
     );
     CommandHelpLibrary::new(map)

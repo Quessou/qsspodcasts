@@ -17,3 +17,7 @@ sha-1 = "0.10.0"
 hex = "0.4.3"
 chrono = "0.4"
 html2text = "0.4.3"
+tokio = { version = "1.32.0" ,features = ["full"]}
+
+[dev-dependencies]
+test-case = "3.0.0"

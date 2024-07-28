@@ -1,6 +1,7 @@
 use command_management::output::output_type::OutputType;
 use log::debug;
 use podcast_management::data_objects::hashable::Hashable;
+use podcast_management::data_objects::podcast_state::PodcastState;
 use podcast_player::duration_wrapper::DurationWrapper;
 use podcast_player::player_status::PlayerStatus;
 use std::borrow::{Borrow, Cow};
@@ -63,6 +64,7 @@ impl MinimalisticUiDrawer<'_> {
             .constraints(
                 [
                     Constraint::Length(3),
+                    Constraint::Length(1),
                     Constraint::Length(3),
                     Constraint::Min(1),
                     Constraint::Length(6),
@@ -70,6 +72,17 @@ impl MinimalisticUiDrawer<'_> {
                 .as_ref(),
             )
             .split(*size)
+            .to_vec()
+    }
+
+    fn build_title_and_volume_line_layout(
+        _context: &ScreenContext,
+        main_layout: &[Rect],
+    ) -> Vec<Rect> {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(vec![Constraint::Min(1), Constraint::Max(12)])
+            .split(main_layout[1])
             .to_vec()
     }
 
@@ -86,6 +99,21 @@ impl MinimalisticUiDrawer<'_> {
             )
     }
 
+    fn build_podcast_title_label(context: &ScreenContext) -> Paragraph {
+        let thing_to_display = context
+            .current_podcast_title
+            .as_deref()
+            .unwrap_or("No podcast selected");
+        Paragraph::new(thing_to_display).style(match context.current_podcast_title {
+            None => Style::default().fg(Color::Magenta),
+            _ => Style::default().fg(Color::LightCyan),
+        })
+    }
+    fn build_volume_label(context: &ScreenContext) -> Paragraph {
+        let volume_label = format!("Volume: {: >3}%", context.volume);
+        Paragraph::new(volume_label).style(Style::default().fg(Color::LightCyan))
+    }
+
     fn build_podcast_progress_bar(context: &ScreenContext) -> Gauge {
         let status = &context.player_status;
 
@@ -93,8 +121,13 @@ impl MinimalisticUiDrawer<'_> {
         let (progress, duration, percentage) = match status {
             PlayerStatus::Playing(prog, dur, perc) => (prog, dur, *perc),
             PlayerStatus::Paused(prog, dur, perc) => (prog, dur, *perc),
-            PlayerStatus::Stopped => (&default_duration, &default_duration, 0),
+            PlayerStatus::Stopped(o) => match o {
+                Some((prog, dur, perc)) => (prog, dur, *perc),
+                None => (&default_duration, &default_duration, 0),
+            },
         };
+
+        let percentage = percentage.clamp(0, 100);
 
         Gauge::default()
             .block(Block::default().title("").borders(Borders::ALL))
@@ -148,7 +181,7 @@ impl MinimalisticUiDrawer<'_> {
                                 Style::default().bg(Color::LightGreen).fg(Color::Red),
                             )));
 
-                            let metadata_display = iter::once(Line::from(vec![
+                            let mut metadata_display = vec![
                                 Span::from("["),
                                 Span::styled(
                                     e.hash(),
@@ -169,7 +202,21 @@ impl MinimalisticUiDrawer<'_> {
                                         .bg(Color::Black)
                                         .add_modifier(Modifier::ITALIC),
                                 ),
-                            ]));
+                            ];
+                            if let Some(PodcastState::Finished) =
+                                context.podcasts_state_cache.get_podcast_state(&e.hash())
+                            {
+                                metadata_display.append(&mut vec![
+                                    Span::from("    "),
+                                    Span::styled(
+                                        "[FINISHED]",
+                                        Style::default()
+                                            .add_modifier(Modifier::BOLD)
+                                            .fg(Color::Red),
+                                    ),
+                                ]);
+                            }
+                            let metadata_display = iter::once(Line::from(metadata_display));
                             let vec_spans = vec_spans.chain(metadata_display);
 
                             let description_style = Style::default().add_modifier(Modifier::ITALIC);
@@ -289,13 +336,13 @@ impl MinimalisticUiDrawer<'_> {
 
     fn build_notifications_field(context: &ScreenContext) -> Paragraph {
         let notifications = context
-            .notifications_buffer
+            .message_notifications_buffer
             .iter()
             .rev()
             .map(|s| Line::from(s.as_ref()));
 
         let empty_lines_count: i16 =
-            std::cmp::max(0, 4 - (context.notifications_buffer.len() as i16));
+            std::cmp::max(0, 4 - (context.message_notifications_buffer.len() as i16));
         let empty_spaces =
             iter::repeat(Line::from(" ")).take(empty_lines_count.try_into().unwrap());
 
@@ -405,18 +452,25 @@ impl MinimalisticUiDrawer<'_> {
         const MINIMAL_WIDTH: u16 = 15;
 
         // Defining screen layout
-        let chunks = MinimalisticUiDrawer::build_screen_layout(context, &size);
+        let main_layout = MinimalisticUiDrawer::build_screen_layout(context, &size);
+        let title_and_volume_layout =
+            MinimalisticUiDrawer::build_title_and_volume_line_layout(context, &main_layout);
 
         let input = MinimalisticUiDrawer::build_input_field(context);
-        f.render_widget(input, chunks[0]);
+        f.render_widget(input, main_layout[0]);
+
+        let podcast_title_widget = MinimalisticUiDrawer::build_podcast_title_label(context);
+        f.render_widget(podcast_title_widget, title_and_volume_layout[0]);
+        let volume_label = MinimalisticUiDrawer::build_volume_label(context);
+        f.render_widget(volume_label, title_and_volume_layout[1]);
 
         let podcast_progress = MinimalisticUiDrawer::build_podcast_progress_bar(context);
 
-        if chunks[1].width > MINIMAL_WIDTH {
-            f.render_widget(podcast_progress, chunks[1]);
+        if main_layout[1].width > MINIMAL_WIDTH {
+            f.render_widget(podcast_progress, main_layout[2]);
         }
 
-        let output_layout = MinimalisticUiDrawer::build_output_layout(context, &chunks[2]);
+        let output_layout = MinimalisticUiDrawer::build_output_layout(context, &main_layout[3]);
 
         if context.last_command_output == OutputType::RawString("".to_string()) {
             let output_paragraph = MinimalisticUiDrawer::build_output_field_paragraph(context);
@@ -443,7 +497,7 @@ impl MinimalisticUiDrawer<'_> {
         let list_state = context.list_output_state.borrow();
         if list_state.is_some() {
             'display_progress_bar: {
-                let progress_bar_height = chunks[2].height - 2;
+                let progress_bar_height = main_layout[3].height - 2;
                 let selected_index = list_state
                     .as_ref()
                     .unwrap()
@@ -469,7 +523,7 @@ impl MinimalisticUiDrawer<'_> {
         }
 
         let notifications_layout = MinimalisticUiDrawer::build_notifications_field(context);
-        f.render_widget(notifications_layout, chunks[3]);
+        f.render_widget(notifications_layout, main_layout[4]);
 
         if context.current_action == ScreenAction::ScrollingModalWindow {
             let block = Block::default().borders(Borders::ALL);

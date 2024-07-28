@@ -12,5 +12,5 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full"] }
 log = "0.4.17"

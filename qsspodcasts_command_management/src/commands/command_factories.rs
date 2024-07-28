@@ -148,6 +148,47 @@ pub fn build_help_command(parameters: Vec<String>) -> Result<Command, CommandErr
     Ok(Command::Help(Some(parameters[0].clone())))
 }
 
+pub fn build_mark_as_finished_command(_parameters: Vec<String>) -> Result<Command, CommandError> {
+    Ok(Command::MarkAsFinished)
+}
+
+pub fn build_get_latest_podcasts_command(
+    _parameters: Vec<String>,
+) -> Result<Command, CommandError> {
+    Ok(Command::LatestPodcasts)
+}
+
+pub fn build_volume_up_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("volume_up"));
+    }
+    let volume_offset = parameters[0].parse::<u32>();
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::VolumeUp(volume_offset.unwrap()))
+}
+pub fn build_volume_down_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("volume_down"));
+    }
+    let volume_offset = parameters[0].parse::<u32>();
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::VolumeDown(volume_offset.unwrap()))
+}
+pub fn build_set_volume_command(parameters: Vec<String>) -> Result<Command, CommandError> {
+    if parameters.len() != 1 {
+        return Err(build_bad_parameter_count_error("set_volume"));
+    }
+    let volume_offset = parameters[0].parse::<u32>();
+    if volume_offset.is_err() {
+        return Err(build_parsing_failed_error("volume_up", "Not an integer"));
+    }
+    Ok(Command::SetVolume(volume_offset.unwrap()))
+}
+
 pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
     let mut factory_hashmap: HashMap<String, FactoryFn> = HashMap::new();
     factory_hashmap.insert(Command::Play(None).to_string(), build_play_command);
@@ -182,6 +223,20 @@ pub fn get_factory_hashmap() -> HashMap<String, FactoryFn> {
         build_go_back_command,
     );
     factory_hashmap.insert(Command::Help(None).to_string(), build_help_command);
+    factory_hashmap.insert(
+        Command::MarkAsFinished.to_string(),
+        build_mark_as_finished_command,
+    );
+    factory_hashmap.insert(
+        Command::LatestPodcasts.to_string(),
+        build_get_latest_podcasts_command,
+    );
+    factory_hashmap.insert(Command::VolumeUp(0).to_string(), build_volume_up_command);
+    factory_hashmap.insert(
+        Command::VolumeDown(0).to_string(),
+        build_volume_down_command,
+    );
+    factory_hashmap.insert(Command::SetVolume(0).to_string(), build_set_volume_command);
     factory_hashmap
 }
 

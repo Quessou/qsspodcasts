@@ -12,7 +12,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
-tokio = { version = "1.26.0", features = ["full"] }
+tokio = { version = "1.32.0", features = ["full"] }
 rodio = "0.15.0"
 # gstreamer = "0.18"
 gstreamer-play = "0.20"
@@ -21,7 +21,9 @@ chrono = "0.4"
 log = "0.4.17"
 podcast_management= { package = "qsspodcasts_podcast_management",path = "../qsspodcasts_podcast_management", version = "0.1.0" }
 path_providing = { package = "qsspodcasts_path_providing", path = "../qsspodcasts_path_providing", version = "0.1.0" }
-
+async-trait = "0.1.53"
+strum = { version = "0.21", features = ["derive"] }
+strum_macros = "0.24"
 
 #[dev-dependencies]
 mockall = "0.11.2"
