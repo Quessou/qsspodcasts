@@ -13,6 +13,7 @@ repository.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+time = "0.3.36"
 tui = { package = "ratatui", version = "0.22.0", features = ["crossterm"], default-features = false }
 crossterm = "0.19"
 tokio = { version = "1.32.0", features = ["full"] }

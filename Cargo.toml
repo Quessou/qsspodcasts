@@ -1,3 +1,4 @@
+cargo-features = ["codegen-backend"]
 
 [workspace]
 
@@ -28,3 +29,23 @@ edition = "2021"
 readme = "README.md"
 license = "BSD-2-Clause"
 repository = "https://github.com/Quessou/qsspodcasts"
+
+[profile.build_time_minimized]
+inherits = "dev"
+opt-level = 0
+debug = 0
+strip = "none"
+lto = false
+codegen-units = 256
+incremental = true
+
+[profile.release_maximize_performances]
+inherits = "release"
+opt-level = 3
+debug = false
+strip = "none"
+lto = true 
+codegen-units = 1
+incremental = false
+panic = "abort"
+codegen-backend = "cranelift"

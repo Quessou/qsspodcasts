@@ -14,7 +14,7 @@ repository.workspace = true
 [dependencies]
 futures = "0.3.21"
 frontend = { package = "qsspodcasts_frontend",path = "../qsspodcasts_frontend" , version = "0.2.0"}
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "4.5.16", features = ["derive"] }
 tokio = { version = "1.32.0", features = ["full"] }
 abstract_frontend = { package = "qsspodcasts_abstract_frontend",path = "../qsspodcasts_abstract_frontend" , version = "0.2.0"}
 business_core = { package = "qsspodcasts_business_core", path = "../qsspodcasts_business_core" , version = "0.2.0"}
