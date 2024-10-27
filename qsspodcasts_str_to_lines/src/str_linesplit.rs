@@ -52,6 +52,7 @@ mod tests {
     use super::*;
 
     #[test_case("tutu toto", 4  => vec!["tutu", "toto"]; "Add line break to split between words")]
+    #[test_case("tutu toto", 8  => vec!["tutu", "toto"]; "Add line break to split between words but with a longer line length")]
     #[test_case("你好吗 你好吗", 4 => vec!["你好吗", "你好吗"]; "Unicode management")]
     #[test_case("toto toto tototo", 6  => vec!["toto", "toto", "tototo"]; "Test iterative line split")]
     #[test_case("to\nto", 2  => vec!["to", "to"]; "Edge case where there's a tricky carriage return")]

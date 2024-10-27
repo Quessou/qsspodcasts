@@ -112,6 +112,11 @@ impl CommandExecutor {
         let podcast_library = tmp_core.podcast_library.lock().await;
         let podcasts = &podcast_library.podcasts;
 
+        let _hashes: Vec<(String, String)> = podcasts
+            .iter()
+            .map(|p| (p.title.clone(), p.hash()))
+            .collect();
+
         let episodes_iter = podcasts
             .iter()
             .flat_map(|p| p.episodes.clone())
@@ -120,9 +125,10 @@ impl CommandExecutor {
                     return true;
                 }
 
-                let p = podcasts
-                    .iter()
-                    .find(|p| &p.hash() == hash.as_ref().unwrap());
+                let p = podcasts.iter().find(|p| {
+                    let podcast_hash = p.hash();
+                    &podcast_hash == hash.as_ref().unwrap()
+                });
                 let title = if let Some(t) = &p { &t.title } else { "" };
 
                 e.podcast_name == title
